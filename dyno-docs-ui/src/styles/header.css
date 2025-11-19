@@ -1,0 +1,163 @@
+.header {
+    width: 100%;
+    border-bottom: 1px solid #eee;
+    background: white;
+    font-family: 'Poppins', sans-serif;
+}
+
+.header-container {
+    max-width: 1300px;
+    margin: auto;
+    padding: 15px 25px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo img {
+    width: 220px;
+    height: auto;
+    cursor: pointer;
+}
+
+.nav-links {
+    display: flex;
+    gap: 40px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--color-text-black);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.nav-links a:hover {
+    color: var(--hover);
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+/* Sign In (desktop) */
+.sign-in {
+    background: none;
+    border: none;
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Sign Up (desktop) */
+.sign-up {
+    padding: var(--spacing-2) var(--spacing-4);
+    background: var(--color-background);
+    border: 2px solid var(--color-primary);
+    border-radius: 8px;
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Mobile Sign In */
+.sign-in-1 {
+    background: none;
+    border: none;
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Mobile Sign Up */
+.sign-up-1 {
+    padding: var(--spacing-2) var(--spacing-4);
+    background: white;
+    border: 2px solid var(--color-primary);
+    border-radius: 8px;
+    color: var(--color-primary);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.menu-icon {
+    font-size: var(--font-size-2xl);
+    cursor: pointer;
+    display: none;
+}
+
+.mobile-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 260px;
+    background: white;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+    from {
+        right: -300px;
+    }
+    to {
+        right: 0;
+    }
+}
+
+.drawer-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.drawer-content a {
+    text-decoration: none;
+    color: var(--color-text-black);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+}
+
+.close-drawer {
+    align-self: flex-end;
+    font-size: var(--font-size-xl);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+/* ---------------------- */
+/* RESPONSIVE BREAKPOINTS */
+/* ---------------------- */
+
+@media (max-width: 1024px) {
+
+    .nav-links,
+    .auth-buttons {
+        display: none;
+    }
+
+    .menu-icon {
+        display: block;
+    }
+}
+
+@media (max-width: 600px) {
+    .logo-text {
+        font-size: var(--font-size-lg);
+    }
+}
