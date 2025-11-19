@@ -1,18 +1,19 @@
+/* Container */
 .hero-container {
   position: relative;
-  padding: 100px 20px;
+  padding: 120px 20px;
   text-align: center;
   background: #fff;
   overflow: hidden;
+  z-index: 1;
 }
 
-/* Main text container */
+/* ==== TEXT CONTENT ==== */
 .hero-content {
   max-width: 900px;
   margin: 0 auto;
 }
 
-/* Title */
 .hero-title {
   font-size: var(--font-size-4xl);
   font-weight: 800;
@@ -24,16 +25,15 @@
   color: var(--color-primary);
 }
 
-/* Description */
 .hero-description {
   max-width: 680px;
   margin: 20px auto;
   font-size: 1rem;
   color: #777;
   line-height: 1.6;
+  z-index: 10;
 }
 
-/* Button */
 .hero-btn {
   margin-top: 25px;
   background-color: var(--color-primary);
@@ -51,63 +51,76 @@
   background-color: var(--hover);
 }
 
-/* Background shapes */
+/* ===== SHAPES ===== */
 .shape {
   position: absolute;
+  z-index: 0;
+  opacity: 1;
+}
+
+.triangle-shape {
+  width: 0;
+  height: 0;
+  border-left: 50px solid transparent;
+  border-right: 50px solid transparent;
+  border-bottom: 80px solid #ccc;
+  position: absolute;
+  top: 50px;
+  left: 180px;
+  transform: rotate(210deg);
+}
+
+
+/* ◤ 2. Large faded circle (Bottom-left) */
+.big-circle-left {
+  width: 380px;
+  height: 380px;
+  background: #f4f4f4;
   border-radius: 50%;
-  opacity: 0.15;
-  z-index: -1;
+  position: absolute;
+  bottom: -120px;
+  left: -140px;
 }
 
-/* Left circle */
-.shape-left {
-  width: 260px;
-  height: 260px;
-  background: #d9d9d9;
-  bottom: -40px;
-  left: -80px;
+/* ◤ 3. Circle outline right side */
+.circle-outline-right {
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  border: 2px solid #e1e1e1;
+  top: 110px;
+  right: 120px;
 }
 
-/* Right circle */
-.shape-right {
-  width: 230px;
-  height: 230px;
-  background: #d9d9d9;
-  top: 100px;
-  right: -60px;
+/* ◤ 4. Small dot inside the circle outline */
+.small-dot-right {
+  width: 28px;
+  height: 28px;
+  background: #d1d1d1;
+  border-radius: 50%;
+  position: absolute;
+  top: 245px;
+  right: 110px;
 }
 
-/* Responsive Styling */
+/* ◤ 5. Bottom-right faded big circle */
+.big-circle-bottom-right {
+  width: 420px;
+  height: 420px;
+  background: #f4f4f4;
+  border-radius: 50%;
+  bottom: -160px;
+  right: -180px;
+}
+
+/* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .hero-title {
-    font-size: 2rem;
-  }
-
-  .hero-subtitle {
-    font-size: 1.4rem;
-  }
-
-  .hero-description {
-    font-size: 0.95rem;
-  }
-
-  .shape-left,
-  .shape-right {
-    width: 180px;
-    height: 180px;
-  }
+  .triangle-shape { left: 20px; top: 40px; }
+  .circle-outline-right { display: none; }
+  .small-dot-right { display: none; }
+  .big-circle-bottom-right { width: 300px; height: 300px; right: -120px; }
 }
 
 @media (max-width: 480px) {
-  .hero-title {
-    font-size: 1.7rem;
-  }
-
-  .hero-subtitle {
-    font-size: 1.1rem;
-  }
-
-  .hero-description {
-    font-size: 0.9rem;
-  }
+  .big-circle-left { width: 260px; height: 260px; left: -100px; bottom: -80px;}
 }
