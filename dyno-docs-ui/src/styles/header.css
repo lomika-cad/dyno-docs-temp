@@ -1,6 +1,6 @@
 .header {
     width: 100%;
-    border-bottom: 1px solid #eee;
+    /* border-bottom: 1px solid #eee; */
     background: white;
     font-family: 'Poppins', sans-serif;
 }
@@ -106,6 +106,7 @@
     background: white;
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
     animation: slideIn 0.3s ease forwards;
+    z-index: 1000;
 }
 
 @keyframes slideIn {

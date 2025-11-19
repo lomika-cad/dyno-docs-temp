@@ -1,0 +1,113 @@
+.hero-container {
+  position: relative;
+  padding: 100px 20px;
+  text-align: center;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* Main text container */
+.hero-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Title */
+.hero-title {
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
+  color: #000;
+  line-height: 1.3;
+}
+
+.hero-title span {
+  color: var(--color-primary);
+}
+
+/* Description */
+.hero-description {
+  max-width: 680px;
+  margin: 20px auto;
+  font-size: 1rem;
+  color: #777;
+  line-height: 1.6;
+}
+
+/* Button */
+.hero-btn {
+  margin-top: 25px;
+  background-color: var(--color-primary);
+  border: none;
+  padding: 12px 36px;
+  color: var(--color-text-white);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.hero-btn:hover {
+  background-color: var(--hover);
+}
+
+/* Background shapes */
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.15;
+  z-index: -1;
+}
+
+/* Left circle */
+.shape-left {
+  width: 260px;
+  height: 260px;
+  background: #d9d9d9;
+  bottom: -40px;
+  left: -80px;
+}
+
+/* Right circle */
+.shape-right {
+  width: 230px;
+  height: 230px;
+  background: #d9d9d9;
+  top: 100px;
+  right: -60px;
+}
+
+/* Responsive Styling */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.4rem;
+  }
+
+  .hero-description {
+    font-size: 0.95rem;
+  }
+
+  .shape-left,
+  .shape-right {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.7rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .hero-description {
+    font-size: 0.9rem;
+  }
+}

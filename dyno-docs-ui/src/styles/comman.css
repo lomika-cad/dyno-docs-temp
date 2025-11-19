@@ -1,0 +1,67 @@
+/* Fullscreen container */
+.error-boundary-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    padding: 20px;
+}
+
+/* White centered box */
+.error-box {
+    background: #fff;
+    padding: 32px;
+    border-radius: 10px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Title */
+.error-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #dc2626;
+    margin-bottom: 16px;
+}
+
+/* Message */
+.error-message {
+    color: #4b5563;
+    margin-bottom: 16px;
+}
+
+/* Error details container */
+.error-details {
+    background: #f3f4f6;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    overflow: auto;
+}
+
+/* Error text */
+.error-text {
+    font-size: 14px;
+    font-family: monospace;
+    color: #1f2937;
+}
+
+/* Refresh button */
+.error-refresh-btn {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+    padding: 10px 0;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.error-refresh-btn:hover {
+    background: #1d4ed8;
+}
