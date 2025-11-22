@@ -3,13 +3,17 @@
     /* border-bottom: 1px solid #eee; */
     background: white;
     font-family: 'Poppins', sans-serif;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
 }
 
 .header-container {
     max-width: 1300px;
     margin: auto;
     padding: 15px 25px;
-
     display: flex;
     align-items: center;
     justify-content: space-between;

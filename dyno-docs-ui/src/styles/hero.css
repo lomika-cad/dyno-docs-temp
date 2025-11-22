@@ -6,6 +6,7 @@
   background: #fff;
   overflow: hidden;
   z-index: 1;
+  margin-top: 80px;
 }
 
 /* ==== TEXT CONTENT ==== */
@@ -125,4 +126,42 @@
 
 @media (max-width: 480px) {
   .big-circle-left { width: 260px; height: 260px; left: -100px; bottom: -80px;}
+}
+
+.slider-container {
+  width: 100%;
+  margin: 10px auto;
+  position: relative;
+  text-align: center;
+  display: flex;
+  gap: 30px;
+  overflow-x: auto;
+}
+
+.slider-image {
+  width: 300px;
+  height: 350px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+/* Dots */
+.slider-dots {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  background: #bbb;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.dot.active {
+  background: var(--color-primary);
 }
