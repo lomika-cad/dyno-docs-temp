@@ -12,6 +12,8 @@
 .hero-content {
   max-width: 900px;
   margin: 0 auto;
+  position: relative;
+  z-index: 10;
 }
 
 .hero-title {
@@ -54,7 +56,7 @@
 /* ===== SHAPES ===== */
 .shape {
   position: absolute;
-  z-index: 0;
+  z-index: -1;
   opacity: 1;
 }
 
@@ -63,7 +65,7 @@
   height: 0;
   border-left: 50px solid transparent;
   border-right: 50px solid transparent;
-  border-bottom: 80px solid #ccc;
+  border-bottom: 80px solid #cccccc5a;
   position: absolute;
   top: 50px;
   left: 180px;
@@ -88,7 +90,7 @@
   height: 250px;
   border-radius: 50%;
   border: 2px solid #e1e1e1;
-  top: 110px;
+  top: 10px;
   right: 120px;
 }
 
@@ -99,7 +101,7 @@
   background: #d1d1d1;
   border-radius: 50%;
   position: absolute;
-  top: 245px;
+  top: 125px;
   right: 110px;
 }
 
@@ -109,8 +111,8 @@
   height: 420px;
   background: #f4f4f4;
   border-radius: 50%;
-  bottom: -160px;
-  right: -180px;
+  bottom: -260px;
+  right: 280px;
 }
 
 /* ===== Responsive ===== */
