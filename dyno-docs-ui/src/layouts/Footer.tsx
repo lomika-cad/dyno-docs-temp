@@ -22,17 +22,17 @@ export default function Footer() {
           <img className="footer-logo" src={logo} alt="DynoDocs" />
 
           <div className="footer-info">
-            <p>
+            <p style={{display: "flex", alignItems: "start"}}>
               <MapPin size={18} className="icon" />
-              No.332/3/1, Aurthur Wijewardana Mw, Hiripitiya, Pannipitiya.
+              No.332/3/1, Hiripitiya, Pannipitiya.
             </p>
 
-            <p>
+            <p style={{display: "flex", alignItems: "start"}}>
               <Mail size={18} className="icon" />
               <a href="mailto:dynodocs@gmail.com">dynodocs@gmail.com</a>
             </p>
 
-            <p>
+            <p style={{display: "flex", alignItems: "start"}}>
               <Phone size={18} className="icon" />
               0779785425, 0715428453
             </p>

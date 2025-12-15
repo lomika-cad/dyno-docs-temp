@@ -4,7 +4,7 @@ import previewSite from "../assets/site-preview.png";
 
 const CTASection = () => {
   return (
-    <Box sx={{ py: { xs: 6, md: 10 }, bgcolor: "#fff" }}>
+    <Box sx={{ py: { xs: 6, md: 10 }, px: { xs: 2, md: 5 }, bgcolor: "#fff" }}>
       <Container maxWidth="lg">
         <Grid
           container
@@ -12,7 +12,7 @@ const CTASection = () => {
           alignItems="center"
         >
           {/* Left Content */}
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
             <Box>
               <Typography
                 variant="h3"
@@ -20,7 +20,7 @@ const CTASection = () => {
                   fontWeight: "bold",
                   color: "#000",
                   mb: 2.5,
-                  fontSize: { xs: "1.8rem", md: "2.5rem" },
+                  fontSize: { xs: "1.8rem", md: "2.2rem" },
                   lineHeight: 1.2,
                 }}
               >

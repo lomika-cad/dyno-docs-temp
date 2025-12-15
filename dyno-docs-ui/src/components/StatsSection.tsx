@@ -26,7 +26,7 @@ const StatsSection = () => {
   ];
 
   return (
-    <Box sx={{ py: 8, bgcolor: "#ff7b2e17" }}>
+    <Box sx={{ py: 8, bgcolor: "#ff7b2e17", px: { xs: 2, md: 5 } }}>
       <Container maxWidth="lg">
         <Grid
           container

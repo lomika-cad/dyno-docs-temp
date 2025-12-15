@@ -3,7 +3,8 @@
     padding: 50px 30px 30px;
     border-radius: 20px;
     margin: 20px auto;
-    width: 95%;
+    width: 98%;
+    max-width: 1400px;
 }
 
 .footer-top {
@@ -77,18 +78,137 @@
     color: #666;
 }
 
+.icon {
+  color: #555;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 /* RESPONSIVE */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
+    .footer-container {
+        padding: 40px 25px 25px;
+    }
+
     .footer-top {
-        flex-direction: column;
+        gap: 30px;
     }
 
     .footer-col {
-        margin-top: 20px;
+        padding: 0 20px 40px 20px;
+        min-width: 130px;
+    }
+
+    .footer-logo {
+        width: 180px;
+    }
+}
+
+@media (max-width: 426px) {
+    .footer-container {
+        padding: 35px 20px 20px;
+        margin: 15px auto;
+        border-radius: 15px;
+    }
+
+    .footer-top {
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .footer-brand {
+        text-align: center;
+    }
+
+    .footer-col {
+        margin-top: 15px;
+        padding: 0;
+        min-width: auto;
+        text-align: center;
+    }
+
+    .footer-col h3 {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    .footer-col ul li {
+        font-size: 14px;
+        margin-bottom: 8px;
+        justify-content: center;
+    }
+
+    .footer-info p {
+        justify-content: center;
+        font-size: 13px;
+    }
+
+    .footer-logo {
+        width: 150px;
+        margin: 0 auto 15px;
+    }
+
+    .icon {
+        width: 20px;
+        height: 20px;
     }
 
     .tagline {
         margin-left: 0;
+    }
+
+    .footer-divider {
+        margin: 25px 0 15px;
+    }
+
+    .footer-bottom {
+        font-size: 12px;
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer-container {
+        padding: 25px 15px 15px;
+        margin: 10px auto;
+        width: 100%;
+    }
+
+    .footer-top {
+        gap: 25px;
+    }
+
+    .footer-col {
+        padding: 0;
+    }
+
+    .footer-col h3 {
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    .footer-col ul li {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+
+    .footer-info p {
+        font-size: 12px;
+    }
+
+    .footer-logo {
+        width: 120px;
+    }
+
+    .icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .footer-bottom {
+        font-size: 11px;
+        line-height: 1.4;
     }
 }
 
@@ -97,8 +217,4 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.icon {
-  color: #555;
 }
