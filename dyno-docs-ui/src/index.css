@@ -1,5 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
+/* CSS Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 :root {
   --color-primary: #FF7B2E;
   --hover: #f9851fc3;
@@ -41,6 +53,14 @@ body {
   color: var(--color-text-black);
   line-height: 1.5;
   overflow-x: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .container {
