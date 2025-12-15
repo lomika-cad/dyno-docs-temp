@@ -157,12 +157,12 @@
 
 @media (max-width: 321px) {
   .hero-title {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-2xl);
     padding: 0;
   }
 
   .hero-description {
-    font-size: 0.7rem;
+    font-size: 0.9rem;
   }
 
   .hero-container {
