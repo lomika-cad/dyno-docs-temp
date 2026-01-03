@@ -1,9 +1,12 @@
 import { useState } from "react";
 import "../styles/header.css";
 import logo from "../assets/dyno-docs.png"
+import { useNavigate } from "react-router-dom";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+
+  const navigate = useNavigate();
 
   return (
     <>
@@ -27,7 +30,7 @@ export default function Header() {
 
           {/* Action Buttons */}
           <div className="auth-buttons">
-            <button className="sign-in">Sign In</button>
+            <button className="sign-in" onClick={() => navigate("/dashboard")}>Sign In</button>
             <button className="sign-up">Sign Up</button>
           </div>
 
@@ -51,7 +54,7 @@ export default function Header() {
             <a href="#" onClick={() => setOpen(false)}>About Us</a>
             <a href="#" onClick={() => setOpen(false)}>Contact Us</a>
 
-            <button className="sign-in-1">Sign In</button>
+            <button className="sign-in-1"  onClick={() => navigate("/dashboard")}>Sign In</button>
             <button className="sign-up-1">Sign Up</button>
           </div>
         </div>
