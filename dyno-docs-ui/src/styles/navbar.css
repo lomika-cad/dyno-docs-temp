@@ -33,12 +33,28 @@
 }
 
 .sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
   color: var(--color-text-black);
   font-size: var(--font-size-sm);
   font-weight: 600;
   padding: 10px 12px;
   border-radius: 10px;
+}
+
+.sidebar__icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 18px;
+}
+
+.sidebar__label {
+  white-space: nowrap;
 }
 
 .sidebar__link:hover {
