@@ -15,191 +15,195 @@ import "../styles/navbar.css";
 import logo from "../assets/dyno-docs.png";
 
 export type NavbarItem = {
-  label: string;
-  to: string;
-  icon?: ReactNode;
+    label: string;
+    to: string;
+    icon?: ReactNode;
 };
 
 export type NavbarProps = {
-  children: ReactNode;
-  items?: NavbarItem[];
-  userName?: string;
+    children: ReactNode;
+    items?: NavbarItem[];
+    userName?: string;
 };
 
 function Icon({ children }: { children: ReactNode }) {
-  return <span className="sidebar__icon">{children}</span>;
+    return <span className="sidebar__icon">{children}</span>;
 }
 
 const DEFAULT_ITEMS: NavbarItem[] = [
-  {
-    label: "Dashboard",
-    to: "/dashboard",
-    icon: (
-      <Icon>
-        <DashboardRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
-  {
-    label: "Agency Data",
-    to: "/agency-data",
-    icon: (
-      <Icon>
-        <SourceRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
-  {
-    label: "Partnerships",
-    to: "/partnerships",
-    icon: (
-      <Icon>
-        <HandshakeRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
-  {
-    label: "Templates",
-    to: "/templates",
-    icon: (
-      <Icon>
-        <ViewModuleRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
-  {
-    label: "Promo Codes",
-    to: "/promo-codes",
-    icon: (
-      <Icon>
-        <LocalOfferRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
-  {
-    label: "Chatbot Integration",
-    to: "/chatbot-integration",
-    icon: (
-      <Icon>
-        <SmartToyRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
-  {
-    label: "Chats",
-    to: "/chats",
-    icon: (
-      <Icon>
-        <ChatRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
-  {
-    label: "Report Generation",
-    to: "/report-generation",
-    icon: (
-      <Icon>
-        <DescriptionRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
-  {
-    label: "Report History",
-    to: "/report-history",
-    icon: (
-      <Icon>
-        <HistoryRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
-  {
-    label: "Customer Profiles",
-    to: "/customer-profiles",
-    icon: (
-      <Icon>
-        <PeopleAltRoundedIcon fontSize="small" />
-      </Icon>
-    ),
-  },
+    {
+        label: "Dashboard",
+        to: "/dashboard",
+        icon: (
+            <Icon>
+                <DashboardRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
+    {
+        label: "Agency Data",
+        to: "/agency-data",
+        icon: (
+            <Icon>
+                <SourceRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
+    {
+        label: "Partnerships",
+        to: "/partnerships",
+        icon: (
+            <Icon>
+                <HandshakeRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
+    {
+        label: "Templates",
+        to: "/templates",
+        icon: (
+            <Icon>
+                <ViewModuleRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
+    {
+        label: "Promo Codes",
+        to: "/promo-codes",
+        icon: (
+            <Icon>
+                <LocalOfferRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
+    {
+        label: "Chatbot Integration",
+        to: "/chatbot-integration",
+        icon: (
+            <Icon>
+                <SmartToyRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
+    {
+        label: "Chats",
+        to: "/chats",
+        icon: (
+            <Icon>
+                <ChatRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
+    {
+        label: "Report Generation",
+        to: "/report-generation",
+        icon: (
+            <Icon>
+                <DescriptionRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
+    {
+        label: "Report History",
+        to: "/report-history",
+        icon: (
+            <Icon>
+                <HistoryRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
+    {
+        label: "Customer Profiles",
+        to: "/customer-profiles",
+        icon: (
+            <Icon>
+                <PeopleAltRoundedIcon fontSize="small" />
+            </Icon>
+        ),
+    },
 ];
 
 export default function Navbar({
-  children,
-  items,
-  userName = "User",
+    children,
+    items,
+    userName = "User",
 }: NavbarProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navItems = items ?? DEFAULT_ITEMS;
+    const navItems = items ?? DEFAULT_ITEMS;
 
-  return (
-    <div className="app-shell">
-      <aside
-        className={`sidebar ${mobileOpen ? "sidebar--open" : ""}`}
-        aria-label="Primary"
-      >
-        <div className="sidebar__brand">
-          <img className="sidebar__logo" src={logo} alt="DynoDocs" />
-        </div>
-
-        <nav className="sidebar__nav" aria-label="Navigation">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `sidebar__link ${isActive ? "sidebar__link--active" : ""}`
-              }
-              onClick={() => setMobileOpen(false)}
+    return (
+        <div className="app-shell">
+            <aside
+                className={`sidebar ${mobileOpen ? "sidebar--open" : ""}`}
+                aria-label="Primary"
             >
-              {item.icon}
-              <span className="sidebar__label">{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
+                <div className="sidebar__brand">
+                    <img className="sidebar__logo" src={logo} alt="DynoDocs" />
+                </div>
 
-        <button
-          type="button"
-          className="sidebar__logout"
-          onClick={() => setMobileOpen(false)}
-        >
-          Logout
-        </button>
-      </aside>
+                <nav className="sidebar__nav" aria-label="Navigation">
+                    {navItems.map((item) => (
+                        <NavLink
+                            key={item.to}
+                            to={item.to}
+                            className={({ isActive }) =>
+                                `sidebar__link ${isActive ? "sidebar__link--active" : ""}`
+                            }
+                            onClick={() => setMobileOpen(false)}
+                        >
+                            {item.icon}
+                            <span className="sidebar__label">{item.label}</span>
+                        </NavLink>
+                    ))}
+                </nav>
 
-      {mobileOpen && (
-        <button
-          type="button"
-          className="sidebar__backdrop"
-          aria-label="Close navigation"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+                <button
+                    type="button"
+                    className="sidebar__logout"
+                    onClick={() => setMobileOpen(false)}
+                >
+                    Logout
+                </button>
+            </aside>
 
-      <div className="main">
-        <header className="topbar">
-          <button
-            type="button"
-            className="topbar__menu"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            ☰
-          </button>
+            {mobileOpen && (
+                <button
+                    type="button"
+                    className="sidebar__backdrop"
+                    aria-label="Close navigation"
+                    onClick={() => setMobileOpen(false)}
+                />
+            )}
 
-          <div className="topbar__spacer" />
+            <div className="main">
+                <header className="topbar">
+                    <button
+                        type="button"
+                        className="topbar__menu"
+                        aria-label={mobileOpen ? "Close menu" : "Open menu"}
+                        aria-expanded={mobileOpen}
+                        onClick={() => setMobileOpen((v) => !v)}
+                    >
+                        ☰
+                    </button>
 
-          <div className="topbar__user" aria-label="User">
-            <span className="topbar__greeting">Hi, {userName}</span>
-            <span className="topbar__avatar" aria-hidden="true">
-              👤
-            </span>
-          </div>
-        </header>
+                    <div className="topbar__spacer" />
 
-        <main className="main__content">{children}</main>
-      </div>
-    </div>
-  );
+                    <div className="topbar__user" aria-label="User">
+                        <span className="topbar__greeting">Hi, {userName}</span>
+                        <span className="topbar__avatar" aria-hidden="true">
+                            👤
+                        </span>
+                    </div>
+                </header>
+
+                <main className="main__content">
+                    <div className="main__card">
+                        {children}
+                    </div>                    
+                </main>
+            </div>
+        </div>
+    );
 }

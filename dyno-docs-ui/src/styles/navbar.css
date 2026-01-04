@@ -1,7 +1,7 @@
 .app-shell {
   min-height: 100vh;
   display: flex;
-  background: var(--color-background);
+  background-color: rgb(240, 238, 238);
 }
 
 .sidebar {
@@ -15,7 +15,6 @@
 
 .sidebar__brand {
   padding: var(--spacing-4);
-  border-bottom: 1px solid var(--color-border);
 }
 
 .sidebar__logo {
@@ -125,6 +124,14 @@
 
 .main__content {
   padding: var(--spacing-6);
+}
+
+.main__card {
+  background: var(--color-background);
+  padding: var(--spacing-6);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 
 /* Mobile drawer behavior */
