@@ -20,7 +20,7 @@ html {
   --color-text-gray: #959595;
   --color-background: #ffffff;
   --color-border: #e5e7eb;
-  --color-success: #10b981;
+  --color-success: #06be28;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --border-radius: 0.375rem;
@@ -53,6 +53,7 @@ body {
   color: var(--color-text-black);
   line-height: 1.5;
   overflow-x: hidden;
+  overflow-y: hidden;
   width: 100%;
   margin: 0;
   padding: 0;
