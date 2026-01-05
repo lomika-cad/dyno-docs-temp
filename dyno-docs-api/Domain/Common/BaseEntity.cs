@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
-using UI.Common;
 
 namespace Domain.Common;
 
-public class BaseEntity : ValidationBase
+public class BaseEntity : AuditableEntity
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; }
+    
+    public Guid TenantId { get; set; }
 }

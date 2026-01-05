@@ -1,12 +1,27 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
-namespace Domain.Entities;
+namespace Domain.Common;
 
-public class User
+public class User : BaseEntity
 {
-    [Key] public int Id { get; set; }
 
-    [MaxLength(255)] public string UserName { get; set; }
+    [MaxLength(255)] public required string UserName { get; set; }
 
-    public string? Password { get; set; }
+    public required string FirstName { get; set; }
+
+    public required string LastName { get; set; }
+    
+    [EmailAddress] 
+    public required string Email { get; set; }
+    
+    [MaxLength(25)]
+    public required string PhoneNumber { get; set; }
+    
+    public IFormFile ? ProfilePicture { get; set; }
+    
+    public bool IsActive { get; set; } = true;
+    
+    
+    public required string? Password { get; set; }
 }

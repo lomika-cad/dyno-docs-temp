@@ -14,6 +14,8 @@ public static class ApplicationDependencyInjection
 
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
 
+        services.AddAutoMapper(assembly);
+
         return services;
     }
 }
