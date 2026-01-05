@@ -222,3 +222,131 @@
     justify-content: space-between;
   }
 }
+
+/* Download modal (UI only) */
+.ddModal {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  display: grid;
+  place-items: center;
+}
+
+.ddModal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.ddModal__card {
+  position: relative;
+  width: min(420px, calc(100vw - 32px));
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 18px;
+  text-align: center;
+}
+
+.ddModal__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.ddModal__logoMark {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
+  background: var(--color-border);
+}
+
+.ddModal__title {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+
+.ddModal__subtitle {
+  margin-top: 6px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-gray);
+}
+
+.ddModal__otp {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.ddModal__otpBox {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  outline: none;
+  font-family: inherit;
+}
+
+.ddModal__otpBox:focus {
+  border-color: var(--color-primary);
+}
+
+.ddModal__resend {
+  margin-top: 10px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-gray);
+}
+
+.ddModal__link {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--color-text-black);
+  text-decoration: underline;
+}
+
+.ddModal__actions {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ddModal__btn {
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+}
+
+.ddModal__btn--ghost {
+  background: var(--color-background);
+  color: var(--color-text-black);
+}
+
+.ddModal__btn--primary {
+  background: var(--color-primary);
+  color: var(--color-text-white);
+  border-color: var(--color-primary);
+}
+
+@media (max-width: 420px) {
+  .ddModal__otpBox {
+    width: 48px;
+    height: 52px;
+    font-size: 24px;
+  }
+}

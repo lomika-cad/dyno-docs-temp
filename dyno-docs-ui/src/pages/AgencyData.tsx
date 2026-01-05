@@ -6,16 +6,44 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import { useState } from "react";
+import { downloadSampleExcel } from "../services/agency-data-api";
+import { showError, showSuccess } from "../components/Toast";
 
 export default function AgencyData() {
+    const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
+    const userEmail = sessionStorage.getItem("dd_email") || "user@email.com";
+    const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+
+    const handleDownloadSampleExcel = async () => {
+        try {
+            const response = await downloadSampleExcel(DD_TOKEN);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "template.xlsx");
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode?.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            showSuccess("Template downloaded successfully.");
+        } catch (error) {
+            showError("Failed to download the template. Please try again.");
+        }
+    }
+
     return (
         <Navbar userName="User">
-            <h2>Agency Data</h2>
             <div className="agency">
+                <h2 className="agency__title">Agency Data</h2>
                 <section className="panel">
                     <div className="panel__header">
                         <div className="panel__title">Download Excel Template</div>
-                        <button type="button" className="btn btn--success">
+                        <button
+                            type="button"
+                            className="btn btn--success"
+                            onClick={() => setDownloadModalOpen(true)}
+                        >
                             <DownloadRoundedIcon fontSize="small" />
                             Download
                         </button>
@@ -116,6 +144,64 @@ export default function AgencyData() {
                     </div>
                 </section>
             </div>
+
+            {downloadModalOpen && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Verify download">
+                    <button
+                        type="button"
+                        className="ddModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => setDownloadModalOpen(false)}
+                    />
+
+                    <div className="ddModal__card">
+                        <div className="ddModal__logo" aria-hidden="true">
+                            <span className="ddModal__logoMark" />
+                        </div>
+
+                        <div className="ddModal__title">Please check your email</div>
+                        <div className="ddModal__subtitle">
+                            We&apos;ve sent a code to <strong>{userEmail}</strong>
+                        </div>
+
+                        <div className="ddModal__otp" aria-label="Code inputs">
+                            {[0, 1, 2, 3].map((i) => (
+                                <input
+                                    key={i}
+                                    className="ddModal__otpBox"
+                                    inputMode="numeric"
+                                    maxLength={1}
+                                    aria-label={`Digit ${i + 1}`}
+                                />
+                            ))}
+                        </div>
+
+                        <div className="ddModal__resend">
+                            Didn&apos;t get a code? <button type="button" className="ddModal__link">Click to resend</button>
+                        </div>
+
+                        <div className="ddModal__actions">
+                            <button
+                                type="button"
+                                className="ddModal__btn ddModal__btn--ghost"
+                                onClick={() => setDownloadModalOpen(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="ddModal__btn ddModal__btn--primary"
+                                onClick={async () => {
+                                    await handleDownloadSampleExcel();
+                                    setDownloadModalOpen(false);
+                                }}
+                            >
+                                Verify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Navbar>
     );
 }
