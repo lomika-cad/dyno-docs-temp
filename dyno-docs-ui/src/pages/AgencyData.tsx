@@ -9,6 +9,7 @@ import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useState } from "react";
 import { downloadSampleExcel } from "../services/agency-data-api";
 import { showError, showSuccess } from "../components/Toast";
+import excelImg from "../assets/xlsx.png";
 
 export default function AgencyData() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
@@ -156,28 +157,12 @@ export default function AgencyData() {
 
                     <div className="ddModal__card">
                         <div className="ddModal__logo" aria-hidden="true">
-                            <span className="ddModal__logoMark" />
+                            <img className="ddModal__img" src={excelImg} alt="Excel file icon" />
                         </div>
 
-                        <div className="ddModal__title">Please check your email</div>
+                        <div className="ddModal__title">Download Sample Excel</div>
                         <div className="ddModal__subtitle">
-                            We&apos;ve sent a code to <strong>{userEmail}</strong>
-                        </div>
-
-                        <div className="ddModal__otp" aria-label="Code inputs">
-                            {[0, 1, 2, 3].map((i) => (
-                                <input
-                                    key={i}
-                                    className="ddModal__otpBox"
-                                    inputMode="numeric"
-                                    maxLength={1}
-                                    aria-label={`Digit ${i + 1}`}
-                                />
-                            ))}
-                        </div>
-
-                        <div className="ddModal__resend">
-                            Didn&apos;t get a code? <button type="button" className="ddModal__link">Click to resend</button>
+                            Are you sure you want to download the sample Excel template?
                         </div>
 
                         <div className="ddModal__actions">
@@ -189,15 +174,16 @@ export default function AgencyData() {
                                 Cancel
                             </button>
                             <button
-                                type="button"
-                                className="ddModal__btn ddModal__btn--primary"
-                                onClick={async () => {
-                                    await handleDownloadSampleExcel();
-                                    setDownloadModalOpen(false);
-                                }}
-                            >
-                                Verify
-                            </button>
+                            type="button"
+                            className="btn btn--success"
+                            onClick={() => {
+                                handleDownloadSampleExcel();
+                                setDownloadModalOpen(false);
+                            }}
+                        >
+                            <DownloadRoundedIcon fontSize="small" />
+                            Download
+                        </button>
                         </div>
                     </div>
                 </div>

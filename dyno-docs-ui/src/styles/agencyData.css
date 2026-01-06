@@ -46,7 +46,8 @@
   font-weight: 700;
   border-radius: 10px;
   padding: 10px 14px;
-  display: inline-flex;
+  display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
 }
@@ -256,6 +257,11 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 10px;
+}
+
+.ddModal__img {
+  width: 56px;
+  height: 56px;
 }
 
 .ddModal__logoMark {
