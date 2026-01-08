@@ -6,16 +6,39 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
-import { useState, useRef } from "react";
-import { downloadSampleExcel, uploadAgencyData } from "../services/agency-data-api";
+import { useState, useRef, useEffect } from "react";
+import { downloadSampleExcel, uploadAgencyData, getUploadDataSet } from "../services/agency-data-api";
 import { showError, showSuccess } from "../components/Toast";
 import excelImg from "../assets/xlsx.png";
+
+interface PlaceData {
+    id: string;
+    name: string;
+    averageVisitDuration: string;
+    description?: string;
+    funFact?: string;
+    district: string;
+    city: string;
+    image1Url?: string;
+    image2Url?: string;
+    image3Url?: string;
+    image4Url?: string;
+    image5Url?: string;
+    createdAt: string;
+    createdBy: string;
+    lastModifiedAt?: string;
+    lastModifiedBy?: string;
+}
 
 export default function AgencyData() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
     const [downloadModalOpen, setDownloadModalOpen] = useState(false);
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
+    const [viewModalOpen, setViewModalOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedPlace, setSelectedPlace] = useState<PlaceData | null>(null);
+    const [places, setPlaces] = useState<PlaceData[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +65,7 @@ export default function AgencyData() {
             showError("Please select a file to upload.");
             return;
         }
-        
+
         try {
             setIsUploading(true);
             const formData = new FormData();
@@ -51,12 +74,34 @@ export default function AgencyData() {
             showSuccess("File uploaded successfully.");
             setUploadModalOpen(false);
             setSelectedFile(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+            handleFetchDataSet();
         } catch (error) {
             showError("Failed to upload the file. Please try again.");
         } finally {
             setIsUploading(false);
         }
     }
+
+    const handleFetchDataSet = async () => {
+        try {
+            const response = await getUploadDataSet(DD_TOKEN);
+            setPlaces(response.data || []);
+        } catch (error) {
+            setPlaces([]);
+        }
+    }
+
+    const handleViewPlace = (place: PlaceData) => {
+        setSelectedPlace(place);
+        setViewModalOpen(true);
+    }
+
+    useEffect(() => {
+        handleFetchDataSet();
+    }, []);
 
     const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
         event.preventDefault();
@@ -118,7 +163,7 @@ export default function AgencyData() {
                         <div className="panel__title">Upload Your Data Set</div>
                     </div>
                     <div className="panel__body">
-                        <div 
+                        <div
                             className={`dropzone ${isDragging ? 'dropzone--active' : ''}`}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
@@ -137,8 +182,8 @@ export default function AgencyData() {
                                 style={{ display: 'none' }}
                                 aria-label="Upload Excel file"
                             />
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 className="btn btn--orange"
                                 onClick={() => fileInputRef.current?.click()}
                             >
@@ -163,48 +208,57 @@ export default function AgencyData() {
                         <table className="table">
                             <thead>
                                 <tr>
+                                    <th>Name</th>
                                     <th>District</th>
-                                    <th>Visiting Place</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {["Trincomalee", "Nuwara Eliya", "Kandy", "Hikkaduwa", "Kataragama"].map((district, idx) => (
-                                    <tr key={district}>
-                                        <td>{district}</td>
-                                        <td>
-                                            {
-                                                [
-                                                    "Koneshvaram Kovil",
-                                                    "Victoria Park",
-                                                    "Temple of the Tooth",
-                                                    "Beach",
-                                                    "Temple",
-                                                ][idx]
-                                            }
-                                        </td>
-                                        <td>
-                                            <span className="actions">
-                                                <button type="button" className="iconBtn iconBtn--view" aria-label="View">
-                                                    <VisibilityRoundedIcon fontSize="inherit" />
-                                                </button>
-                                                <button type="button" className="iconBtn iconBtn--edit" aria-label="Edit">
-                                                    <EditRoundedIcon fontSize="inherit" />
-                                                </button>
-                                                <button type="button" className="iconBtn iconBtn--del" aria-label="Delete">
-                                                    <DeleteRoundedIcon fontSize="inherit" />
-                                                </button>
-                                            </span>
+                                {isLoading ? (
+                                    <tr>
+                                        <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }}>
+                                            Loading...
                                         </td>
                                     </tr>
-                                ))}
+                                ) : places.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }}>
+                                            No data available. Please upload an Excel file.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    places.map((place) => (
+                                        <tr key={place.id}>
+                                            <td>{place.name}</td>
+                                            <td>{place.district}</td>
+                                            <td>
+                                                <span className="actions">
+                                                    <button 
+                                                        type="button" 
+                                                        className="iconBtn iconBtn--view" 
+                                                        aria-label="View"
+                                                        onClick={() => handleViewPlace(place)}
+                                                    >
+                                                        <VisibilityRoundedIcon fontSize="inherit" />
+                                                    </button>
+                                                    <button type="button" className="iconBtn iconBtn--edit" aria-label="Edit">
+                                                        <EditRoundedIcon fontSize="inherit" />
+                                                    </button>
+                                                    <button type="button" className="iconBtn iconBtn--del" aria-label="Delete">
+                                                        <DeleteRoundedIcon fontSize="inherit" />
+                                                    </button>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
 
                     <div className="footerRow">
                         <div className="panel__hint">
-                            <strong>Showing</strong> <strong>1-5</strong> of <strong>50</strong> Entries
+                            <strong>Showing</strong> <strong>{places.length}</strong> of <strong>{places.length}</strong> Entries
                         </div>
 
                         <div className="pagination" aria-label="Pagination">
@@ -247,16 +301,16 @@ export default function AgencyData() {
                                 Cancel
                             </button>
                             <button
-                            type="button"
-                            className="btn btn--success"
-                            onClick={() => {
-                                handleDownloadSampleExcel();
-                                setDownloadModalOpen(false);
-                            }}
-                        >
-                            <DownloadRoundedIcon fontSize="small" />
-                            Download
-                        </button>
+                                type="button"
+                                className="btn btn--success"
+                                onClick={() => {
+                                    handleDownloadSampleExcel();
+                                    setDownloadModalOpen(false);
+                                }}
+                            >
+                                <DownloadRoundedIcon fontSize="small" />
+                                Download
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -268,7 +322,15 @@ export default function AgencyData() {
                         type="button"
                         className="ddModal__backdrop"
                         aria-label="Close"
-                        onClick={() => !isUploading && setUploadModalOpen(false)}
+                        onClick={() => {
+                            if (!isUploading) {
+                                setUploadModalOpen(false);
+                                setSelectedFile(null);
+                                if (fileInputRef.current) {
+                                    fileInputRef.current.value = '';
+                                }
+                            }
+                        }}
                     />
 
                     <div className="ddModal__card">
@@ -288,7 +350,13 @@ export default function AgencyData() {
                             <button
                                 type="button"
                                 className="ddModal__btn ddModal__btn--ghost"
-                                onClick={() => setUploadModalOpen(false)}
+                                onClick={() => {
+                                    setUploadModalOpen(false);
+                                    setSelectedFile(null);
+                                    if (fileInputRef.current) {
+                                        fileInputRef.current.value = '';
+                                    }
+                                }}
                                 disabled={isUploading}
                             >
                                 Cancel
@@ -301,6 +369,146 @@ export default function AgencyData() {
                             >
                                 <CloudUploadRoundedIcon fontSize="small" />
                                 {isUploading ? 'Uploading...' : 'Upload'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {viewModalOpen && selectedPlace && (
+                <div className="ddModal ddModal--large" role="dialog" aria-modal="true" aria-label="View Place Details">
+                    <button
+                        type="button"
+                        className="ddModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => {
+                            setViewModalOpen(false);
+                            setSelectedPlace(null);
+                        }}
+                    />
+
+                    <div className="ddModal__card ddModal__card--large">
+                        <div className="ddModal__header">
+                            <div className="ddModal__title">{selectedPlace.name}</div>
+                            <button
+                                type="button"
+                                className="ddModal__close"
+                                aria-label="Close"
+                                onClick={() => {
+                                    setViewModalOpen(false);
+                                    setSelectedPlace(null);
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="ddModal__content">
+                            <div className="detailSection">
+                                <h3 className="detailSection__title">Basic Information</h3>
+                                <div className="detailGrid">
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">District:</span>
+                                        <span className="detailItem__value">{selectedPlace.district}</span>
+                                    </div>
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">City:</span>
+                                        <span className="detailItem__value">{selectedPlace.city}</span>
+                                    </div>
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">Average Visit Duration:</span>
+                                        <span className="detailItem__value">{selectedPlace.averageVisitDuration}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {selectedPlace.description && (
+                                <div className="detailSection">
+                                    <h3 className="detailSection__title">Description</h3>
+                                    <p className="detailSection__text">{selectedPlace.description}</p>
+                                </div>
+                            )}
+
+                            {selectedPlace.funFact && (
+                                <div className="detailSection">
+                                    <h3 className="detailSection__title">Fun Fact</h3>
+                                    <p className="detailSection__text">{selectedPlace.funFact}</p>
+                                </div>
+                            )}
+
+                            <div className="detailSection">
+                                <h3 className="detailSection__title">Images</h3>
+                                <div className="imageGrid">
+                                    {[
+                                        selectedPlace.image1Url,
+                                        selectedPlace.image2Url,
+                                        selectedPlace.image3Url,
+                                        selectedPlace.image4Url,
+                                        selectedPlace.image5Url,
+                                    ]
+                                        .filter((url) => url)
+                                        .map((url, idx) => (
+                                            <div key={idx} className="imageGrid__item">
+                                                <img
+                                                    src={`data:image/jpeg;base64,${url}`}
+                                                    alt={`${selectedPlace.name} - Image ${idx + 1}`}
+                                                    className="imageGrid__img"
+                                                />
+                                            </div>
+                                        ))}
+                                    {![
+                                        selectedPlace.image1Url,
+                                        selectedPlace.image2Url,
+                                        selectedPlace.image3Url,
+                                        selectedPlace.image4Url,
+                                        selectedPlace.image5Url,
+                                    ].some((url) => url) && (
+                                        <p className="detailSection__text">No images available</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="detailSection">
+                                <h3 className="detailSection__title">Metadata</h3>
+                                <div className="detailGrid">
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">Created By:</span>
+                                        <span className="detailItem__value">{selectedPlace.createdBy}</span>
+                                    </div>
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">Created At:</span>
+                                        <span className="detailItem__value">
+                                            {new Date(selectedPlace.createdAt).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    {selectedPlace.lastModifiedBy && (
+                                        <div className="detailItem">
+                                            <span className="detailItem__label">Last Modified By:</span>
+                                            <span className="detailItem__value">{selectedPlace.lastModifiedBy}</span>
+                                        </div>
+                                    )}
+                                    {selectedPlace.lastModifiedAt && (
+                                        <div className="detailItem">
+                                            <span className="detailItem__label">Last Modified At:</span>
+                                            <span className="detailItem__value">
+                                                {new Date(selectedPlace.lastModifiedAt).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="ddModal__actions">
+                            <button
+                                type="button"
+                                className="btn btn--orange"
+                                onClick={() => {
+                                    setViewModalOpen(false);
+                                    setSelectedPlace(null);
+                                }}
+                            >
+                                Close
                             </button>
                         </div>
                     </div>

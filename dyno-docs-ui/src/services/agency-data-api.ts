@@ -1,11 +1,11 @@
 import axios from "axios";
 import { getEnv } from "../env";
 
-const API_URL = getEnv().API_URL + "/operations/places/";
+const API_URL = getEnv().API_URL + "/operations/places";
 
 export const downloadSampleExcel = async (token: string) => {
     try {
-        const response = await axios.get(API_URL + "download-template", {
+        const response = await axios.get(API_URL + "/download-template", {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -19,10 +19,23 @@ export const downloadSampleExcel = async (token: string) => {
 
 export const uploadAgencyData = async (formData: FormData, token: string ) => {
     try {
-        const response = await axios.post(API_URL + "upload-excel", formData, {
+        const response = await axios.post(API_URL + "/upload-excel", formData, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const getUploadDataSet = async (token: string) => {
+    try {
+        const response = await axios.get(API_URL, {
+            headers: {
+                Authorization: `Bearer ${token}`,
             },
         });
         return response;
