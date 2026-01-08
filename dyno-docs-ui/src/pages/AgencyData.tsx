@@ -6,15 +6,19 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
-import { useState } from "react";
-import { downloadSampleExcel } from "../services/agency-data-api";
+import { useState, useRef } from "react";
+import { downloadSampleExcel, uploadAgencyData } from "../services/agency-data-api";
 import { showError, showSuccess } from "../components/Toast";
 import excelImg from "../assets/xlsx.png";
 
 export default function AgencyData() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
-    const userEmail = sessionStorage.getItem("dd_email") || "user@email.com";
     const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+    const [uploadModalOpen, setUploadModalOpen] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleDownloadSampleExcel = async () => {
         try {
@@ -32,6 +36,58 @@ export default function AgencyData() {
             showError("Failed to download the template. Please try again.");
         }
     }
+
+    const handleUploadExcel = async () => {
+        if (!selectedFile) {
+            showError("Please select a file to upload.");
+            return;
+        }
+        
+        try {
+            setIsUploading(true);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            await uploadAgencyData(formData, DD_TOKEN);
+            showSuccess("File uploaded successfully.");
+            setUploadModalOpen(false);
+            setSelectedFile(null);
+        } catch (error) {
+            showError("Failed to upload the file. Please try again.");
+        } finally {
+            setIsUploading(false);
+        }
+    }
+
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(false);
+        const files = event.dataTransfer.files;
+        if (files.length > 0) {
+            setSelectedFile(files[0]);
+            setUploadModalOpen(true);
+        }
+    };
+
+    const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files && files.length > 0) {
+            setSelectedFile(files[0]);
+            setUploadModalOpen(true);
+        }
+    };
 
     return (
         <Navbar userName="User">
@@ -62,13 +118,30 @@ export default function AgencyData() {
                         <div className="panel__title">Upload Your Data Set</div>
                     </div>
                     <div className="panel__body">
-                        <div className="dropzone">
+                        <div 
+                            className={`dropzone ${isDragging ? 'dropzone--active' : ''}`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
                             <span className="dropzone__icon" aria-hidden="true">
                                 <CloudUploadRoundedIcon />
                             </span>
                             <div className="dropzone__title">select your excel or drag and drop</div>
-                            <div className="dropzone__sub">.xls, .xlsx accepted</div>
-                            <button type="button" className="btn btn--orange">
+                            <div className="dropzone__sub">.xls, .xlsx accepted (max 10MB)</div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".xls,.xlsx"
+                                onChange={handleFileInputChange}
+                                style={{ display: 'none' }}
+                                aria-label="Upload Excel file"
+                            />
+                            <button 
+                                type="button" 
+                                className="btn btn--orange"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
                                 browse
                             </button>
                         </div>
@@ -184,6 +257,51 @@ export default function AgencyData() {
                             <DownloadRoundedIcon fontSize="small" />
                             Download
                         </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {uploadModalOpen && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Confirm upload">
+                    <button
+                        type="button"
+                        className="ddModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => !isUploading && setUploadModalOpen(false)}
+                    />
+
+                    <div className="ddModal__card">
+                        <div className="ddModal__logo" aria-hidden="true">
+                            <img className="ddModal__img" src={excelImg} alt="Excel file icon" />
+                        </div>
+
+                        <div className="ddModal__title">Upload Excel File</div>
+                        <div className="ddModal__subtitle" style={{ marginBottom: '12px' }}>
+                            <strong>File:</strong> {selectedFile?.name}
+                        </div>
+                        <div className="ddModal__subtitle" style={{ color: '#f57c00', fontWeight: 'bold' }}>
+                            ⚠️ Warning: After every Excel upload, previous uploaded data will be lost and replaced with new data.
+                        </div>
+
+                        <div className="ddModal__actions">
+                            <button
+                                type="button"
+                                className="ddModal__btn ddModal__btn--ghost"
+                                onClick={() => setUploadModalOpen(false)}
+                                disabled={isUploading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn--orange"
+                                onClick={handleUploadExcel}
+                                disabled={isUploading}
+                            >
+                                <CloudUploadRoundedIcon fontSize="small" />
+                                {isUploading ? 'Uploading...' : 'Upload'}
+                            </button>
                         </div>
                     </div>
                 </div>
