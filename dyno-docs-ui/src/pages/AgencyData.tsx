@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from "react";
 import { downloadSampleExcel, uploadAgencyData, getUploadDataSet, deleteData, createPlace, updatePlace } from "../services/agency-data-api";
 import { showError, showSuccess } from "../components/Toast";
 import excelImg from "../assets/xlsx.png";
+import trashImg from "../assets/trash.png";
 
 interface PlaceData {
     id: string;
@@ -807,7 +808,7 @@ export default function AgencyData() {
 
                     <div className="ddModal__card">
                         <div className="ddModal__logo" aria-hidden="true">
-                            <img className="ddModal__img" src={excelImg} alt="Delete icon" />
+                            <img className="ddModal__img" src={trashImg} alt="Delete icon" />
                         </div>
 
                         <div className="ddModal__title">Delete Place</div>
@@ -1157,7 +1158,7 @@ export default function AgencyData() {
                                     />
                                 </div>
 
-                                <div className="formField">
+                                {/* <div className="formField">
                                     <label className="formField__label">Images (Max 5)</label>
                                     <div
                                         className={`imageDropzone ${imagesDragActive ? 'imageDropzone--active' : ''}`}
@@ -1206,7 +1207,7 @@ export default function AgencyData() {
                                             ))}
                                         </div>
                                     )}
-                                </div>
+                                </div> */}
                             </form>
                         </div>
 
