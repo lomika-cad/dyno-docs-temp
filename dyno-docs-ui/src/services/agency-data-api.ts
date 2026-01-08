@@ -56,3 +56,17 @@ export const deleteData = async (placeId: string, token: string) => {
         throw error;
     }
 }
+
+export const createPlace = async (formData: FormData, token: string) => {
+    try {
+        const response = await axios.post(API_URL, formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}

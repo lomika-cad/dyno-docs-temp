@@ -7,7 +7,7 @@ import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useState, useRef, useEffect } from "react";
-import { downloadSampleExcel, uploadAgencyData, getUploadDataSet, deleteData } from "../services/agency-data-api";
+import { downloadSampleExcel, uploadAgencyData, getUploadDataSet, deleteData, createPlace } from "../services/agency-data-api";
 import { showError, showSuccess } from "../components/Toast";
 import excelImg from "../assets/xlsx.png";
 
@@ -46,6 +46,19 @@ export default function AgencyData() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
+    const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
+    const [formData, setFormData] = useState({
+        name: '',
+        averageVisitDuration: '',
+        description: '',
+        funFact: '',
+        district: '',
+        city: '',
+    });
+    const [selectedImages, setSelectedImages] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [imagesDragActive, setImagesDragActive] = useState(false);
     const itemsPerPage = 10;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -140,6 +153,129 @@ export default function AgencyData() {
         return pages;
     };
 
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleImagesDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setImagesDragActive(true);
+    };
+
+    const handleImagesDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setImagesDragActive(false);
+    };
+
+    const processImages = (files: FileList) => {
+        const fileArray = Array.from(files).slice(0, 5 - selectedImages.length);
+        const newImages = [...selectedImages, ...fileArray];
+        
+        if (newImages.length > 5) {
+            showError('Maximum 5 images allowed');
+            return;
+        }
+
+        setSelectedImages(newImages);
+
+        // Generate previews
+        const newPreviews: string[] = [];
+        newImages.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                newPreviews.push(reader.result as string);
+                if (newPreviews.length === newImages.length) {
+                    setImagePreviews(newPreviews);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleImagesDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setImagesDragActive(false);
+        const files = e.dataTransfer.files;
+        if (files) {
+            processImages(files);
+        }
+    };
+
+    const handleImagesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files) {
+            processImages(files);
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setSelectedImages(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleAddRecord = async () => {
+        // Validate required fields
+        if (!formData.name.trim()) {
+            showError('Name is required');
+            return;
+        }
+        if (!formData.averageVisitDuration.trim()) {
+            showError('Average Visit Duration is required');
+            return;
+        }
+        if (!formData.district.trim()) {
+            showError('District is required');
+            return;
+        }
+        if (!formData.city.trim()) {
+            showError('City is required');
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            const data = new FormData();
+            data.append('name', formData.name);
+            data.append('averageVisitDuration', formData.averageVisitDuration);
+            data.append('description', formData.description);
+            data.append('funFact', formData.funFact);
+            data.append('district', formData.district);
+            data.append('city', formData.city);
+
+            selectedImages.forEach((image, index) => {
+                data.append(`image${index + 1}`, image);
+            });
+
+            await createPlace(data, DD_TOKEN);
+            showSuccess('Place added successfully!');
+            setAddRecordModalOpen(false);
+            resetForm();
+            handleFetchDataSet();
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || 'Failed to add place. Please try again.';
+            showError(errorMessage);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            name: '',
+            averageVisitDuration: '',
+            description: '',
+            funFact: '',
+            district: '',
+            city: '',
+        });
+        setSelectedImages([]);
+        setImagePreviews([]);
+    };
+
     const handleViewPlace = (place: PlaceData) => {
         setSelectedPlace(place);
         setViewModalOpen(true);
@@ -202,16 +338,6 @@ export default function AgencyData() {
             setUploadModalOpen(true);
         }
     };
-
-    const handleDeletePlace = async (placeId: string) => {
-        try {
-            await deleteData(placeId, DD_TOKEN);
-            showSuccess("Place deleted successfully.");
-            handleFetchDataSet();
-        } catch (error) {
-            showError("Failed to delete the place. Please try again.");
-        }
-    }
 
     return (
         <Navbar userName="User">
@@ -286,7 +412,14 @@ export default function AgencyData() {
                                 }}
                             />
                         </label>
-                        <button type="button" className="btn btn--orange">
+                        <button 
+                            type="button" 
+                            className="btn btn--orange"
+                            onClick={() => {
+                                resetForm();
+                                setAddRecordModalOpen(true);
+                            }}
+                        >
                             + Add Record
                         </button>
                     </div>
@@ -632,6 +765,202 @@ export default function AgencyData() {
                             >
                                 <DeleteRoundedIcon fontSize="small" />
                                 {isDeleting ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {addRecordModalOpen && (
+                <div className="sideModal" role="dialog" aria-modal="true" aria-label="Add New Place">
+                    <button
+                        type="button"
+                        className="sideModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => {
+                            if (!isSubmitting) {
+                                setAddRecordModalOpen(false);
+                                resetForm();
+                            }
+                        }}
+                    />
+
+                    <div className="sideModal__card">
+                        <div className="sideModal__header">
+                            <h2 className="sideModal__title">Add New Place</h2>
+                            <button
+                                type="button"
+                                className="sideModal__close"
+                                aria-label="Close"
+                                onClick={() => {
+                                    if (!isSubmitting) {
+                                        setAddRecordModalOpen(false);
+                                        resetForm();
+                                    }
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="sideModal__content">
+                            <form className="formGroup">
+                                <div className="formField">
+                                    <label htmlFor="name" className="formField__label">Name <span className="required">*</span></label>
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        name="name"
+                                        className="formField__input"
+                                        placeholder="Enter place name"
+                                        value={formData.name}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="averageVisitDuration" className="formField__label">Average Visit Duration <span className="required">*</span></label>
+                                    <input
+                                        id="averageVisitDuration"
+                                        type="text"
+                                        name="averageVisitDuration"
+                                        className="formField__input"
+                                        placeholder="e.g., 2-3 hours"
+                                        value={formData.averageVisitDuration}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="district" className="formField__label">District <span className="required">*</span></label>
+                                    <input
+                                        id="district"
+                                        type="text"
+                                        name="district"
+                                        className="formField__input"
+                                        placeholder="Enter district"
+                                        value={formData.district}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="city" className="formField__label">City <span className="required">*</span></label>
+                                    <input
+                                        id="city"
+                                        type="text"
+                                        name="city"
+                                        className="formField__input"
+                                        placeholder="Enter city"
+                                        value={formData.city}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="description" className="formField__label">Description</label>
+                                    <textarea
+                                        id="description"
+                                        name="description"
+                                        className="formField__textarea"
+                                        placeholder="Enter description"
+                                        value={formData.description}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                        rows={3}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="funFact" className="formField__label">Fun Fact</label>
+                                    <textarea
+                                        id="funFact"
+                                        name="funFact"
+                                        className="formField__textarea"
+                                        placeholder="Enter a fun fact"
+                                        value={formData.funFact}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                        rows={3}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label className="formField__label">Images (Max 5)</label>
+                                    <div
+                                        className={`imageDropzone ${imagesDragActive ? 'imageDropzone--active' : ''}`}
+                                        onDragOver={handleImagesDragOver}
+                                        onDragLeave={handleImagesDragLeave}
+                                        onDrop={handleImagesDrop}
+                                    >
+                                        <div className="imageDropzone__content">
+                                            <div className="imageDropzone__icon">📸</div>
+                                            <p className="imageDropzone__title">Drag and drop images here or click to browse</p>
+                                            <p className="imageDropzone__subtitle">Maximum 5 images</p>
+                                            <input
+                                                type="file"
+                                                multiple
+                                                accept="image/*"
+                                                onChange={handleImagesSelect}
+                                                style={{ display: 'none' }}
+                                                id="imageInput"
+                                                disabled={isSubmitting}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="btn btn--orange"
+                                                onClick={() => document.getElementById('imageInput')?.click()}
+                                                disabled={isSubmitting}
+                                            >
+                                                Browse Images
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {imagePreviews.length > 0 && (
+                                        <div className="imagePreviews">
+                                            {imagePreviews.map((preview, idx) => (
+                                                <div key={idx} className="imagePreviewItem">
+                                                    <img src={preview} alt={`Preview ${idx + 1}`} className="imagePreviewItem__img" />
+                                                    <button
+                                                        type="button"
+                                                        className="imagePreviewItem__remove"
+                                                        onClick={() => removeImage(idx)}
+                                                        disabled={isSubmitting}
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </form>
+                        </div>
+
+                        <div className="sideModal__footer">
+                            <button
+                                type="button"
+                                className="btn btn--secondary"
+                                onClick={() => {
+                                    setAddRecordModalOpen(false);
+                                    resetForm();
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn--orange"
+                                onClick={handleAddRecord}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Adding...' : 'Add Place'}
                             </button>
                         </div>
                     </div>
