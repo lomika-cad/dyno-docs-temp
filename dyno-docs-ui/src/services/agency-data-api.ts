@@ -70,3 +70,17 @@ export const createPlace = async (formData: FormData, token: string) => {
         throw error;
     }
 }
+
+export const updatePlace = async (placeId: string, formData: FormData, token: string) => {
+    try {
+        const response = await axios.put(`${API_URL}/${placeId}`, formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}

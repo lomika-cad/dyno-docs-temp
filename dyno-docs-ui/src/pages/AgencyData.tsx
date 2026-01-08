@@ -7,7 +7,7 @@ import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useState, useRef, useEffect } from "react";
-import { downloadSampleExcel, uploadAgencyData, getUploadDataSet, deleteData, createPlace } from "../services/agency-data-api";
+import { downloadSampleExcel, uploadAgencyData, getUploadDataSet, deleteData, createPlace, updatePlace } from "../services/agency-data-api";
 import { showError, showSuccess } from "../components/Toast";
 import excelImg from "../assets/xlsx.png";
 
@@ -47,6 +47,8 @@ export default function AgencyData() {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
+    const [editRecordModalOpen, setEditRecordModalOpen] = useState(false);
+    const [placeToEdit, setPlaceToEdit] = useState<PlaceData | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         averageVisitDuration: '',
@@ -276,6 +278,69 @@ export default function AgencyData() {
         setImagePreviews([]);
     };
 
+    const handleEditClick = (place: PlaceData) => {
+        setPlaceToEdit(place);
+        setFormData({
+            name: place.name,
+            averageVisitDuration: place.averageVisitDuration,
+            description: place.description || '',
+            funFact: place.funFact || '',
+            district: place.district,
+            city: place.city,
+        });
+        setSelectedImages([]);
+        setImagePreviews([]);
+        setEditRecordModalOpen(true);
+    };
+
+    const handleUpdateRecord = async () => {
+        if (!placeToEdit) return;
+
+        // Validate required fields
+        if (!formData.name.trim()) {
+            showError('Name is required');
+            return;
+        }
+        if (!formData.averageVisitDuration.trim()) {
+            showError('Average Visit Duration is required');
+            return;
+        }
+        if (!formData.district.trim()) {
+            showError('District is required');
+            return;
+        }
+        if (!formData.city.trim()) {
+            showError('City is required');
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            const data = new FormData();
+            data.append('name', formData.name);
+            data.append('averageVisitDuration', formData.averageVisitDuration);
+            data.append('description', formData.description);
+            data.append('funFact', formData.funFact);
+            data.append('district', formData.district);
+            data.append('city', formData.city);
+
+            selectedImages.forEach((image, index) => {
+                data.append(`image${index + 1}`, image);
+            });
+
+            await updatePlace(placeToEdit.id, data, DD_TOKEN);
+            showSuccess('Place updated successfully!');
+            setEditRecordModalOpen(false);
+            setPlaceToEdit(null);
+            resetForm();
+            handleFetchDataSet();
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || 'Failed to update place. Please try again.';
+            showError(errorMessage);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     const handleViewPlace = (place: PlaceData) => {
         setSelectedPlace(place);
         setViewModalOpen(true);
@@ -467,7 +532,12 @@ export default function AgencyData() {
                                                     >
                                                         <VisibilityRoundedIcon fontSize="inherit" />
                                                     </button>
-                                                    <button type="button" className="iconBtn iconBtn--edit" aria-label="Edit">
+                                                    <button 
+                                                        type="button" 
+                                                        className="iconBtn iconBtn--edit" 
+                                                        aria-label="Edit"
+                                                        onClick={() => handleEditClick(place)}
+                                                    >
                                                         <EditRoundedIcon fontSize="inherit" />
                                                     </button>
                                                     <button type="button" className="iconBtn iconBtn--del" aria-label="Delete"
@@ -961,6 +1031,205 @@ export default function AgencyData() {
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Adding...' : 'Add Place'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {editRecordModalOpen && placeToEdit && (
+                <div className="sideModal" role="dialog" aria-modal="true" aria-label="Edit Place">
+                    <button
+                        type="button"
+                        className="sideModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => {
+                            if (!isSubmitting) {
+                                setEditRecordModalOpen(false);
+                                setPlaceToEdit(null);
+                                resetForm();
+                            }
+                        }}
+                    />
+
+                    <div className="sideModal__card">
+                        <div className="sideModal__header">
+                            <h2 className="sideModal__title">Edit Place</h2>
+                            <button
+                                type="button"
+                                className="sideModal__close"
+                                aria-label="Close"
+                                onClick={() => {
+                                    if (!isSubmitting) {
+                                        setEditRecordModalOpen(false);
+                                        setPlaceToEdit(null);
+                                        resetForm();
+                                    }
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="sideModal__content">
+                            <form className="formGroup">
+                                <div className="formField">
+                                    <label htmlFor="edit-name" className="formField__label">Name <span className="required">*</span></label>
+                                    <input
+                                        id="edit-name"
+                                        type="text"
+                                        name="name"
+                                        className="formField__input"
+                                        placeholder="Enter place name"
+                                        value={formData.name}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="edit-averageVisitDuration" className="formField__label">Average Visit Duration <span className="required">*</span></label>
+                                    <input
+                                        id="edit-averageVisitDuration"
+                                        type="text"
+                                        name="averageVisitDuration"
+                                        className="formField__input"
+                                        placeholder="e.g., 2-3 hours"
+                                        value={formData.averageVisitDuration}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="edit-district" className="formField__label">District <span className="required">*</span></label>
+                                    <input
+                                        id="edit-district"
+                                        type="text"
+                                        name="district"
+                                        className="formField__input"
+                                        placeholder="Enter district"
+                                        value={formData.district}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="edit-city" className="formField__label">City <span className="required">*</span></label>
+                                    <input
+                                        id="edit-city"
+                                        type="text"
+                                        name="city"
+                                        className="formField__input"
+                                        placeholder="Enter city"
+                                        value={formData.city}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="edit-description" className="formField__label">Description</label>
+                                    <textarea
+                                        id="edit-description"
+                                        name="description"
+                                        className="formField__textarea"
+                                        placeholder="Enter description"
+                                        value={formData.description}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                        rows={3}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label htmlFor="edit-funFact" className="formField__label">Fun Fact</label>
+                                    <textarea
+                                        id="edit-funFact"
+                                        name="funFact"
+                                        className="formField__textarea"
+                                        placeholder="Enter a fun fact"
+                                        value={formData.funFact}
+                                        onChange={handleFormChange}
+                                        disabled={isSubmitting}
+                                        rows={3}
+                                    />
+                                </div>
+
+                                <div className="formField">
+                                    <label className="formField__label">Images (Max 5)</label>
+                                    <div
+                                        className={`imageDropzone ${imagesDragActive ? 'imageDropzone--active' : ''}`}
+                                        onDragOver={handleImagesDragOver}
+                                        onDragLeave={handleImagesDragLeave}
+                                        onDrop={handleImagesDrop}
+                                    >
+                                        <div className="imageDropzone__content">
+                                            <div className="imageDropzone__icon">📸</div>
+                                            <p className="imageDropzone__title">Drag and drop images here or click to browse</p>
+                                            <p className="imageDropzone__subtitle">Maximum 5 images</p>
+                                            <input
+                                                type="file"
+                                                multiple
+                                                accept="image/*"
+                                                onChange={handleImagesSelect}
+                                                style={{ display: 'none' }}
+                                                id="editImageInput"
+                                                disabled={isSubmitting}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="btn btn--orange"
+                                                onClick={() => document.getElementById('editImageInput')?.click()}
+                                                disabled={isSubmitting}
+                                            >
+                                                Browse Images
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {imagePreviews.length > 0 && (
+                                        <div className="imagePreviews">
+                                            {imagePreviews.map((preview, idx) => (
+                                                <div key={idx} className="imagePreviewItem">
+                                                    <img src={preview} alt={`Preview ${idx + 1}`} className="imagePreviewItem__img" />
+                                                    <button
+                                                        type="button"
+                                                        className="imagePreviewItem__remove"
+                                                        onClick={() => removeImage(idx)}
+                                                        disabled={isSubmitting}
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </form>
+                        </div>
+
+                        <div className="sideModal__footer">
+                            <button
+                                type="button"
+                                className="btn btn--secondary"
+                                onClick={() => {
+                                    setEditRecordModalOpen(false);
+                                    setPlaceToEdit(null);
+                                    resetForm();
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn--orange"
+                                onClick={handleUpdateRecord}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Updating...' : 'Update Place'}
                             </button>
                         </div>
                     </div>
