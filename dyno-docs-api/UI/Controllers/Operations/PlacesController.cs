@@ -3,6 +3,8 @@ using Application.UserStories.Operations.Places;
 using Application.UserStories.Operations.Places.Requests;
 using Application.UserStories.Operations.Places.Responses;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using UI.Requests;
 
 namespace UI.Controllers.Operations;
 
@@ -21,11 +23,14 @@ public class PlacesController : ControllerBase
     /// Create a new place
     /// </summary>
     [HttpPost]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Result>> Create([FromBody] PlaceRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<Result>> Create([FromForm] PlaceFormRequest request, CancellationToken cancellationToken)
     {
-        var result = await _placeService.CreateAsync(request, cancellationToken);
+        var appRequest = await MapToPlaceRequest(request);
+
+        var result = await _placeService.CreateAsync(appRequest, cancellationToken);
 
         if (result.Succeeded)
         {
@@ -68,11 +73,14 @@ public class PlacesController : ControllerBase
     /// Update a place
     /// </summary>
     [HttpPut("{id}")]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Result>> Update([FromRoute] Guid id, [FromBody] PlaceRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<Result>> Update([FromRoute] Guid id, [FromForm] PlaceFormRequest request, CancellationToken cancellationToken)
     {
-        var result = await _placeService.UpdateAsync(id, request, cancellationToken);
+        var appRequest = await MapToPlaceRequest(request);
+
+        var result = await _placeService.UpdateAsync(id, appRequest, cancellationToken);
 
         if (result.Succeeded)
         {
@@ -144,5 +152,32 @@ public class PlacesController : ControllerBase
         var fileBytes = System.IO.File.ReadAllBytes(templatePath);
         return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "places_template.xlsx");
     }
-}
 
+    private static async Task<PlaceRequest> MapToPlaceRequest(PlaceFormRequest form)
+    {
+        byte[]? ToBytes(IFormFile? file) => file == null || file.Length == 0 ? null : ReadAllBytes(file).GetAwaiter().GetResult();
+
+        async Task<byte[]?> ReadAllBytes(IFormFile? file)
+        {
+            if (file == null || file.Length == 0) return null;
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            return ms.ToArray();
+        }
+
+        return new PlaceRequest
+        {
+            Name = form.Name,
+            AverageVisitDuration = form.AverageVisitDuration,
+            Description = form.Description,
+            FunFact = form.FunFact,
+            District = form.District,
+            City = form.City,
+            Image1 = ToBytes(form.Image1),
+            Image2 = ToBytes(form.Image2),
+            Image3 = ToBytes(form.Image3),
+            Image4 = ToBytes(form.Image4),
+            Image5 = ToBytes(form.Image5)
+        };
+    }
+}
