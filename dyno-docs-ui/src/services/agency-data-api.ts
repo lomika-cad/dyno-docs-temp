@@ -43,3 +43,16 @@ export const getUploadDataSet = async (token: string) => {
         throw error;
     }
 }
+
+export const deleteData = async (placeId: string, token: string) => {
+    try {
+        const response = await axios.delete(`${API_URL}/${placeId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}

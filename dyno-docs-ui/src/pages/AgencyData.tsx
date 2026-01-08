@@ -7,7 +7,7 @@ import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useState, useRef, useEffect } from "react";
-import { downloadSampleExcel, uploadAgencyData, getUploadDataSet } from "../services/agency-data-api";
+import { downloadSampleExcel, uploadAgencyData, getUploadDataSet, deleteData } from "../services/agency-data-api";
 import { showError, showSuccess } from "../components/Toast";
 import excelImg from "../assets/xlsx.png";
 
@@ -35,12 +35,18 @@ export default function AgencyData() {
     const [downloadModalOpen, setDownloadModalOpen] = useState(false);
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
     const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [selectedPlace, setSelectedPlace] = useState<PlaceData | null>(null);
+    const [placeToDelete, setPlaceToDelete] = useState<PlaceData | null>(null);
     const [places, setPlaces] = useState<PlaceData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const itemsPerPage = 10;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleDownloadSampleExcel = async () => {
@@ -87,16 +93,79 @@ export default function AgencyData() {
 
     const handleFetchDataSet = async () => {
         try {
+            setIsLoading(true);
             const response = await getUploadDataSet(DD_TOKEN);
             setPlaces(response.data || []);
+            setCurrentPage(1); // Reset to first page when data is fetched
         } catch (error) {
+            showError("Failed to fetch data. Please try again.");
             setPlaces([]);
+        } finally {
+            setIsLoading(false);
         }
     }
+
+    // Filter places based on search term
+    const filteredPlaces = places.filter((place) =>
+        place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        place.district.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredPlaces.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentPlaces = filteredPlaces.slice(startIndex, endIndex);
+
+    const getPaginationNumbers = () => {
+        const pages: (number | string)[] = [];
+        const maxVisible = 5;
+        
+        if (totalPages <= maxVisible) {
+            for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            pages.push(1);
+            if (currentPage > 3) pages.push('...');
+            
+            for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                if (!pages.includes(i)) pages.push(i);
+            }
+            
+            if (currentPage < totalPages - 2) pages.push('...');
+            if (!pages.includes(totalPages)) pages.push(totalPages);
+        }
+        
+        return pages;
+    };
 
     const handleViewPlace = (place: PlaceData) => {
         setSelectedPlace(place);
         setViewModalOpen(true);
+    }
+
+    const handleDeleteClick = (place: PlaceData) => {
+        setPlaceToDelete(place);
+        setDeleteConfirmModalOpen(true);
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!placeToDelete) return;
+
+        try {
+            setIsDeleting(true);
+            await deleteData(placeToDelete.id, DD_TOKEN);
+            showSuccess("Place deleted successfully.");
+            setDeleteConfirmModalOpen(false);
+            setPlaceToDelete(null);
+            // Refresh data after deletion
+            handleFetchDataSet();
+        } catch (error) {
+            showError("Failed to delete the place. Please try again.");
+        } finally {
+            setIsDeleting(false);
+        }
     }
 
     useEffect(() => {
@@ -133,6 +202,16 @@ export default function AgencyData() {
             setUploadModalOpen(true);
         }
     };
+
+    const handleDeletePlace = async (placeId: string) => {
+        try {
+            await deleteData(placeId, DD_TOKEN);
+            showSuccess("Place deleted successfully.");
+            handleFetchDataSet();
+        } catch (error) {
+            showError("Failed to delete the place. Please try again.");
+        }
+    }
 
     return (
         <Navbar userName="User">
@@ -197,7 +276,15 @@ export default function AgencyData() {
                     <div className="controls">
                         <label className="search">
                             <SearchRoundedIcon fontSize="small" aria-hidden="true" />
-                            <input placeholder="Search Record" aria-label="Search Record" />
+                            <input 
+                                placeholder="Search Record" 
+                                aria-label="Search Record"
+                                value={searchTerm}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setCurrentPage(1); // Reset to first page on search
+                                }}
+                            />
                         </label>
                         <button type="button" className="btn btn--orange">
                             + Add Record
@@ -226,8 +313,14 @@ export default function AgencyData() {
                                             No data available. Please upload an Excel file.
                                         </td>
                                     </tr>
+                                ) : filteredPlaces.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={3} style={{ textAlign: 'center', padding: '2rem' }}>
+                                            No results found for "{searchTerm}".
+                                        </td>
+                                    </tr>
                                 ) : (
-                                    places.map((place) => (
+                                    currentPlaces.map((place) => (
                                         <tr key={place.id}>
                                             <td>{place.name}</td>
                                             <td>{place.district}</td>
@@ -244,7 +337,9 @@ export default function AgencyData() {
                                                     <button type="button" className="iconBtn iconBtn--edit" aria-label="Edit">
                                                         <EditRoundedIcon fontSize="inherit" />
                                                     </button>
-                                                    <button type="button" className="iconBtn iconBtn--del" aria-label="Delete">
+                                                    <button type="button" className="iconBtn iconBtn--del" aria-label="Delete"
+                                                        onClick={() => handleDeleteClick(place)}
+                                                    >
                                                         <DeleteRoundedIcon fontSize="inherit" />
                                                     </button>
                                                 </span>
@@ -258,16 +353,37 @@ export default function AgencyData() {
 
                     <div className="footerRow">
                         <div className="panel__hint">
-                            <strong>Showing</strong> <strong>{places.length}</strong> of <strong>{places.length}</strong> Entries
+                            <strong>Showing</strong> <strong>{filteredPlaces.length === 0 ? 0 : startIndex + 1}</strong> - <strong>{Math.min(endIndex, filteredPlaces.length)}</strong> of <strong>{filteredPlaces.length}</strong> Entries
                         </div>
 
                         <div className="pagination" aria-label="Pagination">
-                            <button type="button" className="pageBtn">Previous</button>
-                            <button type="button" className="pageBtn pageBtn--active">1</button>
-                            <button type="button" className="pageBtn">2</button>
-                            <button type="button" className="pageBtn">3</button>
-                            <button type="button" className="pageBtn">10</button>
-                            <button type="button" className="pageBtn">Next</button>
+                            <button 
+                                type="button" 
+                                className="pageBtn"
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </button>
+                            {getPaginationNumbers().map((page, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    className={`pageBtn ${page === currentPage ? 'pageBtn--active' : ''}`}
+                                    onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                                    disabled={page === '...'}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button 
+                                type="button" 
+                                className="pageBtn"
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages || totalPages === 0}
+                            >
+                                Next
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -467,48 +583,55 @@ export default function AgencyData() {
                                     )}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                            <div className="detailSection">
-                                <h3 className="detailSection__title">Metadata</h3>
-                                <div className="detailGrid">
-                                    <div className="detailItem">
-                                        <span className="detailItem__label">Created By:</span>
-                                        <span className="detailItem__value">{selectedPlace.createdBy}</span>
-                                    </div>
-                                    <div className="detailItem">
-                                        <span className="detailItem__label">Created At:</span>
-                                        <span className="detailItem__value">
-                                            {new Date(selectedPlace.createdAt).toLocaleString()}
-                                        </span>
-                                    </div>
-                                    {selectedPlace.lastModifiedBy && (
-                                        <div className="detailItem">
-                                            <span className="detailItem__label">Last Modified By:</span>
-                                            <span className="detailItem__value">{selectedPlace.lastModifiedBy}</span>
-                                        </div>
-                                    )}
-                                    {selectedPlace.lastModifiedAt && (
-                                        <div className="detailItem">
-                                            <span className="detailItem__label">Last Modified At:</span>
-                                            <span className="detailItem__value">
-                                                {new Date(selectedPlace.lastModifiedAt).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+            {deleteConfirmModalOpen && placeToDelete && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Confirm delete">
+                    <button
+                        type="button"
+                        className="ddModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => {
+                            if (!isDeleting) {
+                                setDeleteConfirmModalOpen(false);
+                                setPlaceToDelete(null);
+                            }
+                        }}
+                    />
+
+                    <div className="ddModal__card">
+                        <div className="ddModal__logo" aria-hidden="true">
+                            <img className="ddModal__img" src={excelImg} alt="Delete icon" />
+                        </div>
+
+                        <div className="ddModal__title">Delete Place</div>
+                        <div className="ddModal__subtitle">
+                            Are you sure you want to delete <strong>{placeToDelete.name}</strong>? This action cannot be undone.
                         </div>
 
                         <div className="ddModal__actions">
                             <button
                                 type="button"
-                                className="btn btn--orange"
+                                className="ddModal__btn ddModal__btn--ghost"
                                 onClick={() => {
-                                    setViewModalOpen(false);
-                                    setSelectedPlace(null);
+                                    setDeleteConfirmModalOpen(false);
+                                    setPlaceToDelete(null);
                                 }}
+                                disabled={isDeleting}
                             >
-                                Close
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn--danger"
+                                onClick={handleConfirmDelete}
+                                disabled={isDeleting}
+                            >
+                                <DeleteRoundedIcon fontSize="small" />
+                                {isDeleting ? 'Deleting...' : 'Delete'}
                             </button>
                         </div>
                     </div>
