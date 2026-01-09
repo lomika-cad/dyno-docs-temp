@@ -317,17 +317,14 @@ export default function AgencyData() {
 
         try {
             setIsSubmitting(true);
-            const data = new FormData();
-            data.append('name', formData.name);
-            data.append('averageVisitDuration', formData.averageVisitDuration);
-            data.append('description', formData.description);
-            data.append('funFact', formData.funFact);
-            data.append('district', formData.district);
-            data.append('city', formData.city);
-
-            selectedImages.forEach((image, index) => {
-                data.append(`image${index + 1}`, image);
-            });
+            const data = {
+                name: formData.name,
+                averageVisitDuration: formData.averageVisitDuration,
+                description: formData.description,
+                funFact: formData.funFact,
+                district: formData.district,
+                city: formData.city,
+            }
 
             await updatePlace(placeToEdit.id, data, DD_TOKEN);
             showSuccess('Place updated successfully!');

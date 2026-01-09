@@ -73,7 +73,6 @@ public class PlacesController : ControllerBase
     /// Update a place
     /// </summary>
     [HttpPut("{id}")]
-    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Result>> Update([FromRoute] Guid id, [FromBody] PlaceRequestUpdate request,

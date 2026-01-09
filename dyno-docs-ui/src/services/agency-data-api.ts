@@ -71,12 +71,11 @@ export const createPlace = async (formData: FormData, token: string) => {
     }
 }
 
-export const updatePlace = async (placeId: string, formData: FormData, token: string) => {
+export const updatePlace = async (placeId: string, data: any, token: string) => {
     try {
-        const response = await axios.put(`${API_URL}/${placeId}`, formData, {
+        const response = await axios.put(`${API_URL}/${placeId}`, data, {
             headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'multipart/form-data',
+                Authorization: `Bearer ${token}`
             },
         });
         return response;
