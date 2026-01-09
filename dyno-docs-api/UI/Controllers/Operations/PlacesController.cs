@@ -76,9 +76,18 @@ public class PlacesController : ControllerBase
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Result>> Update([FromRoute] Guid id, [FromForm] PlaceFormRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<Result>> Update([FromRoute] Guid id, [FromBody] PlaceRequestUpdate request,
+        CancellationToken cancellationToken)
     {
-        var appRequest = await MapToPlaceRequest(request);
+        var appRequest = new PlaceRequest
+        {
+            Name = request.Name,
+            AverageVisitDuration = request.AverageVisitDuration,
+            Description = request.Description,
+            FunFact = request.FunFact,
+            District = request.District,
+            City = request.City
+        };
 
         var result = await _placeService.UpdateAsync(id, appRequest, cancellationToken);
 
