@@ -1,6 +1,6 @@
 # DynoDocsApi
 
-A multi-tenant .NET 8 Web API built with Clean Architecture principles, FastEndpoints, and Entity Framework Core.
+A multi-tenant .NET 8 Web API built with Clean Architecture principles, CQRS MediaR pattern, and Entity Framework Core.
 
 ## Table of Contents
 
@@ -8,8 +8,8 @@ A multi-tenant .NET 8 Web API built with Clean Architecture principles, FastEndp
 - [Project Structure](#project-structure)
 - [Design Patterns & Practices](#design-patterns--practices)
 - [Multi-Tenancy](#multi-tenancy)
-- [CRUD Service Pattern](#crud-service-pattern)
-- [FastEndpoints](#fastendpoints)
+- [CQRS MediaR Pattern](#cqrs-mediatr-pattern)
+- [Controllers](#controllers)
 - [How to Extend](#how-to-extend)
 - [Getting Started](#getting-started)
 
@@ -22,13 +22,13 @@ This project follows **Clean Architecture** (also known as Onion Architecture), 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                          UI Layer                           │
-│         (FastEndpoints, Middlewares, Program.cs)            │
+│        (Controllers, Middlewares, Program.cs)               │
 ├─────────────────────────────────────────────────────────────┤
 │                    Infrastructure Layer                      │
 │    (DbContext, Services, External API integrations)         │
 ├─────────────────────────────────────────────────────────────┤
 │                     Application Layer                        │
-│      (Interfaces, DTOs, MediatR, AutoMapper Profiles)       │
+│      (Commands, Queries, Handlers, MediatR, DTOs)           │
 ├─────────────────────────────────────────────────────────────┤
 │                       Domain Layer                           │
 │              (Entities, Base Classes, Extensions)            │
@@ -40,7 +40,7 @@ This project follows **Clean Architecture** (also known as Onion Architecture), 
 | Layer | Responsibility |
 |-------|----------------|
 | **Domain** | Core business entities, base classes (`BaseEntity`, `AuditableEntity`), validation |
-| **Application** | Interfaces, DTOs (Requests/Responses), AutoMapper profiles, MediatR handlers, FluentValidation |
+| **Application** | Commands, Queries, Request/Response handlers using MediatR, DTOs, FluentValidation |
 | **Infrastructure** | EF Core DbContext, service implementations, external integrations (JWT, DropBox) |
 | **UI** | Controllers, middleware pipeline, dependency injection configuration |
 
@@ -68,36 +68,41 @@ DynoDocsApi/
 │   ├── Common/
 │   │   ├── Interfaces/
 │   │   │   ├── IApplicationDbContext.cs
-│   │   │   ├── IBaseCrudService.cs      # Generic CRUD interface
 │   │   │   ├── ICurrentUserService.cs   # Current user abstraction
 │   │   │   ├── ITenantService.cs        # Tenant context abstraction
 │   │   │   ├── IJwtService.cs
 │   │   │   └── IDropBoxService.cs
 │   │   └── Result.cs
 │   ├── UserStories/
+│   │   ├── Team/
+│   │   │   ├── Commands/
+│   │   │   │   ├── CreateTeamMemberCommand.cs
+│   │   │   │   ├── UpdateTeamMemberCommand.cs
+│   │   │   │   └── DeleteTeamMemberCommand.cs
+│   │   │   └── Queries/
+│   │   │       └── GetTeamMembersQuery.cs
 │   │   └── Places/
-│   │       ├── Requests/
-│   │       │   └── PlaceRequest.cs
-│   │       ├── Responses/
-│   │       │   └── PlaceResponse.cs
-│   │       ├── IPlaceService.cs
-│   │       └── PlaceMappingProfile.cs
+│   │       ├── Commands/
+│   │       │   ├── CreatePlaceCommand.cs
+│   │       │   ├── UpdatePlaceCommand.cs
+│   │       │   └── DeletePlaceCommand.cs
+│   │       └── Queries/
+│   │           └── GetPlacesQuery.cs
 │   └── ApplicationDependencyInjection.cs
 │
 ├── Infrastructure/
 │   ├── Persistence/
 │   │   └── ApplicationDbContext.cs      # EF Core with auto-audit & tenant filtering
 │   ├── Services/
-│   │   ├── BaseCrudService.cs           # Generic CRUD implementation
 │   │   ├── CurrentUserService.cs        # Extracts user from JWT
 │   │   ├── TenantService.cs             # Extracts tenant from JWT/middleware
-│   │   ├── PlaceService.cs              # Place-specific CRUD
 │   │   ├── JwtService.cs
 │   │   └── DropBoxService.cs
 │   └── InfrastructureDependencyInjection.cs
 │
 ├── UI/
 │   ├── Controllers/
+│   │   ├── TeamController.cs
 │   │   └── Operations/
 │   │       └── PlacesController.cs
 │   ├── Middlewares/
@@ -117,14 +122,16 @@ DynoDocsApi/
 - **Interfaces in Application layer**: Implemented in Infrastructure
 - **Testability**: Business logic is isolated from frameworks
 
-### 2. Generic CRUD Service Pattern
-- `IBaseCrudService<TEntity, TRequest, TResponse>` provides reusable CRUD operations
-- Services inherit from `BaseCrudService` and override only when needed
-- Reduces boilerplate while maintaining flexibility
+### 2. CQRS with MediaR Pattern
+- **Commands**: Handle create, update, and delete operations that modify state
+- **Queries**: Handle read operations that return data
+- **Handlers**: Implement `IRequestHandler<TRequest, TResponse>` for each command/query
+- **Separation of Concerns**: Read and write operations are separated for better maintainability
 
 ### 3. Repository Pattern (via DbContext)
 - `IApplicationDbContext` acts as the abstraction
 - EF Core `DbSet<T>` properties serve as repositories
+- Command/Query handlers access DbContext directly for data operations
 - Global query filters handle tenant isolation
 
 ### 4. Unit of Work
@@ -132,9 +139,10 @@ DynoDocsApi/
 - Audit fields automatically populated on save
 
 ### 5. DTO Pattern
-- **Requests**: Input DTOs for create/update operations
-- **Responses**: Output DTOs with computed/formatted data
-- **AutoMapper**: Handles entity ↔ DTO transformations
+- **Commands**: Input DTOs for create/update/delete operations that implement `IRequest<Result>`
+- **Queries**: Input DTOs for read operations that implement `IRequest<TResponse>`
+- **Response DTOs**: Output DTOs with computed/formatted data
+- **AutoMapper**: Can be used for entity ↔ DTO transformations in handlers
 
 ### 6. Middleware Pipeline
 - `ErrorHandlerMiddleware`: Global exception handling
@@ -198,21 +206,104 @@ This API implements **row-level multi-tenancy** where all tenants share the same
 
 ---
 
-## CRUD Service Pattern
+## CQRS MediaR Pattern
 
-### Interface Definition
+This project uses **CQRS (Command Query Responsibility Segregation)** with **MediatR** to separate read and write operations, making the codebase more maintainable and scalable.
+
+### Pattern Overview
+
+```
+Controller → MediatR → Handler → DbContext → Database
+```
+
+### Commands (Write Operations)
+
+Commands handle operations that modify state (Create, Update, Delete). They return a `Result` object for consistent response handling.
+
 ```csharp
-public interface IBaseCrudService<TEntity, TRequest, TResponse>
+public class CreateTeamMemberCommand : IRequest<Result>
 {
-    Task<IEnumerable<TResponse>> GetAllAsync(CancellationToken ct = default);
-    Task<TResponse?> GetByIdAsync(Guid id, CancellationToken ct = default);
-    Task<Result> CreateAsync(TRequest request, CancellationToken ct = default);
-    Task<Result> UpdateAsync(Guid id, TRequest request, CancellationToken ct = default);
-    Task<Result> DeleteAsync(Guid id, CancellationToken ct = default);
+    [MaxLength(300)]
+    public required string Name { get; set; }
+    
+    [MaxLength(500)]
+    public string? Position { get; set; }
+
+    public required IFormFile ImageUrl { get; set; }
+}
+
+public class CreateTeamMemberCommandHandler : IRequestHandler<CreateTeamMemberCommand, Result>
+{
+    private readonly IApplicationDbContext _context;
+    private readonly IDropBoxService _dropBoxService;
+
+    public CreateTeamMemberCommandHandler(IApplicationDbContext context, IDropBoxService dropBoxService)
+    {
+        _context = context;
+        _dropBoxService = dropBoxService;
+    }
+
+    public async Task<Result> Handle(CreateTeamMemberCommand request, CancellationToken cancellationToken)
+    {
+        var imageLink = await _dropBoxService.UploadImageAsync(request.ImageUrl, "team");
+        
+        var teamMember = new Domain.Entities.Teams.Team
+        {
+            Name = request.Name,
+            Position = request.Position,    
+            ImageUrl = imageLink
+        };
+
+        _context.Team.Add(teamMember);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Result.Success("Team member created successfully.");
+    }
 }
 ```
 
-### Result Pattern for CUD Operations
+### Queries (Read Operations)
+
+Queries handle operations that retrieve data. They return specific response DTOs or lists of data.
+
+```csharp
+public record GetTeamMembersQuery : IRequest<List<TeamResponse>>;
+
+public class GetTeamMembersQueryHandler : IRequestHandler<GetTeamMembersQuery, List<TeamResponse>>
+{
+    private readonly IApplicationDbContext _context;
+
+    public GetTeamMembersQueryHandler(IApplicationDbContext context)
+    {
+        _context = context;
+    }
+    
+    public async Task<List<TeamResponse>> Handle(GetTeamMembersQuery request, CancellationToken cancellationToken)
+    {
+        var teamMembers = await _context.Team
+            .Select(tm => new TeamResponse
+            {
+                Id = tm.Id,
+                Name = tm.Name,
+                Position = tm.Position,
+                ImageUrl = tm.ImageUrl
+            })
+            .ToListAsync(cancellationToken);
+
+        return teamMembers;
+    }
+}
+
+public class TeamResponse
+{
+    public int Id { get; set; }
+    public required string Name { get; set; }
+    public string? Position { get; set; }
+    public required string ImageUrl { get; set; }
+}
+```
+
+### Result Pattern for Commands
 
 All **Create**, **Update**, and **Delete** operations return a `Result` object instead of direct data types. This provides:
 
@@ -223,12 +314,11 @@ All **Create**, **Update**, and **Delete** operations return a `Result` object i
 
 **Example Result Usage:**
 ```csharp
-var result = await _placeService.CreateAsync(request, ct);
+var result = await mediator.Send(new CreateTeamMemberCommand { ... }, cancellationToken);
 
 if (result.Succeeded)
 {
-    var createdPlace = result.GetData<PlaceResponse>();
-    // Handle success
+    // Handle success - result.Message contains success message
 }
 else
 {
@@ -244,248 +334,313 @@ else
 - `IsPending` (bool): Indicates if operation is asynchronous/pending
 - `RequestId` (string): Optional request identifier for tracking
 
-### Creating a New Service
+### Benefits of CQRS MediaR Pattern
 
-1. **Define entity-specific interface** (optional, for custom methods):
-   ```csharp
-   public interface IPlaceService : IBaseCrudService<Place, PlaceRequest, PlaceResponse>
-   {
-       // Add custom methods if needed
-   }
-   ```
-
-2. **Implement the service**:
-   ```csharp
-   public class PlaceService : BaseCrudService<Place, PlaceRequest, PlaceResponse>, IPlaceService
-   {
-       public PlaceService(/* dependencies */) : base(/* ... */) { }
-       
-       protected override DbSet<Place> DbSet => DbContext.Places;
-   }
-   ```
-
-3. **Register in DI**:
-   ```csharp
-   services.AddScoped<IPlaceService, PlaceService>();
-   ```
+1. **Separation of Concerns**: Read and write operations are separated
+2. **Simplified Controllers**: Controllers only dispatch commands/queries to MediatR
+3. **Testability**: Each handler can be unit tested independently
+4. **Flexibility**: Different optimization strategies for reads vs writes
+5. **Maintainability**: Single responsibility principle for each handler
+6. **Pipeline Behaviors**: Cross-cutting concerns (validation, logging) via MediatR behaviors
 
 ---
 
 ## Controllers
 
-We use ASP.NET Core Controllers with a RESTful API design pattern for scalable and maintainable API endpoints.
+We use ASP.NET Core Controllers with MediatR integration for clean separation between HTTP layer and business logic.
 
 ### Advantages
-- **Standard MVC Pattern**: Well-known and widely supported
-- **Scalability**: Better suited for large applications
-- **Rich Ecosystem**: Full ASP.NET Core middleware support
-- **Team Familiarity**: Standard approach most developers know
+- **Clean Separation**: Controllers only handle HTTP concerns, business logic in handlers
+- **Simplified Controllers**: Just dispatch commands/queries to MediatR
+- **Testability**: Business logic tested independently from HTTP layer
+- **Consistency**: All operations follow the same pattern
 
 ### Controller Structure
 ```
 UI/Controllers/
+├── TeamController.cs
 └── Operations/
     └── PlacesController.cs
 ```
 
-### Example Controller
+### Example Controller with MediatR
 ```csharp
 [ApiController]
-[Route("api/[controller]")]
-public class PlacesController : ControllerBase
+[Route("api/teams")]
+public class TeamController(IMediator mediator) : ControllerBase
 {
-    private readonly IPlaceService _placeService;
-
-    public PlacesController(IPlaceService placeService)
-    {
-        _placeService = placeService;
-    }
-
+    [Authorize]
     [HttpPost]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Result>> Create([FromBody] PlaceRequest request, CancellationToken cancellationToken)
-    {
-        var result = await _placeService.CreateAsync(request, cancellationToken);
+    public async Task<ActionResult<Result>> CreateTeamMember([FromForm] CreateTeamMemberCommand request)
+        => await mediator.Send(request);
+    
+    [Authorize]
+    [HttpPut]
+    public async Task<ActionResult<Result>> UpdateTeamMember([FromForm] UpdateTeamMemberCommand request)
+        => await mediator.Send(request);
 
-        if (result.Succeeded)
-        {
-            return StatusCode(StatusCodes.Status201Created, result);
-        }
-
-        return BadRequest(result);
-    }
-
+    [Authorize]
+    [HttpDelete]
+    public async Task<ActionResult<Result>> DeleteTeamMember([FromQuery] DeleteTeamMemberCommand request)
+        => await mediator.Send(request);
+    
     [HttpGet]
-    public async Task<ActionResult<List<PlaceResponse>>> GetAll(CancellationToken cancellationToken)
-    {
-        var places = await _placeService.GetAllAsync(cancellationToken);
-        return Ok(places.ToList());
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<PlaceResponse>> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
-    {
-        var place = await _placeService.GetByIdAsync(id, cancellationToken);
-        if (place == null)
-        {
-            return NotFound();
-        }
-        return Ok(place);
-    }
-
-    [HttpPut("{id}")]
-    public async Task<ActionResult<Result>> Update([FromRoute] Guid id, [FromBody] PlaceRequest request, CancellationToken cancellationToken)
-    {
-        var result = await _placeService.UpdateAsync(id, request, cancellationToken);
-        if (result.Succeeded)
-        {
-            return Ok(result);
-        }
-        return BadRequest(result);
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<ActionResult<Result>> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
-    {
-        var result = await _placeService.DeleteAsync(id, cancellationToken);
-        if (result.Succeeded)
-        {
-            return Ok(result);
-        }
-        return BadRequest(result);
-    }
+    public async Task<ActionResult<List<TeamResponse>>> GetTeams()
+        => await mediator.Send(new GetTeamMembersQuery());
 }
 ```
 
-**Response Format:**
-```json
-{
-  "succeeded": true,
-  "message": "Place created successfully",
-  "errors": [],
-  "dateTime": "2026-01-04T10:30:00Z",
-  "isPending": false,
-  "data": {
-    "id": "...",
-    "name": "...",
-    ...
-  }
-}
-```
+### Controller Pattern
+1. **Inject IMediator**: Constructor injection of MediatR mediator
+2. **Create Commands/Queries**: Map HTTP request data to command/query objects
+3. **Dispatch to MediatR**: Use `mediator.Send()` to execute the operation
+4. **Return Result**: Return the result directly from the handler
+
+### HTTP Response Handling
+- **Commands**: Return `Result` object with success/failure status
+- **Queries**: Return data directly (e.g., `List<TeamResponse>`)
+- **Error Handling**: Let MediatR pipeline behaviors handle exceptions
 
 ---
 
 ## How to Extend
 
-### Adding a New Entity with Full CRUD
+### Adding a New Entity with Full CRUD using CQRS
 
-1. **Create the Entity** (`Domain/Entities/Operations/YourEntity.cs`):
-   ```csharp
-   public class YourEntity : BaseEntity
-   {
-       public required string Name { get; set; }
-       // ... other properties
-   }
-   ```
+Follow these steps to add a new entity with complete CRUD operations using the CQRS MediaR pattern.
 
-2. **Create DTOs** (`Application/UserStories/YourEntities/`):
-   ```
-   Requests/YourEntityRequest.cs
-   Responses/YourEntityResponse.cs
-   ```
+#### 1. Create the Entity (`Domain/Entities/Operations/YourEntity.cs`)
+```csharp
+public class YourEntity : BaseEntity
+{
+    public required string Name { get; set; }
+    // ... other properties
+}
+```
 
-3. **Create AutoMapper Profile** (`Application/UserStories/YourEntities/YourEntityMappingProfile.cs`):
-   ```csharp
-   public class YourEntityMappingProfile : Profile
-   {
-       public YourEntityMappingProfile()
-       {
-           CreateMap<YourEntityRequest, YourEntity>();
-           CreateMap<YourEntity, YourEntityResponse>();
-       }
-   }
-   ```
+#### 2. Add DbSet to DbContext
+Add the entity to `IApplicationDbContext` and `ApplicationDbContext`:
+```csharp
+DbSet<YourEntity> YourEntities { get; }
+```
 
-4. **Add DbSet** to `IApplicationDbContext` and `ApplicationDbContext`:
-   ```csharp
-   DbSet<YourEntity> YourEntities { get; }
-   ```
+#### 3. Create Commands (`Application/UserStories/YourEntities/Commands/`)
 
-5. **Create Service Interface** (`Application/UserStories/YourEntities/IYourEntityService.cs`):
-   ```csharp
-   public interface IYourEntityService : IBaseCrudService<YourEntity, YourEntityRequest, YourEntityResponse> { }
-   ```
+**CreateYourEntityCommand.cs:**
+```csharp
+public class CreateYourEntityCommand : IRequest<Result>
+{
+    [MaxLength(300)]
+    public required string Name { get; set; }
+    // ... other properties
+}
 
-6. **Create Service Implementation** (`Infrastructure/Services/YourEntityService.cs`):
-   ```csharp
-   public class YourEntityService : BaseCrudService<YourEntity, YourEntityRequest, YourEntityResponse>, IYourEntityService
-   {
-       protected override DbSet<YourEntity> DbSet => DbContext.YourEntities;
-       // constructor...
-   }
-   ```
+public class CreateYourEntityCommandHandler : IRequestHandler<CreateYourEntityCommand, Result>
+{
+    private readonly IApplicationDbContext _context;
 
-7. **Register Service** in `InfrastructureDependencyInjection.cs`:
-   ```csharp
-   services.AddScoped<IYourEntityService, YourEntityService>();
-   ```
+    public CreateYourEntityCommandHandler(IApplicationDbContext context)
+    {
+        _context = context;
+    }
 
-8. **Create Controller** (`UI/Controllers/Operations/YourEntitiesController.cs`):
-   ```csharp
-   [ApiController]
-   [Route("api/[controller]")]
-   public class YourEntitiesController : ControllerBase
-   {
-       private readonly IYourEntityService _service;
+    public async Task<Result> Handle(CreateYourEntityCommand request, CancellationToken cancellationToken)
+    {
+        var entity = new YourEntity
+        {
+            Name = request.Name
+            // Map other properties
+        };
 
-       public YourEntitiesController(IYourEntityService service)
-       {
-           _service = service;
-       }
+        _context.YourEntities.Add(entity);
+        await _context.SaveChangesAsync(cancellationToken);
 
-       [HttpPost]
-       public async Task<ActionResult<Result>> Create([FromBody] YourEntityRequest request, CancellationToken ct)
-       {
-           var result = await _service.CreateAsync(request, ct);
-           return result.Succeeded ? StatusCode(201, result) : BadRequest(result);
-       }
+        return Result.Success("YourEntity created successfully.");
+    }
+}
+```
 
-       [HttpGet]
-       public async Task<ActionResult<List<YourEntityResponse>>> GetAll(CancellationToken ct)
-       {
-           var items = await _service.GetAllAsync(ct);
-           return Ok(items.ToList());
-       }
+**UpdateYourEntityCommand.cs:**
+```csharp
+public class UpdateYourEntityCommand : IRequest<Result>
+{
+    public Guid Id { get; set; }
+    public required string Name { get; set; }
+    // ... other properties
+}
 
-       [HttpGet("{id}")]
-       public async Task<ActionResult<YourEntityResponse>> GetById([FromRoute] Guid id, CancellationToken ct)
-       {
-           var item = await _service.GetByIdAsync(id, ct);
-           return item == null ? NotFound() : Ok(item);
-       }
+public class UpdateYourEntityCommandHandler : IRequestHandler<UpdateYourEntityCommand, Result>
+{
+    private readonly IApplicationDbContext _context;
 
-       [HttpPut("{id}")]
-       public async Task<ActionResult<Result>> Update([FromRoute] Guid id, [FromBody] YourEntityRequest request, CancellationToken ct)
-       {
-           var result = await _service.UpdateAsync(id, request, ct);
-           return result.Succeeded ? Ok(result) : BadRequest(result);
-       }
+    public UpdateYourEntityCommandHandler(IApplicationDbContext context)
+    {
+        _context = context;
+    }
 
-       [HttpDelete("{id}")]
-       public async Task<ActionResult<Result>> Delete([FromRoute] Guid id, CancellationToken ct)
-       {
-           var result = await _service.DeleteAsync(id, ct);
-           return result.Succeeded ? Ok(result) : BadRequest(result);
-       }
-   }
-   ```
+    public async Task<Result> Handle(UpdateYourEntityCommand request, CancellationToken cancellationToken)
+    {
+        var entity = await _context.YourEntities
+            .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
-9. **Run EF Migration**:
-   ```bash
-   dotnet ef migrations add AddYourEntity -p Infrastructure -s UI
-   dotnet ef database update -p Infrastructure -s UI
-   ```
+        if (entity == null)
+        {
+            return Result.Failure("YourEntity not found.");
+        }
+
+        entity.Name = request.Name;
+        // Update other properties
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return Result.Success("YourEntity updated successfully.");
+    }
+}
+```
+
+**DeleteYourEntityCommand.cs:**
+```csharp
+public class DeleteYourEntityCommand : IRequest<Result>
+{
+    public Guid Id { get; set; }
+}
+
+public class DeleteYourEntityCommandHandler : IRequestHandler<DeleteYourEntityCommand, Result>
+{
+    private readonly IApplicationDbContext _context;
+
+    public DeleteYourEntityCommandHandler(IApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<Result> Handle(DeleteYourEntityCommand request, CancellationToken cancellationToken)
+    {
+        var entity = await _context.YourEntities
+            .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+
+        if (entity == null)
+        {
+            return Result.Failure("YourEntity not found.");
+        }
+
+        _context.YourEntities.Remove(entity);
+        await _context.SaveChangesAsync(cancellationToken);
+        return Result.Success("YourEntity deleted successfully.");
+    }
+}
+```
+
+#### 4. Create Queries (`Application/UserStories/YourEntities/Queries/`)
+
+**GetYourEntitiesQuery.cs:**
+```csharp
+public record GetYourEntitiesQuery : IRequest<List<YourEntityResponse>>;
+
+public class GetYourEntitiesQueryHandler : IRequestHandler<GetYourEntitiesQuery, List<YourEntityResponse>>
+{
+    private readonly IApplicationDbContext _context;
+
+    public GetYourEntitiesQueryHandler(IApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<List<YourEntityResponse>> Handle(GetYourEntitiesQuery request, CancellationToken cancellationToken)
+    {
+        return await _context.YourEntities
+            .Select(e => new YourEntityResponse
+            {
+                Id = e.Id,
+                Name = e.Name
+                // Map other properties
+            })
+            .ToListAsync(cancellationToken);
+    }
+}
+
+public class YourEntityResponse
+{
+    public Guid Id { get; set; }
+    public required string Name { get; set; }
+    // ... other properties
+}
+```
+
+**GetYourEntityByIdQuery.cs:**
+```csharp
+public record GetYourEntityByIdQuery(Guid Id) : IRequest<YourEntityResponse?>;
+
+public class GetYourEntityByIdQueryHandler : IRequestHandler<GetYourEntityByIdQuery, YourEntityResponse?>
+{
+    private readonly IApplicationDbContext _context;
+
+    public GetYourEntityByIdQueryHandler(IApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<YourEntityResponse?> Handle(GetYourEntityByIdQuery request, CancellationToken cancellationToken)
+    {
+        return await _context.YourEntities
+            .Where(e => e.Id == request.Id)
+            .Select(e => new YourEntityResponse
+            {
+                Id = e.Id,
+                Name = e.Name
+                // Map other properties
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+}
+```
+
+#### 5. Create Controller (`UI/Controllers/YourEntitiesController.cs`)
+```csharp
+[ApiController]
+[Route("api/your-entities")]
+public class YourEntitiesController(IMediator mediator) : ControllerBase
+{
+    [HttpPost]
+    public async Task<ActionResult<Result>> Create([FromBody] CreateYourEntityCommand request)
+        => await mediator.Send(request);
+
+    [HttpGet]
+    public async Task<ActionResult<List<YourEntityResponse>>> GetAll()
+        => await mediator.Send(new GetYourEntitiesQuery());
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<YourEntityResponse>> GetById([FromRoute] Guid id)
+    {
+        var result = await mediator.Send(new GetYourEntityByIdQuery(id));
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Result>> Update([FromRoute] Guid id, [FromBody] UpdateYourEntityCommand request)
+    {
+        request.Id = id; // Set ID from route
+        return await mediator.Send(request);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult<Result>> Delete([FromRoute] Guid id)
+        => await mediator.Send(new DeleteYourEntityCommand { Id = id });
+}
+```
+
+#### 6. Run EF Migration
+```bash
+dotnet ef migrations add AddYourEntity -p Infrastructure -s UI
+dotnet ef database update -p Infrastructure -s UI
+```
+
+### Pattern Benefits
+
+- **Single Responsibility**: Each handler has one specific purpose
+- **Easy Testing**: Mock `IApplicationDbContext` and test handlers independently
+- **No Service Layer**: Controllers communicate directly with handlers via MediatR
+- **Consistent Structure**: All features follow the same Commands/Queries pattern
+- **Validation**: Add FluentValidation to MediatR pipeline for automatic validation
 
 ---
 
@@ -517,16 +672,47 @@ Swagger UI is available at: `https://localhost:{port}/swagger`
 ### Available Endpoints (Phase 1)
 | Method | Endpoint | Description | Response Type | Parameters |
 |--------|----------|-------------|---------------|------------|
-| GET | `/api/places` | Get all places | `List<PlaceResponse>` | - |
-| GET | `/api/places/{id}` | Get place by ID | `PlaceResponse` | `id` (route param) |
-| POST | `/api/places` | Create new place | `Result` (with embedded `PlaceResponse`) | Body: `PlaceRequest` |
-| PUT | `/api/places/{id}` | Update place | `Result` (with embedded `PlaceResponse`) | `id` (route param), Body: `PlaceRequest` |
-| DELETE | `/api/places/{id}` | Delete place | `Result` | `id` (route param) |
+| GET | `/api/teams` | Get all team members | `List<TeamResponse>` | - |
+| POST | `/api/teams` | Create new team member | `Result` | Form: `CreateTeamMemberCommand` |
+| PUT | `/api/teams` | Update team member | `Result` | Form: `UpdateTeamMemberCommand` |
+| DELETE | `/api/teams` | Delete team member | `Result` | Query: `DeleteTeamMemberCommand` |
 
 **Note**: 
-- CUD operations (Create, Update, Delete) return a standardized `Result` object with success/failure status, messages, and embedded data.
-- **Route Parameter Usage**: Get by ID, Update, and Delete operations use route parameters for the ID (`{id}` in the URL path).
-- Update endpoint receives Place properties (`name`, `description`, `district`, `city`) from the request body, while the `id` comes from the route parameter.
+- All endpoints use CQRS pattern with Commands and Queries processed via MediatR
+- CUD operations (Create, Update, Delete) return a standardized `Result` object with success/failure status and messages
+- Commands contain input validation attributes for automatic model validation
+- Queries return data directly without wrapping in Result objects
+
+---
+
+## Migration from BaseCrudService to CQRS MediaR
+
+This project has transitioned from a generic BaseCrudService pattern to CQRS with MediatR for improved maintainability and separation of concerns.
+
+### Key Changes Made
+
+| Before (BaseCrudService) | After (CQRS MediaR) |
+|--------------------------|---------------------|
+| `IBaseCrudService<TEntity, TRequest, TResponse>` | Commands and Queries with `IRequest<TResponse>` |
+| Service implementations inheriting from `BaseCrudService` | Individual handlers implementing `IRequestHandler<TRequest, TResponse>` |
+| Controllers injecting specific service interfaces | Controllers injecting `IMediator` |
+| Service method calls: `await _service.CreateAsync(request)` | MediatR dispatch: `await mediator.Send(command)` |
+
+### Benefits of Migration
+
+1. **Simplified Architecture**: Removed service layer, controllers communicate directly with handlers via MediatR
+2. **Single Responsibility**: Each handler has one specific purpose
+3. **Better Testability**: Test handlers independently without service layer abstractions
+4. **Improved Maintainability**: Clear separation between read (Queries) and write (Commands) operations
+5. **Consistent Pattern**: All features follow the same Commands/Queries structure
+
+### Implementation Reference
+
+The **Team** feature demonstrates the complete CQRS implementation:
+- Commands: `CreateTeamMemberCommand`, `UpdateTeamMemberCommand`, `DeleteTeamMemberCommand`
+- Queries: `GetTeamMembersQuery`
+- Controller: `TeamController` using MediatR injection
+- Handlers: Individual handler classes for each operation
 
 ---
 
@@ -547,9 +733,9 @@ Swagger UI is available at: `https://localhost:{port}/swagger`
 - **ASP.NET Core Controllers** - RESTful API framework
 - **Entity Framework Core** - ORM
 - **MySQL (Pomelo)** - Database provider
-- **AutoMapper** - Object mapping
+- **MediatR** - CQRS/Mediator pattern implementation
+- **AutoMapper** - Object mapping (optional in handlers)
 - **FluentValidation** - Input validation
-- **MediatR** - CQRS/Mediator pattern (ready for use)
 - **JWT Bearer** - Authentication
 
 ---

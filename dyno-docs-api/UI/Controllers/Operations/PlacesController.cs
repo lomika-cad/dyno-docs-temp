@@ -1,7 +1,7 @@
 using Application.Common;
-using Application.UserStories.Operations.Places;
-using Application.UserStories.Operations.Places.Requests;
-using Application.UserStories.Operations.Places.Responses;
+using Application.UserStories.Operations.Places.Commands;
+using Application.UserStories.Operations.Places.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using UI.Requests;
@@ -12,11 +12,11 @@ namespace UI.Controllers.Operations;
 [Route("api/operations/places")]
 public class PlacesController : ControllerBase
 {
-    private readonly IPlaceService _placeService;
+    private readonly IMediator _mediator;
 
-    public PlacesController(IPlaceService placeService)
+    public PlacesController(IMediator mediator)
     {
-        _placeService = placeService;
+        _mediator = mediator;
     }
 
     /// <summary>
@@ -28,9 +28,8 @@ public class PlacesController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Result>> Create([FromForm] PlaceFormRequest request, CancellationToken cancellationToken)
     {
-        var appRequest = await MapToPlaceRequest(request);
-
-        var result = await _placeService.CreateAsync(appRequest, cancellationToken);
+        var command = await MapToCreatePlaceCommand(request);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.Succeeded)
         {
@@ -47,8 +46,8 @@ public class PlacesController : ControllerBase
     [ProducesResponseType(typeof(List<PlaceResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<PlaceResponse>>> GetAll(CancellationToken cancellationToken)
     {
-        var places = await _placeService.GetAllAsync(cancellationToken);
-        return Ok(places.ToList());
+        var places = await _mediator.Send(new GetPlacesQuery(), cancellationToken);
+        return Ok(places);
     }
 
     /// <summary>
@@ -59,7 +58,7 @@ public class PlacesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PlaceResponse>> GetById([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var place = await _placeService.GetByIdAsync(id, cancellationToken);
+        var place = await _mediator.Send(new GetPlaceByIdQuery(id), cancellationToken);
 
         if (place == null)
         {
@@ -78,8 +77,9 @@ public class PlacesController : ControllerBase
     public async Task<ActionResult<Result>> Update([FromRoute] Guid id, [FromBody] PlaceRequestUpdate request,
         CancellationToken cancellationToken)
     {
-        var appRequest = new PlaceRequest
+        var command = new UpdatePlaceCommand
         {
+            Id = id,
             Name = request.Name,
             AverageVisitDuration = request.AverageVisitDuration,
             Description = request.Description,
@@ -88,7 +88,7 @@ public class PlacesController : ControllerBase
             City = request.City
         };
 
-        var result = await _placeService.UpdateAsync(id, appRequest, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.Succeeded)
         {
@@ -106,7 +106,8 @@ public class PlacesController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Result>> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var result = await _placeService.DeleteAsync(id, cancellationToken);
+        var command = new DeletePlaceCommand { Id = id };
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.Succeeded)
         {
@@ -123,16 +124,10 @@ public class PlacesController : ControllerBase
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Result>> UploadExcel(
-        [FromForm] UploadPlacesExcelRequest request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<Result>> UploadExcel([FromForm] IFormFile file, CancellationToken cancellationToken)
     {
-        if (request.File.Length == 0)
-        {
-            return BadRequest(Result.Failure("No file uploaded"));
-        }
-
-        var result = await _placeService.UploadExcelAsync(request.File, cancellationToken);
+        var command = new UploadPlacesExcelCommand { File = file };
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.Succeeded)
         {
@@ -161,10 +156,8 @@ public class PlacesController : ControllerBase
         return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "places_template.xlsx");
     }
 
-    private static async Task<PlaceRequest> MapToPlaceRequest(PlaceFormRequest form)
+    private static async Task<CreatePlaceCommand> MapToCreatePlaceCommand(PlaceFormRequest form)
     {
-        byte[]? ToBytes(IFormFile? file) => file == null || file.Length == 0 ? null : ReadAllBytes(file).GetAwaiter().GetResult();
-
         async Task<byte[]?> ReadAllBytes(IFormFile? file)
         {
             if (file == null || file.Length == 0) return null;
@@ -173,7 +166,7 @@ public class PlacesController : ControllerBase
             return ms.ToArray();
         }
 
-        return new PlaceRequest
+        return new CreatePlaceCommand
         {
             Name = form.Name,
             AverageVisitDuration = form.AverageVisitDuration,
@@ -181,11 +174,11 @@ public class PlacesController : ControllerBase
             FunFact = form.FunFact,
             District = form.District,
             City = form.City,
-            Image1 = ToBytes(form.Image1),
-            Image2 = ToBytes(form.Image2),
-            Image3 = ToBytes(form.Image3),
-            Image4 = ToBytes(form.Image4),
-            Image5 = ToBytes(form.Image5)
+            Image1 = await ReadAllBytes(form.Image1),
+            Image2 = await ReadAllBytes(form.Image2),
+            Image3 = await ReadAllBytes(form.Image3),
+            Image4 = await ReadAllBytes(form.Image4),
+            Image5 = await ReadAllBytes(form.Image5)
         };
     }
 }

@@ -1,5 +1,4 @@
 using Application.Common.Interfaces;
-using Application.UserStories.Operations.Places;
 using Infrastructure.Persistence;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -28,11 +27,8 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IDropBoxService, DropBoxService>();
 
-        // CRUD Services
-        services.AddScoped<IPlaceService, PlaceService>();
-        
         // Excel Services
-        services.AddScoped<PlaceExcelService>();
+        services.AddScoped<IPlaceExcelService,PlaceExcelService>();
 
         return services;
     }
