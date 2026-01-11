@@ -53,7 +53,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     // Support for IFormFile in Swagger
-    c.OperationFilter<FileUploadOperationFilter>();
+    c.OperationFilter<FormFileOperationFilter>();
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
