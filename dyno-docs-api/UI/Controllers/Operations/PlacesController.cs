@@ -124,9 +124,9 @@ public class PlacesController : ControllerBase
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Result>> UploadExcel([FromForm] IFormFile file, CancellationToken cancellationToken)
+    public async Task<ActionResult<Result>> UploadExcel([FromForm] UploadPlacesExcelRequest file, CancellationToken cancellationToken)
     {
-        var command = new UploadPlacesExcelCommand { File = file };
+        var command = new UploadPlacesExcelCommand { File = file.File };
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.Succeeded)
@@ -180,5 +180,10 @@ public class PlacesController : ControllerBase
             Image4 = await ReadAllBytes(form.Image4),
             Image5 = await ReadAllBytes(form.Image5)
         };
+    }
+    
+    public class UploadPlacesExcelRequest
+    {
+        public IFormFile File { get; set; } = default!;
     }
 }
