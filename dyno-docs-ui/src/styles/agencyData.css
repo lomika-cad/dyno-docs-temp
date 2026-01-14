@@ -8,6 +8,29 @@
   font-weight: 700;
 }
 
+.agency__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.infoBtn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--color-primary);
+}
+
+.infoBtn:hover {
+  background: #f4f3f3;
+}
+
 .panel {
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -288,7 +311,7 @@
 .ddModal__subtitle {
   margin-top: 6px;
   font-size: var(--font-size-sm);
-  color: var(--color-text-gray);
+  color: var(--color-text-black);
 }
 
 .ddModal__otp {
@@ -419,6 +442,7 @@
   overflow-y: auto;
   flex: 1;
   text-align: left;
+  font-size: 13px;
 }
 
 .detailSection {

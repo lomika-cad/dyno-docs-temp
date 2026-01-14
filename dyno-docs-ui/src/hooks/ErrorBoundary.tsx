@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import "../styles/comman.css";
+import "../styles/common.css";
 
 interface Props {
     children: ReactNode;

@@ -6,6 +6,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useState, useRef, useEffect } from "react";
 import { downloadSampleExcel, uploadAgencyData, getUploadDataSet, deleteData, createPlace, updatePlace } from "../services/agency-data-api";
 import { showError, showSuccess } from "../components/Toast";
@@ -49,6 +50,7 @@ export default function AgencyData() {
     const [searchTerm, setSearchTerm] = useState('');
     const [addRecordModalOpen, setAddRecordModalOpen] = useState(false);
     const [editRecordModalOpen, setEditRecordModalOpen] = useState(false);
+    const [infoOpen, setInfoOpen] = useState(false);
     const [placeToEdit, setPlaceToEdit] = useState<PlaceData | null>(null);
     const [formData, setFormData] = useState({
         name: '',
@@ -405,7 +407,17 @@ export default function AgencyData() {
     return (
         <Navbar userName="User">
             <div className="agency">
-                <h2 className="agency__title">Agency Data</h2>
+                <div className="agency__header">
+                    <h2 className="agency__title">Agency Data</h2>
+                    <button
+                        type="button"
+                        className="infoBtn"
+                        aria-label="Agency data steps"
+                        onClick={() => setInfoOpen(true)}
+                    >
+                        <InfoOutlinedIcon fontSize="small" />
+                    </button>
+                </div>
                 <section className="panel">
                     <div className="panel__header">
                         <div className="panel__title">Download Excel Template</div>
@@ -440,7 +452,7 @@ export default function AgencyData() {
                             <span className="dropzone__icon" aria-hidden="true">
                                 <CloudUploadRoundedIcon />
                             </span>
-                            <div className="dropzone__title">select your excel or drag and drop</div>
+                            <div className="dropzone__title">Select your excel or drag and drop</div>
                             <div className="dropzone__sub">.xls, .xlsx accepted (max 10MB)</div>
                             <input
                                 ref={fileInputRef}
@@ -455,7 +467,7 @@ export default function AgencyData() {
                                 className="btn btn--orange"
                                 onClick={() => fileInputRef.current?.click()}
                             >
-                                browse
+                                Browse
                             </button>
                         </div>
                     </div>
@@ -589,6 +601,32 @@ export default function AgencyData() {
                     </div>
                 </section>
             </div>
+
+            {infoOpen && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Agency data hint">
+                    <button
+                        type="button"
+                        className="ddModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => setInfoOpen(false)}
+                    />
+
+                    <div className="ddModal__card">
+                        <div className="ddModal__subtitle" style={{ textAlign: 'left', marginTop: 8 }}>
+                            Follow these steps to add and manage agency data:
+                        </div>
+                        <div className="ddModal__content">
+                            <ol>
+                                <li>Download the <strong>Excel template</strong> to see required columns.</li>
+                                <li>Fill in your records in the template and save as .xls or .xlsx.</li>
+                                <li>Use the <strong>Upload</strong> section to submit the completed file (this replaces previous uploads).</li>
+                                <li>Or add individual records using <strong>+ Add Record</strong> to enter data manually.</li>
+                                <li>Use the actions to <strong>View, Edit</strong> or <strong>Delete</strong> existing records.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {downloadModalOpen && (
                 <div className="ddModal" role="dialog" aria-modal="true" aria-label="Verify download">
