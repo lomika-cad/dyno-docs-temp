@@ -115,12 +115,15 @@ export default function AgencyData() {
 
     const handleFetchDataSet = async () => {
         try {
+            setIsLoading(true);
             const response = await getUploadDataSet(DD_TOKEN);
             setPlaces(response.data || []);
             setCurrentPage(1); // Reset to first page when data is fetched
         } catch (error) {
             showError("Failed to fetch data. Please try again.");
             setPlaces([]);
+        } finally {
+            setIsLoading(false);
         }
     }
 
