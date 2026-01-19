@@ -1,6 +1,13 @@
 using Application.Common.Interfaces;
 using ClosedXML.Excel;
 using Domain.Entities.Operations;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services;
 
@@ -26,6 +33,16 @@ public class PlaceExcelService : IPlaceExcelService
             using var workbook = new XLWorkbook(fileStream);
             var worksheet = workbook.Worksheet(1);
 
+            // Validate headers before doing any processing
+            if (!ValidateHeaders(worksheet, out var headerError))
+            {
+                errors.Add(headerError ?? "Invalid headers");
+                return (0, 0, errors);
+            }
+
+            // Truncate existing records before uploading new ones
+            await TruncatePlacesAsync(cancellationToken);
+
             // Extract images from worksheet mapped by row number
             var imagesByRow = ExtractImagesFromWorksheet(worksheet);
 
@@ -38,8 +55,9 @@ public class PlaceExcelService : IPlaceExcelService
                 return (0, 0, errors);
             }
 
-            // Skip header row (assuming row 1 is header)
-            var dataRows = worksheet.RowsUsed().Skip(1);
+            // Use the detected header row; only process rows after the header
+            var headerRowNumber = firstRowUsed.RowNumber();
+            var dataRows = worksheet.RowsUsed().Where(r => r.RowNumber() > headerRowNumber);
 
             var entitiesToAdd = new List<Place>();
             const int batchSize = 100;
@@ -179,6 +197,49 @@ public class PlaceExcelService : IPlaceExcelService
         catch
         {
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Validate that the header row in the worksheet matches the expected columns
+    /// </summary>
+    private bool ValidateHeaders(IXLWorksheet worksheet, out string? error)
+    {
+        error = null;
+        var firstRowUsed = worksheet.FirstRowUsed();
+        if (firstRowUsed == null)
+        {
+            error = "No header row found";
+            return false;
+        }
+
+        var headerRow = worksheet.Row(firstRowUsed.RowNumber());
+        var expected = new[] { "District", "City", "Name", "Average Visit Duration", "Description", "Fun Fact", "Images" };
+
+        for (int i = 0; i < expected.Length; i++)
+        {
+            var cellVal = headerRow.Cell(i + 1).GetString().Trim();
+            if (!string.Equals(cellVal, expected[i], StringComparison.OrdinalIgnoreCase))
+            {
+                error = $"Invalid header at column {i + 1}. Expected '{expected[i]}', found '{cellVal}'";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Remove all existing Place records before adding new ones
+    /// </summary>
+    private async Task TruncatePlacesAsync(CancellationToken cancellationToken)
+    {
+        // Try to remove all existing places using the DbSet. This will load them into memory first.
+        var allPlaces = await _dbContext.Places.ToListAsync(cancellationToken);
+        if (allPlaces.Any())
+        {
+            _dbContext.Places.RemoveRange(allPlaces);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }
