@@ -8,6 +8,7 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useState, useRef, useEffect } from "react";
+import CircularProgress from '@mui/material/CircularProgress';
 import { downloadSampleExcel, uploadAgencyData, getUploadDataSet, deleteData, createPlace, updatePlace } from "../services/agency-data-api";
 import { showError, showSuccess } from "../components/Toast";
 import excelImg from "../assets/xlsx.png";
@@ -68,6 +69,7 @@ export default function AgencyData() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleDownloadSampleExcel = async () => {
+        setIsLoading(true);
         try {
             const response = await downloadSampleExcel(DD_TOKEN);
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -81,6 +83,8 @@ export default function AgencyData() {
             showSuccess("Template downloaded successfully.");
         } catch (error) {
             showError("Failed to download the template. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -625,6 +629,12 @@ export default function AgencyData() {
                             </ol>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {(isLoading || isUploading || isDeleting || isSubmitting) && (
+                <div className="globalLoader" role="status" aria-live="polite">
+                    <CircularProgress size={56} />
                 </div>
             )}
 
