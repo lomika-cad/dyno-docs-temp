@@ -26,12 +26,12 @@ const StatsSection = () => {
   ];
 
   return (
-    <Box sx={{ py: 8, bgcolor: "#ff7b2e17", px: { xs: 2, md: 5 } }}>
+    <Box sx={{ py: 15, bgcolor: "#ff7b2e17", px: { xs: 2, md: 5 } }}>
       <Container maxWidth="lg">
         <Grid
           container
           spacing={{ xs: 4, md: 6 }}
-          alignItems="center"
+          alignItems="stretch"
         >
           {/* Left Content */}
           <Grid size={{ xs: 12, md: 5 }}>
@@ -52,7 +52,7 @@ const StatsSection = () => {
                 sx={{
                   color: "#FF8C42",
                   fontWeight: "bold",
-                  mb: 3.5,
+                  mb: 4.5,
                   fontSize: { xs: "1.3rem", md: "1.8rem" },
                 }}
               >
@@ -75,7 +75,7 @@ const StatsSection = () => {
 
           {/* Right Stats Grid */}
           <Grid size={{ xs: 12, md: 7 }}>
-            <Grid container spacing={{ xs: 2.5, md: 3 }}>
+            <Grid container spacing={{ xs: 3.5, md: 4.5 }}>
               {stats.map((stat, index) => {
                 const IconComponent = stat.icon;
                 return (
@@ -84,7 +84,7 @@ const StatsSection = () => {
                       sx={{
                         display: "flex",
                         alignItems: "flex-start",
-                        gap: 2.5,
+                        gap: 3.5,
                       }}
                     >
                       {/* Icon Container */}
