@@ -174,10 +174,18 @@
   width: 100%;
   margin: 10px auto;
   position: relative;
-  text-align: center;
+  overflow: hidden;
+}
+
+.slider-track {
   display: flex;
   gap: 30px;
-  overflow-x: auto;
+  width: max-content;
+  animation: slide-left 40s linear infinite;
+}
+
+.slider-container:hover .slider-track {
+  animation-play-state: paused;
 }
 
 .slider-image {
@@ -186,6 +194,11 @@
   border-radius: 12px;
   object-fit: cover;
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+@keyframes slide-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 /* Dots */

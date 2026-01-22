@@ -14,16 +14,20 @@ export default function HeroImageSlider() {
     image5,
   ];
 
+  const loopedImages = [...images, ...images, ...images];
+
   return (
     <div className="slider-container">
-    {images.map((imgSrc, index) => (
-      <img
-        key={index}
-        src={imgSrc}
-        alt={`Slide ${index + 1}`}
-        className="slider-image"
-      />
-    ))}
+      <div className="slider-track">
+        {loopedImages.map((imgSrc, index) => (
+          <img
+            key={index}
+            src={imgSrc}
+            alt={`Slide ${index % images.length + 1}`}
+            className="slider-image"
+          />
+        ))}
+      </div>
     </div>
   );
 }
