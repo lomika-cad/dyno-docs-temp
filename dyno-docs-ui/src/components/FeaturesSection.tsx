@@ -37,6 +37,7 @@ const FeaturesSection = () => {
               mt: 2,
               fontSize: { xs: "1.8rem", md: "2.5rem" },
             }}
+            data-aos="fade-up"
           >
             Smart Reporting for Growing Agencies
           </Typography>
@@ -48,6 +49,7 @@ const FeaturesSection = () => {
               maxWidth: "600px",
               mx: "auto",
             }}
+            data-aos="fade-up"
           >
             Ideal for teams that need real-time dashboards and customizable
             reports.
@@ -74,6 +76,8 @@ const FeaturesSection = () => {
                       transform: "translateY(-4px)",
                     },
                   }}
+                  data-aos="fade-up"
+                  data-aos-delay={index * 100}
                 >
                   <CardContent
                     sx={{

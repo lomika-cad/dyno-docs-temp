@@ -23,6 +23,7 @@ const CTASection = () => {
                   fontSize: { xs: "1.8rem", md: "2.2rem" },
                   lineHeight: 1.2,
                 }}
+                data-aos="fade-right"
               >
                 The Fastest Way to Generate Travel Reports
               </Typography>
@@ -34,6 +35,7 @@ const CTASection = () => {
                   fontSize: { xs: "0.95rem", md: "1rem" },
                   mb: 3.5,
                 }}
+                data-aos="fade-right"
               >
                 Create accurate, professional reports in seconds—no spreadsheets,
                 no delays, just instant insights powered by smart automation.
@@ -56,6 +58,7 @@ const CTASection = () => {
                     transform: "translateX(4px)",
                   },
                 }}
+                data-aos="fade-right"
               >
                 Get started for free
               </Button>
@@ -72,6 +75,7 @@ const CTASection = () => {
                 alignItems: "center",
                 minHeight: { xs: "300px", md: "400px" },
               }}
+              data-aos="fade-left"
             >
               {/* Placeholder for dashboard image */}
               <Box
