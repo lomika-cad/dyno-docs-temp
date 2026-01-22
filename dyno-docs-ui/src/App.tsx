@@ -1,10 +1,16 @@
+import { useEffect } from "react"
 import { Route, Routes } from "react-router-dom"
+import AOS from "aos"
+import "aos/dist/aos.css"
 import Home from "./pages/Home"
 import Dashboard from "./pages/Dashboard"
 import AgencyData from "./pages/AgencyData"
 import Toast from "./components/Toast"
 
 function App() {
+  useEffect(() => {
+    AOS.init({ duration: 900, once: true, easing: "ease-out-cubic" })
+  }, [])
   
   return (
     <>
