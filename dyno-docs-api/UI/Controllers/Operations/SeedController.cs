@@ -45,7 +45,7 @@ public class SeedController : ControllerBase
                     PlanName = "Professional",
                     Description = "Best for professional freelancers and small teams.",
                     MonthlyPrice = 14.99m,
-                    YearlyPrice = 179.88m,
+                    YearlyPrice = 125.91m,
                     Features = new[] { "Everything in Free", "50 Report Generation", "15 Templates Usage Limit", "5% Discount For Templates", "Enhanced Security" }
                 },
                 new PricingPlan
@@ -53,7 +53,7 @@ public class SeedController : ControllerBase
                     PlanName = "Enterprise",
                     Description = "Best for growing large company or enterprise design team.",
                     MonthlyPrice = 99.99m,
-                    YearlyPrice = 1199.88m,
+                    YearlyPrice = 840.24m,
                     Features = new[] { "Everything in Free", "Unlimited Report Generation", "Unlimited Templates Usage", "100% Discount For Templates", "Priority Security" }
                 }
             };

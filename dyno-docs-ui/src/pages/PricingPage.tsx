@@ -1,53 +1,41 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
 import "../styles/home.css";
+import { getPricingPlans } from "../services/pricing-plan-api";
 
 export default function PricingPage() {
     const [yearly, setYearly] = useState(false);
+    const [plans, setPlans] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const plans = [
-        {
-            id: "free",
-            title: "Free",
-            monthly: 0,
-            yearly: 0,
-            description: "Great for trying out DynoDocs component and templates.",
-            features: ["Design Guidelines", "10 Reports Generation", "5 Templates Usage Limit"],
-            ctaType: "ghost",
-        },
-        {
-            id: "pro",
-            title: "Professional",
-            monthly: 14.99,
-            // yearly billed price (monthly equivalent after 30% discount)
-            yearly: +(14.99 * 12 * (1 - 0.3)).toFixed(2),
-            description: "Best for professional freelancers and small teams.",
-            features: [
-                "Everything in Free",
-                "50 Report Generation",
-                "15 Templates Usage Limit",
-                "5% Discount For Templates",
-                "Enhanced Security",
-            ],
-            ctaType: "primary",
-        },
-        {
-            id: "enterprise",
-            title: "Enterprise",
-            monthly: 99.99,
-            yearly: +(99.99 * 12 * (1 - 0.3)).toFixed(2),
-            description: "Best for growing large company or enterprise design team.",
-            features: [
-                "Everything in Free",
-                "Unlimited Report Generation",
-                "Unlimited Templates Usage",
-                "100% Discount For Templates",
-                "Priority Security",
-            ],
-            ctaType: "ghost",
-        },
-    ];
+    const handleGetPricingPlans = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await getPricingPlans();
+            const data = response.data.map((p: any) => ({
+                id: p.id ?? p.planName?.toLowerCase() ?? Math.random().toString(36).slice(2),
+                title: p.planName ?? p.title ?? "",
+                monthly: Number(p.monthlyPrice ?? p.monthly ?? 0),
+                yearly: Number(p.yearlyPrice ?? p.yearly ?? 0),
+                description: p.description ?? "",
+                features: p.features ?? []
+            }));
+
+            setPlans(data);
+        } catch (err: any) {
+            setPlans([]);
+            setError(err?.message ?? "Failed to load plans");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        handleGetPricingPlans();
+    }, []);
 
     return (
         <div>
@@ -58,7 +46,6 @@ export default function PricingPage() {
                     <h1>
                         Ready to start with <span className="accent">DynoDocs</span>?
                     </h1>
-                    <br />
                     <p className="sub">Choose the package that best suit you</p>
 
                     <div className="billing-row">
@@ -79,46 +66,48 @@ export default function PricingPage() {
                 </section>
 
                 <section className="pricing-cards">
-                    {plans.map((p, idx) => (
-                        <article
-                            key={p.id}
-                            className={"card " + (p.id === "pro" ? "highlight" : "")}
-                        >
-                            <div className="card-head">
-                                <span style={{fontSize: "16px", fontWeight: "600"}}>{p.title}</span>
-                            </div>
-
-                            <div className="card-body">
-                                <div className="price">
-                                    <span className="currency">$</span>
-                                    <span className="amount">
-                                        {yearly
-                                            ? // show monthly-equivalent for yearly billing
-                                            (p.yearly === 0
-                                                ? "0"
-                                                : (p.yearly / 12).toFixed(2))
-                                            : p.monthly.toFixed(2)}
-                                    </span>
-                                    <span className="period">{yearly ? "/per month (billed yearly)" : "/per month"}</span>
+                    {loading && <div>Loading plans…</div>}
+                    {error && <div style={{ color: "#dc2626" }}>Error: {error}</div>}
+                    {!loading && !error && plans.map((p) => {
+                        const isHighlight = p.title.toLowerCase().includes("professional");
+                        return (
+                            <article
+                                key={p.id}
+                                className={"card " + (isHighlight ? "highlight" : "")}
+                            >
+                                <div className="card-head">
+                                    <span style={{fontSize: "16px", fontWeight: 600}}>{p.title}</span>
                                 </div>
 
-                                <p className="desc">{p.description}</p>
+                                <div className="card-body">
+                                    <div className="price">
+                                        <span className="currency">$</span>
+                                        <span className="amount">
+                                            {yearly
+                                                ? (p.yearly === 0 ? "0.00" : p.yearly.toFixed(2))
+                                                : p.monthly.toFixed(2)}
+                                        </span>
+                                        <span className="period">{yearly ? "/per year" : "/per month"}</span>
+                                    </div>
 
-                                <button className={"btn " + (p.ctaType === "primary" ? "btn-primary" : "btn-ghost")}>Get Started</button>
+                                    <p className="desc">{p.description}</p>
 
-                                <hr />
+                                    <button className={isHighlight ? "btn btn-primary1" : "btn btn-ghost"}>Get Started</button>
 
-                                <ul className="features">
-                                    {p.features.map((f) => (
-                                        <li key={f}>
-                                            <span className="check">✓</span>
-                                            <span className="feat-text">{f}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </article>
-                    ))}
+                                    <hr />
+
+                                    <ul className="features">
+                                        {p.features.map((f: string) => (
+                                            <li key={f}>
+                                                <span className="check">✓</span>
+                                                <span className="feat-text">{f}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </article>
+                        );
+                    })}
                 </section>
             </main>
 
