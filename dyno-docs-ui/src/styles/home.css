@@ -65,6 +65,7 @@
     position:relative; 
     width:54px; 
     height:30px; 
+    cursor:pointer;
 }
 
 .toggle input{ 
