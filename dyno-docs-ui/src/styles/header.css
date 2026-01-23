@@ -48,6 +48,23 @@
     color: var(--hover);
 }
 
+/* Active state for header/nav */
+.nav-links a.active {
+    color: var(--color-primary);
+    position: relative;
+}
+
+.auth-buttons .sign-in.active,
+.auth-buttons .sign-up.active {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.drawer-content a.active {
+    color: var(--color-primary);
+}
+.sign-in.active{ color: var(--color-primary); }
+
 .auth-buttons {
     display: flex;
     gap: 15px;

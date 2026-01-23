@@ -1,6 +1,5 @@
 *{
     box-sizing: border-box;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
 .pricing-page{
@@ -19,12 +18,12 @@
     line-height: 1.05;
     margin: 0 0 5px;
     color: var(--heading, #0f172a);
-    font-weight: 800;
+    font-weight: 900;
 }
 
 .pricing-hero .accent{
     color: var(--accent-600, #ff6b00);
-    font-weight: 800;
+    font-weight: 900;
 }
 
 .pricing-hero .sub{
@@ -50,7 +49,7 @@
 
 .badge{
     display: inline-block;
-    background: var(--badge-bg, #fff6ea);
+    background: var(--badge-bg, #fffcdd);
     color: var(--badge-fg, #b45309);
     font-size: 11px;
     padding: 3px 6px;
@@ -106,6 +105,12 @@
     grid-template-columns: 1fr;
     gap: 18px;
     margin-top: 28px;
+    cursor: pointer;
+}
+.pricing-cards .card:hover{
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05));
+    transition: all 0.3s ease;
 }
 
 .card{
@@ -120,7 +125,6 @@
     background: var(--glass, linear-gradient(0deg, rgba(255, 121, 26, 0.425), rgba(255, 121, 26, 0.062)));
     border-color: rgba(255, 121, 26, 0.39);
     box-shadow: var(--shadow, 0 8px 30px rgba(16,24,40,0.06));
-    transform: translateY(-6px);
     border-radius: 14px;
 }
 

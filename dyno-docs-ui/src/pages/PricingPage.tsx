@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
 import "../styles/home.css";
@@ -46,6 +46,7 @@ export default function PricingPage() {
                     <h1>
                         Ready to start with <span className="accent">DynoDocs</span>?
                     </h1>
+                    <br />
                     <p className="sub">Choose the package that best suit you</p>
 
                     <div className="billing-row">
