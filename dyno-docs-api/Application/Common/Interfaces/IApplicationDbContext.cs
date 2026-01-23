@@ -9,6 +9,7 @@ public interface IApplicationDbContext
     #region DbSets
 
     DbSet<Place> Places { get; }
+    DbSet<PricingPlan> PricingPlan { get; }
 
     #endregion
 
