@@ -85,7 +85,7 @@ export default function PricingPage() {
                             className={"card " + (p.id === "pro" ? "highlight" : "")}
                         >
                             <div className="card-head">
-                                <h3>{p.title}</h3>
+                                <span style={{fontSize: "16px", fontWeight: "600"}}>{p.title}</span>
                             </div>
 
                             <div className="card-body">
