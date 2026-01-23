@@ -3,7 +3,7 @@ import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
 import "../styles/home.css";
 import { getPricingPlans } from "../services/pricing-plan-api";
-import { Backdrop } from "@mui/material";
+import { Backdrop, CircularProgress } from "@mui/material";
 
 export default function PricingPage() {
     const [yearly, setYearly] = useState(false);
@@ -68,10 +68,9 @@ export default function PricingPage() {
 
                 <section className="pricing-cards">
                     {loading && <div>
-                        <Backdrop open={true}
-                            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-                            <div className="loader"></div>
-                        </Backdrop>
+                        <div className="globalLoader" role="status" aria-live="polite">
+                            <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
+                        </div>
                     </div>}
                     {error && <div style={{ color: "#dc2626" }}>Error: {error}</div>}
                     {!loading && !error && plans.map((p) => {

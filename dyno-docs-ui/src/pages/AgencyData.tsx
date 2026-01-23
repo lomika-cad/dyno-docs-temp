@@ -634,7 +634,7 @@ export default function AgencyData() {
 
             {(isLoading || isUploading || isDeleting || isSubmitting) && (
                 <div className="globalLoader" role="status" aria-live="polite">
-                    <CircularProgress size={56} />
+                    <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
                 </div>
             )}
 
