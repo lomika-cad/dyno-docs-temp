@@ -17,13 +17,14 @@ export default function Header() {
             <img
               src={logo}
               alt="DynoDocs"
+              onClick={() => navigate("/")}
             />
           </div>
 
           {/* Desktop Menu */}
           <nav className="nav-links">
             <a href="#">Documentation</a>
-            <a href="#">Pricing</a>
+            <a href="/pricing">Pricing</a>
             <a href="#">About Us</a>
             <a href="#">Contact Us</a>
           </nav>
