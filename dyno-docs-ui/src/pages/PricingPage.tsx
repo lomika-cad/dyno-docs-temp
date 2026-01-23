@@ -3,6 +3,7 @@ import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
 import "../styles/home.css";
 import { getPricingPlans } from "../services/pricing-plan-api";
+import { Backdrop } from "@mui/material";
 
 export default function PricingPage() {
     const [yearly, setYearly] = useState(false);
@@ -27,7 +28,6 @@ export default function PricingPage() {
             setPlans(data);
         } catch (err: any) {
             setPlans([]);
-            setError(err?.message ?? "Failed to load plans");
         } finally {
             setLoading(false);
         }
@@ -67,7 +67,12 @@ export default function PricingPage() {
                 </section>
 
                 <section className="pricing-cards">
-                    {loading && <div>Loading plans…</div>}
+                    {loading && <div>
+                        <Backdrop open={true}
+                            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+                            <div className="loader"></div>
+                        </Backdrop>
+                    </div>}
                     {error && <div style={{ color: "#dc2626" }}>Error: {error}</div>}
                     {!loading && !error && plans.map((p) => {
                         const isHighlight = p.title.toLowerCase().includes("professional");
@@ -77,7 +82,7 @@ export default function PricingPage() {
                                 className={"card " + (isHighlight ? "highlight" : "")}
                             >
                                 <div className="card-head">
-                                    <span style={{fontSize: "16px", fontWeight: 600}}>{p.title}</span>
+                                    <span style={{ fontSize: "16px", fontWeight: 600 }}>{p.title}</span>
                                 </div>
 
                                 <div className="card-body">
