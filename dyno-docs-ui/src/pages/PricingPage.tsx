@@ -3,7 +3,7 @@ import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
 import "../styles/home.css";
 import { getPricingPlans } from "../services/pricing-plan-api";
-import { Backdrop, CircularProgress } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 
 export default function PricingPage() {
     const [yearly, setYearly] = useState(false);
