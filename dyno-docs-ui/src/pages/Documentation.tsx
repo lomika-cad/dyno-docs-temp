@@ -90,45 +90,53 @@ export default function Documentation() {
         <div className="docs-page">
             <Header />
 
-            <section className="docs-hero">
-                <h1>
-                    Dyno<span className="accent">Docs</span> Documentation
-                </h1>
-                <p>
-                    Clear, simple guides to help you automate your reporting
-                    workflow.
-                </p>
-            </section>
+            <div className="docs-shell" aria-label="Documentation">
+                <section className="docs-hero" aria-label="Documentation title">
+                    <h1>
+                        Dyno<span className="accent">Docs</span> Documentation
+                    </h1>
+                    <p>
+                        Clear, simple guides to help you automate your reporting
+                        workflow.
+                    </p>
+                </section>
 
-            <div className="docs-layout">
-                <aside className="docs-sidebar" aria-label="Documentation navigation">
-                    {navGroups.map((group) => (
-                        <div key={group.title} className="docs-nav-section">
-                            <div className="docs-nav-title">{group.title}</div>
-                            <ul className="docs-nav-list">
-                                {group.items.map((item) => (
-                                    <li key={item.id}>
-                                        <a
-                                            href={`#${item.id}`}
-                                            className={
-                                                "docs-nav-link " +
-                                                (activeId === item.id ? "active" : "")
-                                            }
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                handleNavClick(item.id);
-                                            }}
-                                        >
-                                            {item.label}
-                                        </a>
-                                    </li>
+                <div className="docs-scroll" aria-label="Documentation content">
+                    <div className="docs-container">
+                        <div className="docs-layout">
+                            <aside
+                                className="docs-sidebar"
+                                aria-label="Documentation navigation"
+                            >
+                                {navGroups.map((group) => (
+                                    <div key={group.title} className="docs-nav-section">
+                                        <div className="docs-nav-title">{group.title}</div>
+                                        <ul className="docs-nav-list">
+                                            {group.items.map((item) => (
+                                                <li key={item.id}>
+                                                    <a
+                                                        href={`#${item.id}`}
+                                                        className={
+                                                            "docs-nav-link " +
+                                                            (activeId === item.id
+                                                                ? "active"
+                                                                : "")
+                                                        }
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            handleNavClick(item.id);
+                                                        }}
+                                                    >
+                                                        {item.label}
+                                                    </a>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
                                 ))}
-                            </ul>
-                        </div>
-                    ))}
-                </aside>
+                            </aside>
 
-                <main className="docs-main" ref={contentRef}>
+                            <main className="docs-main" ref={contentRef}>
                     <section
                         id="overview"
                         data-doc-section
@@ -551,10 +559,13 @@ export default function Documentation() {
                             agency, in line with professional and regulatory standards.
                         </p>
                     </section>
-                </main>
-            </div>
+                            </main>
+                        </div>
 
-            <Footer />
+                        <Footer />
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
