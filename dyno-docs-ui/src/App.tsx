@@ -8,6 +8,7 @@ import AgencyData from "./pages/AgencyData"
 import Toast from "./components/Toast"
 import PricingPage from "./pages/PricingPage"
 import AboutUs from "./pages/AboutUs"
+import Documentation from "./pages/Documentation"
 
 function App() {
   useEffect(() => {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/about" element={<AboutUs />} />
+        <Route path="/documentation" element={<Documentation />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/agency-data" element={<AgencyData />} />
       </Routes>

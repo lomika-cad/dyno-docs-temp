@@ -26,8 +26,8 @@ export default function Header() {
           <nav className="nav-links">
             <a
               href="#"
-              onClick={(e) => { e.preventDefault(); navigate('/docs'); setOpen(false); }}
-              className={location.pathname.startsWith('/docs') ? 'active' : ''}
+              onClick={(e) => { e.preventDefault(); navigate('/documentation'); setOpen(false); }}
+              className={location.pathname.startsWith('/documentation') ? 'active' : ''}
             >Documentation</a>
 
             <a
@@ -78,8 +78,8 @@ export default function Header() {
 
             <a
               href="#"
-              onClick={(e) => { e.preventDefault(); navigate('/docs'); setOpen(false); }}
-              className={location.pathname.startsWith('/docs') ? 'active' : ''}
+              onClick={(e) => { e.preventDefault(); navigate('/documentation'); setOpen(false); }}
+              className={location.pathname.startsWith('/documentation') ? 'active' : ''}
             >Documentation</a>
 
             <a
