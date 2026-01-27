@@ -173,7 +173,7 @@ export default function Partnerships() {
                                         onChange={(e) => setType(e.target.value)}
                                     >
                                         <option value="">Select partnership type</option>
-                                        <option value="Hotels & Stays">Hotels &amp; Stays</option>
+                                        <option value="Hotels & Stays">Hotels</option>
                                         <option value="Transport">Transport</option>
                                         <option value="Activities">Activities</option>
                                         <option value="Travel Services">Travel Services</option>
