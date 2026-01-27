@@ -1,42 +1,91 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import {
+    createPartnership,
+    deletePartnership,
+    getPartnerships,
+    updatePartnership,
+} from "../services/partnership-api";
+import { showError, showSuccess } from "../components/Toast";
+import { CircularProgress } from "@mui/material";
 
 interface PartnershipRecord {
-    id: number;
-    title: string;
-    type: string;
+    id: string;
+    name?: string;
+    description?: string;
+    partnershipType: number;
 }
 
-const MOCK_PARTNERSHIPS: PartnershipRecord[] = [
-    { id: 1, title: "Destination Collaborations", type: "Destinations" },
-    { id: 2, title: "Hospitality Partnerships", type: "Hotels & Stays" },
-    { id: 3, title: "Transport & Mobility Partners", type: "Transport" },
-    { id: 4, title: "Experience & Activity Partners", type: "Activities" },
-    { id: 5, title: "Travel Service Partners", type: "Travel Services" },
+const PARTNERSHIP_TYPE_OPTIONS: { value: number; label: string }[] = [
+    { value: 0, label: "Hotels" },
+    { value: 1, label: "Transport" },
+    { value: 2, label: "Activities" },
+    { value: 3, label: "Travel Services" },
+    { value: 4, label: "Other" },
 ];
 
+const PARTNERSHIP_TYPE_LABELS: Record<number, string> = {
+    0: "Hotels",
+    1: "Transport",
+    2: "Activities",
+    3: "Travel Services",
+    4: "Other",
+};
+
 export default function Partnerships() {
+    const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
+
     const [title, setTitle] = useState("");
     const [type, setType] = useState("");
     const [description, setDescription] = useState("");
+    const [partnerships, setPartnerships] = useState<PartnershipRecord[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isImagesDragActive, setIsImagesDragActive] = useState(false);
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const itemsPerPage = 5;
     const imagesInputRef = useRef<HTMLInputElement | null>(null);
 
-    const filteredPartnerships = MOCK_PARTNERSHIPS.filter((item) => {
+    const fetchPartnerships = async () => {
+        try {
+            setIsLoading(true);
+            const response = await getPartnerships(DD_TOKEN);
+            setPartnerships(response.data || []);
+            setCurrentPage(1);
+        } catch (error: any) {
+            const message =
+                error?.response?.data?.message ||
+                "Failed to fetch partnerships. Please try again.";
+            showError(message);
+            setPartnerships([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPartnerships();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const filteredPartnerships = partnerships.filter((item) => {
         const term = searchTerm.toLowerCase();
+        const name = item.name || "";
+        const typeLabel = PARTNERSHIP_TYPE_LABELS[item.partnershipType] || "";
+
         return (
-            item.title.toLowerCase().includes(term) ||
-            item.type.toLowerCase().includes(term)
+            name.toLowerCase().includes(term) ||
+            typeLabel.toLowerCase().includes(term)
         );
     });
 
@@ -129,15 +178,126 @@ export default function Partnerships() {
         setDescription("");
         setSelectedImages([]);
         setImagePreviews([]);
+        setEditingId(null);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Placeholder submit handler – integrate API or data logic here.
+
+        if (!title.trim()) {
+            showError("Title is required");
+            return;
+        }
+
+        if (!type) {
+            showError("Partnership type is required");
+            return;
+        }
+
+        const partnershipTypeValue = Number(type);
+        if (Number.isNaN(partnershipTypeValue)) {
+            showError("Invalid partnership type");
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+
+            if (editingId) {
+                const payload = {
+                    id: editingId,
+                    name: title,
+                    description,
+                    partnershipType: partnershipTypeValue,
+                };
+
+                const response = await updatePartnership(
+                    editingId,
+                    payload,
+                    DD_TOKEN,
+                );
+                const message =
+                    response?.data?.message ||
+                    "Partnership updated successfully.";
+                showSuccess(message);
+            } else {
+                const formData = new FormData();
+                formData.append("Name", title);
+                if (description) {
+                    formData.append("Description", description);
+                }
+                formData.append(
+                    "PartnershipType",
+                    String(partnershipTypeValue),
+                );
+
+                selectedImages.forEach((image) => {
+                    formData.append("Images", image);
+                });
+
+                const response = await createPartnership(formData, DD_TOKEN);
+                const message =
+                    response?.data?.message ||
+                    "Partnership created successfully.";
+                showSuccess(message);
+            }
+
+            handleClear();
+            fetchPartnerships();
+        } catch (error: any) {
+            const message =
+                error?.response?.data?.message ||
+                (editingId
+                    ? "Failed to update partnership. Please try again."
+                    : "Failed to create partnership. Please try again.");
+            showError(message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleEditClick = (record: PartnershipRecord) => {
+        setEditingId(record.id);
+        setTitle(record.name || "");
+        setDescription(record.description || "");
+        setType(String(record.partnershipType));
+        setSelectedImages([]);
+        setImagePreviews([]);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleDeleteClick = async (record: PartnershipRecord) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${record.name ?? "this partnership"}"?`,
+        );
+        if (!confirmed) return;
+
+        try {
+            setIsDeleting(true);
+            const response = await deletePartnership(record.id, DD_TOKEN);
+            const message =
+                response?.data?.message ||
+                "Partnership deleted successfully.";
+            showSuccess(message);
+            fetchPartnerships();
+        } catch (error: any) {
+            const message =
+                error?.response?.data?.message ||
+                "Failed to delete partnership. Please try again.";
+            showError(message);
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     return (
         <Navbar userName="User">
+
+            {(isLoading || isDeleting || isSubmitting) && (
+                <div className="globalLoader" role="status" aria-live="polite">
+                    <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
+                </div>
+            )}
             <div className="agency">
                 <h2 className="agency__title">Partnerships</h2>
 
@@ -173,11 +333,14 @@ export default function Partnerships() {
                                         onChange={(e) => setType(e.target.value)}
                                     >
                                         <option value="">Select partnership type</option>
-                                        <option value="Hotels & Stays">Hotels</option>
-                                        <option value="Transport">Transport</option>
-                                        <option value="Activities">Activities</option>
-                                        <option value="Travel Services">Travel Services</option>
-                                        <option value="Other">Other</option>
+                                        {PARTNERSHIP_TYPE_OPTIONS.map((option) => (
+                                            <option
+                                                key={option.value}
+                                                value={option.value}
+                                            >
+                                                {option.label}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -198,9 +361,8 @@ export default function Partnerships() {
                             <div className="formField">
                                 <span className="formField__label">Images</span>
                                 <div
-                                    className={`dropzone ${
-                                        isImagesDragActive ? "dropzone--active" : ""
-                                    }`}
+                                    className={`dropzone ${isImagesDragActive ? "dropzone--active" : ""
+                                        }`}
                                     onDragOver={handleImagesDragOver}
                                     onDragLeave={handleImagesDragLeave}
                                     onDrop={handleImagesDrop}
@@ -267,8 +429,9 @@ export default function Partnerships() {
                                 <button
                                     type="submit"
                                     className="btn btn--orange"
+                                    disabled={isSubmitting}
                                 >
-                                    Submit
+                                    {editingId ? "Update" : "Submit"}
                                 </button>
                             </div>
                         </form>
@@ -302,21 +465,32 @@ export default function Partnerships() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {currentItems.length === 0 ? (
+                                {isLoading ? (
+                                    <tr>
+                                        <td colSpan={3}>Loading...</td>
+                                    </tr>
+                                ) : currentItems.length === 0 ? (
                                     <tr>
                                         <td colSpan={3}>No records found.</td>
                                     </tr>
                                 ) : (
                                     currentItems.map((item) => (
                                         <tr key={item.id}>
-                                            <td>{item.title}</td>
-                                            <td>{item.type}</td>
+                                            <td>{item.name}</td>
+                                            <td>
+                                                {PARTNERSHIP_TYPE_LABELS[
+                                                    item.partnershipType
+                                                ] || "-"}
+                                            </td>
                                             <td>
                                                 <span className="actions">
                                                     <button
                                                         type="button"
                                                         className="iconBtn iconBtn--edit"
                                                         aria-label="Edit partnership"
+                                                        onClick={() =>
+                                                            handleEditClick(item)
+                                                        }
                                                     >
                                                         <EditRoundedIcon fontSize="inherit" />
                                                     </button>
@@ -324,6 +498,9 @@ export default function Partnerships() {
                                                         type="button"
                                                         className="iconBtn iconBtn--del"
                                                         aria-label="Delete partnership"
+                                                        onClick={() =>
+                                                            handleDeleteClick(item)
+                                                        }
                                                     >
                                                         <DeleteRoundedIcon fontSize="inherit" />
                                                     </button>
@@ -363,9 +540,8 @@ export default function Partnerships() {
                                 <button
                                     key={idx}
                                     type="button"
-                                    className={`pageBtn ${
-                                        page === currentPage ? "pageBtn--active" : ""
-                                    }`}
+                                    className={`pageBtn ${page === currentPage ? "pageBtn--active" : ""
+                                        }`}
                                     onClick={() =>
                                         typeof page === "number" && setCurrentPage(page)
                                     }
