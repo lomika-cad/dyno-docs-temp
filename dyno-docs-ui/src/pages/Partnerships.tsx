@@ -173,11 +173,11 @@ export default function Partnerships() {
                                         onChange={(e) => setType(e.target.value)}
                                     >
                                         <option value="">Select partnership type</option>
-                                        <option value="Destinations">Destinations</option>
                                         <option value="Hotels & Stays">Hotels &amp; Stays</option>
                                         <option value="Transport">Transport</option>
                                         <option value="Activities">Activities</option>
                                         <option value="Travel Services">Travel Services</option>
+                                        <option value="Other">Other</option>
                                     </select>
                                 </div>
                             </div>
@@ -198,22 +198,21 @@ export default function Partnerships() {
                             <div className="formField">
                                 <span className="formField__label">Images</span>
                                 <div
-                                    className={`imageDropzone ${
-                                        isImagesDragActive ? "imageDropzone--active" : ""
+                                    className={`dropzone ${
+                                        isImagesDragActive ? "dropzone--active" : ""
                                     }`}
                                     onDragOver={handleImagesDragOver}
                                     onDragLeave={handleImagesDragLeave}
                                     onDrop={handleImagesDrop}
-                                    onClick={() => imagesInputRef.current?.click()}
                                 >
-                                    <div className="imageDropzone__content">
-                                        <CloudUploadRoundedIcon className="imageDropzone__icon" />
-                                        <p className="imageDropzone__title">
-                                            Select your images or drag and drop
-                                        </p>
-                                        <p className="imageDropzone__subtitle">
-                                            .png, .jpg, .jpeg accepted
-                                        </p>
+                                    <span className="dropzone__icon" aria-hidden="true">
+                                        <CloudUploadRoundedIcon />
+                                    </span>
+                                    <div className="dropzone__title">
+                                        Select your images or drag and drop
+                                    </div>
+                                    <div className="dropzone__sub">
+                                        .png, .jpg, .jpeg accepted
                                     </div>
                                     <input
                                         ref={imagesInputRef}
@@ -223,6 +222,13 @@ export default function Partnerships() {
                                         style={{ display: "none" }}
                                         onChange={handleImagesSelect}
                                     />
+                                    <button
+                                        type="button"
+                                        className="btn btn--orange"
+                                        onClick={() => imagesInputRef.current?.click()}
+                                    >
+                                        Browse
+                                    </button>
                                 </div>
 
                                 {imagePreviews.length > 0 && (
