@@ -85,6 +85,8 @@ export default function Partnerships() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const itemsPerPage = 5;
     const imagesInputRef = useRef<HTMLInputElement | null>(null);
+    const formTopRef = useRef<HTMLDivElement | null>(null);
+    const titleInputRef = useRef<HTMLInputElement | null>(null);
 
     const fetchPartnerships = async () => {
         try {
@@ -304,7 +306,14 @@ export default function Partnerships() {
         setDistrict(record.district || "");
         setSelectedImages([]);
         setImagePreviews([]);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        // Smoothly scroll form into view and focus the title field
+        if (formTopRef.current) {
+            formTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        if (titleInputRef.current) {
+            titleInputRef.current.focus();
+        }
     };
 
     const handleDeleteClick = async (record: PartnershipRecord) => {
@@ -339,7 +348,7 @@ export default function Partnerships() {
                     <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
                 </div>
             )}
-            <div className="agency">
+            <div className="agency" ref={formTopRef}>
                 <h2 className="agency__title">Partnerships</h2>
 
                 <section className="panel">
@@ -361,6 +370,7 @@ export default function Partnerships() {
                                             placeholder="Enter title"
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
+                                            ref={titleInputRef}
                                         />
                                     </div>
                                 </Grid>
@@ -422,65 +432,68 @@ export default function Partnerships() {
                                 />
                             </div>
 
-                            <div className="formField">
-                                <span className="formField__label">Images</span>
-                                <div
-                                    className={`dropzone ${isImagesDragActive ? "dropzone--active" : ""
+                            {!editingId && (
+                                <div className="formField">
+                                    <span className="formField__label">Images</span>
+                                    <div
+                                        className={`dropzone ${
+                                            isImagesDragActive ? "dropzone--active" : ""
                                         }`}
-                                    onDragOver={handleImagesDragOver}
-                                    onDragLeave={handleImagesDragLeave}
-                                    onDrop={handleImagesDrop}
-                                >
-                                    <span className="dropzone__icon" aria-hidden="true">
-                                        <CloudUploadRoundedIcon />
-                                    </span>
-                                    <div className="dropzone__title">
-                                        Select your images or drag and drop
-                                    </div>
-                                    <div className="dropzone__sub">
-                                        .png, .jpg, .jpeg accepted
-                                    </div>
-                                    <input
-                                        ref={imagesInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        style={{ display: "none" }}
-                                        onChange={handleImagesSelect}
-                                    />
-                                    <button
-                                        type="button"
-                                        className="btn btn--orange"
-                                        onClick={() => imagesInputRef.current?.click()}
+                                        onDragOver={handleImagesDragOver}
+                                        onDragLeave={handleImagesDragLeave}
+                                        onDrop={handleImagesDrop}
                                     >
-                                        Browse
-                                    </button>
-                                </div>
-
-                                {imagePreviews.length > 0 && (
-                                    <div className="imagePreviews">
-                                        {imagePreviews.map((src, index) => (
-                                            <div
-                                                key={index}
-                                                className="imagePreviewItem"
-                                            >
-                                                <img
-                                                    src={src}
-                                                    alt={`Preview ${index + 1}`}
-                                                    className="imagePreviewItem__img"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="imagePreviewItem__remove"
-                                                    onClick={() => removeImage(index)}
-                                                >
-                                                    ×
-                                                </button>
-                                            </div>
-                                        ))}
+                                        <span className="dropzone__icon" aria-hidden="true">
+                                            <CloudUploadRoundedIcon />
+                                        </span>
+                                        <div className="dropzone__title">
+                                            Select your images or drag and drop
+                                        </div>
+                                        <div className="dropzone__sub">
+                                            .png, .jpg, .jpeg accepted
+                                        </div>
+                                        <input
+                                            ref={imagesInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            style={{ display: "none" }}
+                                            onChange={handleImagesSelect}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn btn--orange"
+                                            onClick={() => imagesInputRef.current?.click()}
+                                        >
+                                            Browse
+                                        </button>
                                     </div>
-                                )}
-                            </div>
+
+                                    {imagePreviews.length > 0 && (
+                                        <div className="imagePreviews">
+                                            {imagePreviews.map((src, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="imagePreviewItem"
+                                                >
+                                                    <img
+                                                        src={src}
+                                                        alt={`Preview ${index + 1}`}
+                                                        className="imagePreviewItem__img"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="imagePreviewItem__remove"
+                                                        onClick={() => removeImage(index)}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="partnershipsForm__actions">
                                 <button
@@ -554,10 +567,7 @@ export default function Partnerships() {
                                                         type="button"
                                                         className="iconBtn iconBtn--edit"
                                                         aria-label="Edit partnership"
-                                                        onClick={() =>  {
-                                                            window.scrollTo({ top: 0, behavior: "smooth" }),
-                                                            handleEditClick(item) 
-                                                        }}
+                                                        onClick={() => handleEditClick(item)}
                                                     >
                                                         <EditRoundedIcon fontSize="inherit" />
                                                     </button>
