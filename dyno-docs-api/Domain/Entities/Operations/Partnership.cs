@@ -9,6 +9,8 @@ public class Partnership : BaseEntity
     public string? Name { get; set; }
     [MaxLength(500)]
     public string? Description { get; set; }
+    [MaxLength(225)]
+    public string? District { get; set; }
     public PartnershipTypes PartnershipType { get; set; }
     public byte[][]? Images { get; set; }
 }

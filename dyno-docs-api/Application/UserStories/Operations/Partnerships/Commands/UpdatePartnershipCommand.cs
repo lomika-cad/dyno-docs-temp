@@ -12,6 +12,7 @@ public class UpdatePartnershipCommand : IRequest<Result>
     public Guid Id { get; set; }
     public string? Name { get; set; }
     public string? Description { get; set; }
+    public string? District { get; set; }
     public PartnershipTypes PartnershipType { get; set; }
 }
 
@@ -27,6 +28,7 @@ public class UpdatePartnershipCommandHandler(IApplicationDbContext dbContext) : 
 
         entity.Name = request.Name ?? entity.Name;
         entity.Description = request.Description ?? entity.Description;
+        entity.District = request.District ?? entity.District;
         entity.PartnershipType = request.PartnershipType;
 
         await dbContext.SaveChangesAsync(cancellationToken);

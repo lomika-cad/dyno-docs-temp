@@ -12,6 +12,7 @@ public class CreatePartnershipCommand : IRequest<Result>
 {
     public string? Name { get; set; }
     public string? Description { get; set; }
+    public string? District { get; set; }
     public PartnershipTypes PartnershipType { get; set; }
     public IFormFile[]? Images { get; set; }
 }
@@ -39,6 +40,7 @@ public class CreatePartnershipCommandHandler (IApplicationDbContext dbContext) :
         {
             Name = request.Name,
             Description = request.Description,
+            District = request.District,
             PartnershipType = request.PartnershipType,
             Images = imageBytes,
             CreatedAt = DateTime.Now
