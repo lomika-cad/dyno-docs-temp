@@ -12,12 +12,13 @@ import {
     updatePartnership,
 } from "../services/partnership-api";
 import { showError, showSuccess } from "../components/Toast";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Grid } from "@mui/material";
 
 interface PartnershipRecord {
     id: string;
     name?: string;
     description?: string;
+    district?: string;
     partnershipType: number;
 }
 
@@ -37,12 +38,41 @@ const PARTNERSHIP_TYPE_LABELS: Record<number, string> = {
     4: "Other",
 };
 
+const SRI_LANKA_DISTRICTS: string[] = [
+    "Colombo",
+    "Gampaha",
+    "Kalutara",
+    "Kandy",
+    "Matale",
+    "Nuwara Eliya",
+    "Galle",
+    "Matara",
+    "Hambantota",
+    "Jaffna",
+    "Kilinochchi",
+    "Mannar",
+    "Vavuniya",
+    "Mullaitivu",
+    "Batticaloa",
+    "Ampara",
+    "Trincomalee",
+    "Kurunegala",
+    "Puttalam",
+    "Anuradhapura",
+    "Polonnaruwa",
+    "Badulla",
+    "Monaragala",
+    "Ratnapura",
+    "Kegalle",
+];
+
 export default function Partnerships() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
 
     const [title, setTitle] = useState("");
     const [type, setType] = useState("");
     const [description, setDescription] = useState("");
+    const [district, setDistrict] = useState("");
     const [partnerships, setPartnerships] = useState<PartnershipRecord[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isImagesDragActive, setIsImagesDragActive] = useState(false);
@@ -82,10 +112,12 @@ export default function Partnerships() {
         const term = searchTerm.toLowerCase();
         const name = item.name || "";
         const typeLabel = PARTNERSHIP_TYPE_LABELS[item.partnershipType] || "";
+        const itemDistrict = item.district || "";
 
         return (
             name.toLowerCase().includes(term) ||
-            typeLabel.toLowerCase().includes(term)
+            typeLabel.toLowerCase().includes(term) ||
+            itemDistrict.toLowerCase().includes(term)
         );
     });
 
@@ -176,6 +208,7 @@ export default function Partnerships() {
         setTitle("");
         setType("");
         setDescription("");
+        setDistrict("");
         setSelectedImages([]);
         setImagePreviews([]);
         setEditingId(null);
@@ -194,6 +227,11 @@ export default function Partnerships() {
             return;
         }
 
+        if (!district) {
+            showError("District is required");
+            return;
+        }
+
         const partnershipTypeValue = Number(type);
         if (Number.isNaN(partnershipTypeValue)) {
             showError("Invalid partnership type");
@@ -208,6 +246,7 @@ export default function Partnerships() {
                     id: editingId,
                     name: title,
                     description,
+                    district,
                     partnershipType: partnershipTypeValue,
                 };
 
@@ -226,6 +265,7 @@ export default function Partnerships() {
                 if (description) {
                     formData.append("Description", description);
                 }
+                formData.append("District", district);
                 formData.append(
                     "PartnershipType",
                     String(partnershipTypeValue),
@@ -261,6 +301,7 @@ export default function Partnerships() {
         setTitle(record.name || "");
         setDescription(record.description || "");
         setType(String(record.partnershipType));
+        setDistrict(record.district || "");
         setSelectedImages([]);
         setImagePreviews([]);
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -307,22 +348,24 @@ export default function Partnerships() {
                             className="partnershipsForm formGroup"
                             onSubmit={handleSubmit}
                         >
-                            <div className="partnershipsForm__row">
-                                <div className="formField">
-                                    <label className="formField__label" htmlFor="title">
-                                        Title
-                                    </label>
-                                    <input
-                                        id="title"
-                                        className="formField__input"
-                                        type="text"
-                                        placeholder="Enter title"
-                                        value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="formField">
+                            <Grid container spacing={2} alignItems="center" marginBottom={2}>
+                                <Grid size={4}>
+                                    <div className="formField">
+                                        <label className="formField__label" htmlFor="title">
+                                            Title
+                                        </label>
+                                        <input
+                                            id="title"
+                                            className="formField__input"
+                                            type="text"
+                                            placeholder="Enter title"
+                                            value={title}
+                                            onChange={(e) => setTitle(e.target.value)}
+                                        />
+                                    </div>
+                                </Grid>
+                                <Grid size={4}>
+                                    <div className="formField">
                                     <label className="formField__label" htmlFor="type">
                                         Partnership Type
                                     </label>
@@ -343,7 +386,28 @@ export default function Partnerships() {
                                         ))}
                                     </select>
                                 </div>
-                            </div>
+                                </Grid>
+                                <Grid size={4}>
+                                    <div className="formField">
+                                    <label className="formField__label" htmlFor="district">
+                                        District
+                                    </label>
+                                    <select
+                                        id="district"
+                                        className="formField__input"
+                                        value={district}
+                                        onChange={(e) => setDistrict(e.target.value)}
+                                    >
+                                        <option value="">Select district</option>
+                                        {SRI_LANKA_DISTRICTS.map((d) => (
+                                            <option key={d} value={d}>
+                                                {d}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                </Grid>
+                            </Grid>
 
                             <div className="formField">
                                 <label className="formField__label" htmlFor="description">
@@ -460,6 +524,7 @@ export default function Partnerships() {
                             <thead>
                                 <tr>
                                     <th>Title</th>
+                                    <th>District</th>
                                     <th>Partnership Types</th>
                                     <th>Actions</th>
                                 </tr>
@@ -467,16 +532,17 @@ export default function Partnerships() {
                             <tbody>
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={3}>Loading...</td>
+                                        <td colSpan={4}>Loading...</td>
                                     </tr>
                                 ) : currentItems.length === 0 ? (
                                     <tr>
-                                        <td colSpan={3}>No records found.</td>
+                                        <td colSpan={4}>No records found.</td>
                                     </tr>
                                 ) : (
                                     currentItems.map((item) => (
                                         <tr key={item.id}>
                                             <td>{item.name}</td>
+                                            <td>{item.district || "-"}</td>
                                             <td>
                                                 {PARTNERSHIP_TYPE_LABELS[
                                                     item.partnershipType
