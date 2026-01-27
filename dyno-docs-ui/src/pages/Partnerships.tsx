@@ -3,6 +3,7 @@ import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import {
@@ -13,6 +14,7 @@ import {
 } from "../services/partnership-api";
 import { showError, showSuccess } from "../components/Toast";
 import { CircularProgress, Grid } from "@mui/material";
+import trashImg from "../assets/trash.png";
 
 interface PartnershipRecord {
     id: string;
@@ -20,6 +22,7 @@ interface PartnershipRecord {
     description?: string;
     district?: string;
     partnershipType: number;
+    images?: string[];
 }
 
 const PARTNERSHIP_TYPE_OPTIONS: { value: number; label: string }[] = [
@@ -83,6 +86,10 @@ export default function Partnerships() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+    const [selectedPartnership, setSelectedPartnership] = useState<PartnershipRecord | null>(null);
+    const [partnershipToDelete, setPartnershipToDelete] = useState<PartnershipRecord | null>(null);
     const itemsPerPage = 5;
     const imagesInputRef = useRef<HTMLInputElement | null>(null);
     const formTopRef = useRef<HTMLDivElement | null>(null);
@@ -316,19 +323,28 @@ export default function Partnerships() {
         }
     };
 
-    const handleDeleteClick = async (record: PartnershipRecord) => {
-        const confirmed = window.confirm(
-            `Are you sure you want to delete "${record.name ?? "this partnership"}"?`,
-        );
-        if (!confirmed) return;
+    const handleViewClick = (record: PartnershipRecord) => {
+        setSelectedPartnership(record);
+        setViewModalOpen(true);
+    };
+
+    const handleDeleteClick = (record: PartnershipRecord) => {
+        setPartnershipToDelete(record);
+        setDeleteConfirmModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!partnershipToDelete) return;
 
         try {
             setIsDeleting(true);
-            const response = await deletePartnership(record.id, DD_TOKEN);
+            const response = await deletePartnership(partnershipToDelete.id, DD_TOKEN);
             const message =
                 response?.data?.message ||
                 "Partnership deleted successfully.";
             showSuccess(message);
+            setDeleteConfirmModalOpen(false);
+            setPartnershipToDelete(null);
             fetchPartnerships();
         } catch (error: any) {
             const message =
@@ -565,6 +581,14 @@ export default function Partnerships() {
                                                 <span className="actions">
                                                     <button
                                                         type="button"
+                                                        className="iconBtn iconBtn--view"
+                                                        aria-label="View partnership"
+                                                        onClick={() => handleViewClick(item)}
+                                                    >
+                                                        <VisibilityRoundedIcon fontSize="inherit" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
                                                         className="iconBtn iconBtn--edit"
                                                         aria-label="Edit partnership"
                                                         onClick={() => handleEditClick(item)}
@@ -645,6 +669,139 @@ export default function Partnerships() {
                     </div>
                 </section>
             </div>
+
+            {viewModalOpen && selectedPartnership && (
+                <div
+                    className="ddModal ddModal--large"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="View partnership details"
+                >
+                    <button
+                        type="button"
+                        className="ddModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => {
+                            setViewModalOpen(false);
+                            setSelectedPartnership(null);
+                        }}
+                    />
+
+                    <div className="ddModal__card ddModal__card--large">
+                        <div className="ddModal__header">
+                            <div className="ddModal__title">{selectedPartnership.name}</div>
+                            <button
+                                type="button"
+                                className="ddModal__close"
+                                aria-label="Close"
+                                onClick={() => {
+                                    setViewModalOpen(false);
+                                    setSelectedPartnership(null);
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="ddModal__content">
+                            <div className="detailSection">
+                                <h3 className="detailSection__title">Basic Information</h3>
+                                <div className="detailGrid">
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">District:</span>
+                                        <span className="detailItem__value">{selectedPartnership.district || "-"}</span>
+                                    </div>
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">Partnership Type:</span>
+                                        <span className="detailItem__value">
+                                            {PARTNERSHIP_TYPE_LABELS[selectedPartnership.partnershipType] || "-"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {selectedPartnership.description && (
+                                <div className="detailSection">
+                                    <h3 className="detailSection__title">Description</h3>
+                                    <p className="detailSection__text">{selectedPartnership.description}</p>
+                                </div>
+                            )}
+
+                            {selectedPartnership.images && selectedPartnership.images.length > 0 && (
+                                <div className="detailSection">
+                                    <h3 className="detailSection__title">Images</h3>
+                                    <div className="imageGrid">
+                                        {selectedPartnership.images.filter(Boolean).map((img, idx) => (
+                                            <div key={idx} className="imageGrid__item">
+                                                <img
+                                                    src={`data:image/jpeg;base64,${img}`}
+                                                    alt={`${selectedPartnership.name || "Partnership"} - Image ${idx + 1}`}
+                                                    className="imageGrid__img"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {deleteConfirmModalOpen && partnershipToDelete && (
+                <div
+                    className="ddModal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Confirm delete partnership"
+                >
+                    <button
+                        type="button"
+                        className="ddModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => {
+                            if (!isDeleting) {
+                                setDeleteConfirmModalOpen(false);
+                                setPartnershipToDelete(null);
+                            }
+                        }}
+                    />
+
+                    <div className="ddModal__card">
+                        <div className="ddModal__logo" aria-hidden="true">
+                            <img className="ddModal__img" src={trashImg} alt="Delete icon" />
+                        </div>
+
+                        <div className="ddModal__title">Delete Partnership</div>
+                        <div className="ddModal__subtitle">
+                            Are you sure you want to delete <strong>{partnershipToDelete.name || "this partnership"}</strong>? This action cannot be undone.
+                        </div>
+
+                        <div className="ddModal__actions">
+                            <button
+                                type="button"
+                                className="ddModal__btn ddModal__btn--ghost"
+                                onClick={() => {
+                                    setDeleteConfirmModalOpen(false);
+                                    setPartnershipToDelete(null);
+                                }}
+                                disabled={isDeleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn--danger"
+                                onClick={handleConfirmDelete}
+                                disabled={isDeleting}
+                            >
+                                <DeleteRoundedIcon fontSize="small" />
+                                {isDeleting ? "Deleting..." : "Delete"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Navbar>
     );
 }
