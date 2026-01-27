@@ -1,10 +1,12 @@
 import { useState } from "react";
 import "../styles/header.css";
-import logo from "../assets/dyno-docs.png"
+import logo from "../assets/dyno-docs.png";
+import SignInModal from "../components/SignInModal";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,7 +55,7 @@ export default function Header() {
           <div className="auth-buttons">
             <button
               className={"sign-in " + (location.pathname.startsWith('/dashboard') ? 'active' : '')}
-              onClick={() => navigate("/dashboard")}
+              onClick={() => setSignInOpen(true)}
             >Sign In</button>
             <button
               className={"sign-up " + (location.pathname.startsWith('/signup') ? 'active' : '')}
@@ -102,7 +104,7 @@ export default function Header() {
 
             <button
               className={"sign-in-1 " + (location.pathname.startsWith('/dashboard') ? 'active' : '')}
-              onClick={() => { navigate('/dashboard'); setOpen(false); }}
+              onClick={() => { setOpen(true); }}
             >Sign In</button>
 
             <button
@@ -112,6 +114,8 @@ export default function Header() {
           </div>
         </div>
       )}
+
+      <SignInModal open={signInOpen} onClose={() => setSignInOpen(false)} />
     </>
   );
 }
