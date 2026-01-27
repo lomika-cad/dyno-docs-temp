@@ -10,6 +10,7 @@ import PricingPage from "./pages/PricingPage"
 import AboutUs from "./pages/AboutUs"
 import Documentation from "./pages/Documentation"
 import ContactUs from "./pages/ContactUs"
+import Partnerships from "./pages/Partnerships"
 
 function App() {
   useEffect(() => {
@@ -26,6 +27,7 @@ function App() {
         <Route path="/documentation" element={<Documentation />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/agency-data" element={<AgencyData />} />
+        <Route path="/partnerships" element={<Partnerships />} />
       </Routes>
       <Toast />
     </>

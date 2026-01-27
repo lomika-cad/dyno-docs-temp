@@ -773,3 +773,26 @@
     max-width: 100vw;
   }
 }
+
+/* Partnerships Page Layout */
+.partnershipsForm {
+  gap: var(--spacing-4);
+}
+
+.partnershipsForm__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-4);
+}
+
+.partnershipsForm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-3);
+}
+
+@media (max-width: 768px) {
+  .partnershipsForm__row {
+    grid-template-columns: 1fr;
+  }
+}
