@@ -554,9 +554,10 @@ export default function Partnerships() {
                                                         type="button"
                                                         className="iconBtn iconBtn--edit"
                                                         aria-label="Edit partnership"
-                                                        onClick={() =>
-                                                            handleEditClick(item)
-                                                        }
+                                                        onClick={() =>  {
+                                                            window.scrollTo({ top: 0, behavior: "smooth" }),
+                                                            handleEditClick(item) 
+                                                        }}
                                                     >
                                                         <EditRoundedIcon fontSize="inherit" />
                                                     </button>
