@@ -45,6 +45,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 method.Invoke(this, new object[] { modelBuilder });
             }
         }
+        
+        modelBuilder.Entity<Template>()
+            .Property(t => t.TemplateDesign)
+            .HasColumnType("LONGTEXT");
     }
 
     private void ApplyTenantQueryFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : BaseEntity
