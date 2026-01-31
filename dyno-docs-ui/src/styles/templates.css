@@ -149,9 +149,9 @@
 }
 
 .template-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: var(--spacing-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   justify-items: left;
 }
 
