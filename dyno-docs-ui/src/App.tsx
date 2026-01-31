@@ -11,6 +11,7 @@ import AboutUs from "./pages/AboutUs"
 import Documentation from "./pages/Documentation"
 import ContactUs from "./pages/ContactUs"
 import Partnerships from "./pages/Partnerships"
+import Templates from "./pages/Templates"
 
 function App() {
   useEffect(() => {
@@ -28,6 +29,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/agency-data" element={<AgencyData />} />
         <Route path="/partnerships" element={<Partnerships />} />
+        <Route path="/templates" element={<Templates />} />
       </Routes>
       <Toast />
     </>
