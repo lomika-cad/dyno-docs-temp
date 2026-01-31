@@ -1,5 +1,7 @@
 ﻿using Application.Common;
 using Application.UserStories.Operations.Templates.Commands;
+using Application.UserStories.Operations.Templates.Queries;
+using Domain.Entities.Operations;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,5 +21,14 @@ public class TemplateController (IMediator mediator) : ControllerBase
             return StatusCode(StatusCodes.Status201Created, res);
         }
         return BadRequest(res);
+    }
+    
+    [HttpGet]
+    [ProducesResponseType(typeof(List<Template>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<Template>>> GetTemplates()
+    {
+        var query = new GetTemplatesQuery();
+        var templates = await mediator.Send(query);
+        return Ok(templates);
     }
 }
