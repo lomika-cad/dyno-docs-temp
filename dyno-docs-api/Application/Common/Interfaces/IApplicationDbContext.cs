@@ -11,6 +11,7 @@ public interface IApplicationDbContext
     DbSet<Place> Places { get; }
     DbSet<PricingPlan> PricingPlan { get; }
     DbSet<Partnership> Partnership { get; }
+    DbSet<Template> Template { get; }
 
     #endregion
 
