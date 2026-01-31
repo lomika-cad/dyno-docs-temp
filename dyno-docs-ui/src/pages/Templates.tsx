@@ -6,10 +6,12 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import Navbar from "../layouts/Navbar";
 import "../styles/templates.css";
+import "../styles/agencyData.css";
 import { getTemplates } from "../services/template-api";
 import { showError, showInfo } from "../components/Toast";
 import { EyeIcon } from "lucide-react";
 import { MonetizationOn } from "@mui/icons-material";
+import { Divider } from "@mui/material";
 
 type TemplateFilter = "all" | "free" | "paid";
 
@@ -197,12 +199,7 @@ export default function Templates() {
       <section className="templates-page">
         <div className="templates-hero">
           <div>
-            <p className="templates-eyebrow">Template library</p>
-            <h1 className="templates-hero__title">Templates</h1>
-            <p className="templates-hero__subtitle">
-              Smart templates to speed up your report creation. Pick curated layouts that keep brand
-              consistency while letting you customize every detail.
-            </p>
+            <h2 className="agency__title">Template Marketplace</h2>
           </div>
 
           <button
@@ -243,6 +240,8 @@ export default function Templates() {
             />
           </label>
         </div>
+
+        <Divider />
 
         {error && (
           <div className="templates-alert" role="status">
@@ -344,7 +343,6 @@ function TemplateCard({ template, onAdd, onPreview }: TemplateCardProps) {
 
       <div className="template-card__content">
         <h3 className="template-title">{name}</h3>
-        <p className="template-description">{description}</p>
       </div>
 
       <div className="template-card__actions">
