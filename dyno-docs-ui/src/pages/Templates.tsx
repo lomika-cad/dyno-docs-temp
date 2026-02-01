@@ -9,6 +9,7 @@ import "../styles/templates.css";
 import "../styles/agencyData.css";
 import { getTemplates } from "../services/template-api";
 import { showError, showInfo } from "../components/Toast";
+import CardPayment from "../components/CardPayment";
 import { EyeIcon } from "lucide-react";
 import { MonetizationOn } from "@mui/icons-material";
 import { Divider } from "@mui/material";
@@ -37,6 +38,7 @@ type TemplateCardModel = {
   thumbnail: string | null;
   isPaid: boolean;
   priceLabel: string;
+  priceValue: number | null;
   designMarkup: string;
 };
 
@@ -84,9 +86,11 @@ const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[]
     const priceRaw = template.price ?? template.Price ?? null;
     const priceNumber =
       typeof priceRaw === "number" ? priceRaw : priceRaw ? Number(priceRaw) : null;
+    const normalizedPrice =
+      typeof priceNumber === "number" && !Number.isNaN(priceNumber) ? priceNumber : null;
     const priceLabel =
-      isPaid && priceNumber !== null && !Number.isNaN(priceNumber)
-        ? LKR_FORMATTER.format(priceNumber)
+      isPaid && normalizedPrice !== null
+        ? LKR_FORMATTER.format(normalizedPrice)
         : isPaid
         ? "Premium"
         : "Free";
@@ -98,6 +102,7 @@ const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[]
       thumbnail: template.templateThumbnail ?? template.TemplateThumbnail ?? null,
       isPaid,
       priceLabel,
+      priceValue: isPaid ? normalizedPrice : null,
       designMarkup: safeDesign || FALLBACK_PREVIEW,
     };
   });
@@ -109,6 +114,7 @@ export default function Templates() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateCardModel | null>(null);
+  const [paymentTemplate, setPaymentTemplate] = useState<TemplateCardModel | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -192,6 +198,26 @@ export default function Templates() {
     setPreviewTemplate(null);
   };
 
+  const handlePurchaseTemplate = (template: TemplateCardModel) => {
+    if (template.priceValue === null) {
+      showError("Pricing information is not available for this template yet.");
+      return;
+    }
+    setPaymentTemplate(template);
+  };
+
+  const handleClosePayment = () => {
+    setPaymentTemplate(null);
+  };
+
+  const handlePaymentSuccess = () => {
+    const purchasedName = paymentTemplate?.name;
+    if (purchasedName) {
+      showInfo(`"${purchasedName}" unlocked. Check your workspace for the template shortly.`);
+    }
+    setPaymentTemplate(null);
+  };
+
   const showEmptyState = !isLoading && filteredTemplates.length === 0;
 
   return (
@@ -259,6 +285,7 @@ export default function Templates() {
                 key={template.id}
                 template={template}
                 onAdd={handleAddTemplate}
+                onPurchase={handlePurchaseTemplate}
                 onPreview={handleCardPreview}
               />
             ))}
@@ -281,6 +308,14 @@ export default function Templates() {
             onClose={handleClosePreview}
           />
         )}
+
+        {paymentTemplate && (
+          <TemplatePaymentModal
+            template={paymentTemplate}
+            onClose={handleClosePayment}
+            onPaymentSuccess={handlePaymentSuccess}
+          />
+        )}
       </section>
     </Navbar>
   );
@@ -289,11 +324,12 @@ export default function Templates() {
 type TemplateCardProps = {
   template: TemplateCardModel;
   onAdd: (template: TemplateCardModel) => void;
+  onPurchase?: (template: TemplateCardModel) => void;
   onPreview: (template: TemplateCardModel) => void;
 };
 
-function TemplateCard({ template, onAdd, onPreview }: TemplateCardProps) {
-  const { name, description, thumbnail, isPaid, priceLabel } = template;
+function TemplateCard({ template, onAdd, onPurchase, onPreview }: TemplateCardProps) {
+  const { name, thumbnail, isPaid, priceLabel } = template;
   const thumbnailSrc = thumbnail
     ? thumbnail.startsWith("data:")
       ? thumbnail
@@ -313,6 +349,10 @@ function TemplateCard({ template, onAdd, onPreview }: TemplateCardProps) {
 
   const handleAddClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
+    if (isPaid) {
+      onPurchase?.(template);
+      return;
+    }
     onAdd(template);
   };
 
@@ -405,6 +445,44 @@ function TemplatePreviewModal({ template, onClose }: TemplatePreviewModalProps) 
           ) : (
             <pre className="template-modal__raw">{template.designMarkup}</pre>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type TemplatePaymentModalProps = {
+  template: TemplateCardModel;
+  onClose: () => void;
+  onPaymentSuccess: () => void;
+};
+
+function TemplatePaymentModal({ template, onClose, onPaymentSuccess }: TemplatePaymentModalProps) {
+  const handleBackdropClick = () => {
+    onClose();
+  };
+
+  const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
+
+  return (
+    <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
+      <div className="template-modal__panel template-modal__panel--payment" onClick={handlePanelClick}>
+        <header className="template-modal__header">
+          <div>
+            <p className="template-modal__eyebrow">Secure Checkout</p>
+            <h2>{template.name}</h2>
+          </div>
+          <button type="button" className="template-modal__close" onClick={onClose} aria-label="Close checkout">
+            <CloseRoundedIcon />
+          </button>
+        </header>
+
+        <div className="template-modal__body template-modal__body--payment">
+          <div className="template-payment__grid">
+            <CardPayment totalAmount={template.priceValue ?? 0} onPaid={onPaymentSuccess} />
+          </div>
         </div>
       </div>
     </div>
