@@ -8,9 +8,7 @@ public class TenantService : ITenantService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    // Hardcoded fallback for Phase 1 (before login is implemented)
-    private static readonly Guid HardcodedTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-
+    
     public TenantService(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;
@@ -34,8 +32,7 @@ public class TenantService : ITenantService
                 return tenantId;
             }
 
-            // Fallback to hardcoded tenant for Phase 1
-            return HardcodedTenantId;
+            throw new Exception("TenantId not found in the current context.");
         }
     }
 }
