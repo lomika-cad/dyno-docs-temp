@@ -493,6 +493,7 @@ const SAMPLE_PLACEHOLDERS: Record<string, string> = {
   "{{customer_name}}": "Ayesha Fernando",
   "{{destination_city}}": "Bali",
   "{{destination_country}}": "Indonesia",
+  "{{bottom_logo}}": "https://drive.google.com/file/d/1ezJue6VOcxvhvFZetr2Lk_QbyW0C2o5T/view?usp=sharing",
   "{{trip_length}}": "6",
   "{{traveler_count}}": "02",
   "{{summary_highlights}}":
