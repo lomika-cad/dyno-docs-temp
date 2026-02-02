@@ -2,6 +2,7 @@
 using Application.UserStories.Operations.Templates.Commands;
 using Application.UserStories.Operations.Templates.Queries;
 using Application.UserStories.Operations.UserTemplates.Commands;
+using Application.UserStories.Operations.UserTemplates.Queries;
 using Domain.Entities.Operations;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -43,5 +44,14 @@ public class TemplateController (IMediator mediator) : ControllerBase
             return Ok(res);
         }
         return BadRequest(res);
+    }
+    
+    [HttpGet("user-templates/{userId}")]
+    [ProducesResponseType(typeof(List<UserTemplate>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<UserTemplate>>> GetUserTemplates([FromRoute] Guid userId)
+    {
+        var query = new GetUserTemplates() { UserId = userId };
+        var userTemplates = await mediator.Send(query);
+        return Ok(userTemplates);
     }
 }

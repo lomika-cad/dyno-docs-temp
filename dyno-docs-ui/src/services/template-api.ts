@@ -24,3 +24,16 @@ export const assignTemplate = async (data: any, token: string) => {
         throw error;
     }
 }
+
+export const getUserTemplates = async (userId: string, token: string) => {
+    try {
+        const response = await axios.get(`${API_URL}/user-templates/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}

@@ -8,7 +8,7 @@ import JSON5 from "json5";
 import Navbar from "../layouts/Navbar";
 import "../styles/templates.css";
 import "../styles/agencyData.css";
-import { assignTemplate, getTemplates } from "../services/template-api";
+import { assignTemplate, getTemplates, getUserTemplates } from "../services/template-api";
 import { showError, showInfo, showSuccess } from "../components/Toast";
 import CardPayment from "../components/CardPayment";
 import { EyeIcon } from "lucide-react";
@@ -42,6 +42,11 @@ type TemplateCardModel = {
   priceLabel: string;
   priceValue: number | null;
   designMarkup: string;
+};
+
+type UserSession = {
+  userId: string;
+  token: string;
 };
 
 type FilterOption = {
@@ -310,6 +315,27 @@ const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[]
     };
   });
 
+const extractTemplatesPayload = (rawResponse: unknown): TemplateApiResponse[] => {
+  if (Array.isArray(rawResponse)) {
+    return rawResponse as TemplateApiResponse[];
+  }
+
+  if (
+    rawResponse &&
+    typeof rawResponse === "object" &&
+    Array.isArray((rawResponse as { data?: unknown }).data)
+  ) {
+    return ((rawResponse as { data?: TemplateApiResponse[] }).data ?? []) as TemplateApiResponse[];
+  }
+
+  return [];
+};
+
+const resolveApiErrorMessage = (err: unknown) =>
+  (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data?.message ??
+  (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data?.Message ??
+  null;
+
 const getAssignmentDesign = (template: TemplateCardModel) => {
   const markup = template.designMarkup?.trim();
   if (markup && markup !== FALLBACK_PREVIEW) {
@@ -332,6 +358,11 @@ export default function Templates() {
   const [agencyName, setAgencyName] = useState<string | null>(null);
   const [contactNo, setContactNo] = useState<string>("");
   const [agencyAddress, setAgencyAddress] = useState<string>("");
+  const [isMyTemplatesModalOpen, setIsMyTemplatesModalOpen] = useState(false);
+  const [myTemplates, setMyTemplates] = useState<TemplateCardModel[]>([]);
+  const [isLoadingMyTemplates, setIsLoadingMyTemplates] = useState(false);
+  const [myTemplatesError, setMyTemplatesError] = useState<string | null>(null);
+  const [hasLoadedMyTemplates, setHasLoadedMyTemplates] = useState(false);
 
   const placeholders = useMemo<PlaceholderMap>(() => {
     return {
@@ -352,6 +383,53 @@ export default function Templates() {
   }, [agencyAddress, agencyLogoUrl, agencyName, contactNo]);
 
   const tenantId = sessionStorage.getItem("dd_tenant_id") || "";
+
+  const resolveUserSession = (): UserSession | null => {
+    const token = sessionStorage.getItem("dd_token");
+    const userId = sessionStorage.getItem("dd_user_id");
+
+    if (!token || !userId) {
+      showError("Please sign in to view your templates.");
+      return null;
+    }
+
+    return { userId, token };
+  };
+
+  const fetchUserTemplates = async ({ userId, token }: UserSession) => {
+    setIsLoadingMyTemplates(true);
+    setMyTemplatesError(null);
+    try {
+      const response = await getUserTemplates(userId, token);
+      const payload = extractTemplatesPayload(response ?? []);
+      const normalized = normalizeTemplates(payload);
+      setMyTemplates(normalized);
+      setHasLoadedMyTemplates(true);
+    } catch (err) {
+      const message =
+        resolveApiErrorMessage(err) ?? "Unable to load your templates. Please try again.";
+      setMyTemplates([]);
+      setMyTemplatesError(message);
+      showError(message);
+    } finally {
+      setIsLoadingMyTemplates(false);
+    }
+  };
+
+  const appendTemplateToLibrary = (template: TemplateCardModel) => {
+    setMyTemplates((current) => {
+      if (!hasLoadedMyTemplates) {
+        return current;
+      }
+
+      const exists = current.some((entry) => entry.id === template.id);
+      if (exists) {
+        return current;
+      }
+
+      return [template, ...current];
+    });
+  };
 
   const handleGetTenantInfo = async () => {
     try {
@@ -381,18 +459,9 @@ export default function Templates() {
           return;
         }
 
-        const raw = (response as { data?: unknown }).data;
-        let payload: TemplateApiResponse[] = [];
-
-        if (Array.isArray(raw)) {
-          payload = raw as TemplateApiResponse[];
-        } else if (
-          raw &&
-          typeof raw === "object" &&
-          Array.isArray((raw as { data?: unknown }).data)
-        ) {
-          payload = ((raw as { data?: TemplateApiResponse[] }).data ?? []) as TemplateApiResponse[];
-        }
+        const payload = extractTemplatesPayload(
+          (response as { data?: unknown })?.data ?? response,
+        );
 
         setTemplates(normalizeTemplates(payload));
         setError(null);
@@ -469,13 +538,10 @@ export default function Templates() {
         (response as { message?: string; Message?: string })?.Message ??
         `"${pendingAssignment.name}" assigned to your workspace.`;
       showSuccess(successMessage);
+      appendTemplateToLibrary(pendingAssignment);
       setPendingAssignment(null);
     } catch (err) {
-      const apiMessage =
-        (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
-          ?.message ??
-        (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
-          ?.Message;
+      const apiMessage = resolveApiErrorMessage(err);
       showError(apiMessage ?? "Unable to assign template. Please try again.");
       console.error("assignTemplate failed", err);
     } finally {
@@ -484,7 +550,26 @@ export default function Templates() {
   };
 
   const handleMyTemplatesClick = () => {
-    showInfo("Personal template collections are coming soon.");
+    const session = resolveUserSession();
+    if (!session) {
+      return;
+    }
+
+    setIsMyTemplatesModalOpen(true);
+    fetchUserTemplates(session);
+  };
+
+  const handleReloadMyTemplates = () => {
+    const session = resolveUserSession();
+    if (!session) {
+      setIsMyTemplatesModalOpen(false);
+      return;
+    }
+    fetchUserTemplates(session);
+  };
+
+  const handleCloseMyTemplatesModal = () => {
+    setIsMyTemplatesModalOpen(false);
   };
 
   const handleResetFilters = () => {
@@ -537,13 +622,10 @@ export default function Templates() {
         `"${purchasedTemplate.name}" assigned to your workspace.`;
       showSuccess(successMessage);
       showInfo(`"${purchasedTemplate.name}" unlocked. Check your workspace for the template shortly.`);
+      appendTemplateToLibrary(purchasedTemplate);
       setPaymentTemplate(null);
     } catch (err) {
-      const apiMessage =
-        (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
-          ?.message ??
-        (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
-          ?.Message;
+      const apiMessage = resolveApiErrorMessage(err);
       showError(apiMessage ?? "Payment succeeded, but template assignment failed. Please try again.");
       console.error("assignTemplate after payment failed", err);
     } finally {
@@ -636,6 +718,17 @@ export default function Templates() {
           </div>
         )}
 
+        {isMyTemplatesModalOpen && (
+          <MyTemplatesModal
+            templates={myTemplates}
+            isLoading={isLoadingMyTemplates}
+            error={myTemplatesError}
+            onClose={handleCloseMyTemplatesModal}
+            onPreview={handleCardPreview}
+            onReload={handleReloadMyTemplates}
+          />
+        )}
+
         {previewTemplate && (
           <TemplatePreviewModal
             template={previewTemplate}
@@ -667,19 +760,28 @@ export default function Templates() {
 
 type TemplateCardProps = {
   template: TemplateCardModel;
-  onAddRequest: (template: TemplateCardModel) => void;
+  onAddRequest?: (template: TemplateCardModel) => void;
   onPurchase?: (template: TemplateCardModel) => void;
   onPreview: (template: TemplateCardModel) => void;
   isAssigning?: boolean;
+  variant?: "marketplace" | "assigned";
 };
 
-function TemplateCard({ template, onAddRequest, onPurchase, onPreview, isAssigning = false }: TemplateCardProps) {
+function TemplateCard({
+  template,
+  onAddRequest,
+  onPurchase,
+  onPreview,
+  isAssigning = false,
+  variant = "marketplace",
+}: TemplateCardProps) {
   const { name, thumbnail, isPaid, priceLabel } = template;
   const thumbnailSrc = thumbnail
     ? thumbnail.startsWith("data:")
       ? thumbnail
       : `data:image/png;base64,${thumbnail}`
     : null;
+  const isAssignedCard = variant === "assigned";
 
   const handleCardClick = () => {
     onPreview(template);
@@ -694,11 +796,17 @@ function TemplateCard({ template, onAddRequest, onPurchase, onPreview, isAssigni
 
   const handleAddClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
+    if (isAssignedCard) {
+      onPreview(template);
+      return;
+    }
+
     if (isPaid) {
       onPurchase?.(template);
       return;
     }
-    onAddRequest(template);
+
+    onAddRequest?.(template);
   };
 
   return (
@@ -735,20 +843,31 @@ function TemplateCard({ template, onAddRequest, onPurchase, onPreview, isAssigni
           type="button"
           className="btn btn--orange"
           onClick={handleAddClick}
-          disabled={!isPaid && isAssigning}
+          disabled={!isAssignedCard && !isPaid && isAssigning}
         >
-          {isPaid ? <MonetizationOn fontSize="small" /> : <AddRoundedIcon fontSize="small" />}
-          {isPaid ? "Purchase" : isAssigning ? "Assigning..." : "Add Template"}
+          {isAssignedCard ? (
+            <>
+              <EyeIcon size={16} />
+              View Template
+            </>
+          ) : (
+            <>
+              {isPaid ? <MonetizationOn fontSize="small" /> : <AddRoundedIcon fontSize="small" />}
+              {isPaid ? "Purchase" : isAssigning ? "Assigning..." : "Add Template"}
+            </>
+          )}
         </button>
 
         <div className="template-card__badges">
-          <span
-            className={`template-card__price-pill ${
-              isPaid ? "template-card__price-pill--paid" : "template-card__price-pill--free"
-            }`}
-          >
-            {isPaid ? "Paid" : "Free"}
-          </span>
+          {!(isAssignedCard && !isPaid) && (
+            <span
+              className={`template-card__price-pill ${
+                isPaid ? "template-card__price-pill--paid" : "template-card__price-pill--free"
+              }`}
+            >
+              {isPaid ? "Paid" : "Free"}
+            </span>
+          )}
           {isPaid && <span className="template-card__price">{priceLabel}</span>}
         </div>
       </div>
@@ -791,6 +910,79 @@ function TemplatePreviewModal({ template, placeholders, onClose }: TemplatePrevi
             <TemplateDesignRenderer design={parsedDesign} placeholders={placeholders} />
           ) : (
             <pre className="template-modal__raw">{template.designMarkup}</pre>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type MyTemplatesModalProps = {
+  templates: TemplateCardModel[];
+  isLoading: boolean;
+  error: string | null;
+  onClose: () => void;
+  onPreview: (template: TemplateCardModel) => void;
+  onReload: () => void;
+};
+
+function MyTemplatesModal({ templates, isLoading, error, onClose, onPreview, onReload }: MyTemplatesModalProps) {
+  const handleBackdropClick = () => {
+    onClose();
+  };
+
+  const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
+
+  const hasNoTemplates = !isLoading && !error && templates.length === 0;
+
+  return (
+    <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
+      <div className="template-modal__panel" style={{ maxWidth: "960px" }} onClick={handlePanelClick}>
+        <header className="template-modal__header">
+          <div>
+            <p className="template-modal__eyebrow">Assigned Templates</p>
+            <h2>My Templates</h2>
+          </div>
+          <button type="button" className="template-modal__close" onClick={onClose} aria-label="Close my templates">
+            <CloseRoundedIcon />
+          </button>
+        </header>
+
+        <div className="template-modal__body template-modal__body--my-templates">
+          {isLoading && (
+            <div className="templates-empty">
+              <p>Loading your templates...</p>
+            </div>
+          )}
+
+          {!isLoading && error && (
+            <div className="templates-empty">
+              <p>{error}</p>
+              <button type="button" className="btn btn--orange" onClick={onReload}>
+                Try again
+              </button>
+            </div>
+          )}
+
+          {hasNoTemplates && (
+            <div className="templates-empty">
+              <p>You have not assigned any templates yet.</p>
+            </div>
+          )}
+
+          {!isLoading && !error && templates.length > 0 && (
+            <div className="template-grid">
+              {templates.map((template) => (
+                <TemplateCard
+                  key={`my-${template.id}`}
+                  template={template}
+                  onPreview={onPreview}
+                  variant="assigned"
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
