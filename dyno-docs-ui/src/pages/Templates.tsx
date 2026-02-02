@@ -458,20 +458,24 @@ export default function Templates() {
     const payload = {
       userId,
       templateId: pendingAssignment.id,
-      templateDesign: fillTemplatePlaceholders(getAssignmentDesign(pendingAssignment), placeholders),
+      templateDesign: finalizeTemplateDesign(getAssignmentDesign(pendingAssignment), placeholders),
     };
 
     try {
       setAssigningTemplateId(pendingAssignment.id);
       const response = await assignTemplate(payload, token);
       const successMessage =
-        (response as { message?: string })?.message ??
+        (response as { message?: string; Message?: string })?.message ??
+        (response as { message?: string; Message?: string })?.Message ??
         `"${pendingAssignment.name}" assigned to your workspace.`;
       showSuccess(successMessage);
       setPendingAssignment(null);
     } catch (err) {
       const apiMessage =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
+          ?.message ??
+        (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
+          ?.Message;
       showError(apiMessage ?? "Unable to assign template. Please try again.");
       console.error("assignTemplate failed", err);
     } finally {
@@ -508,12 +512,43 @@ export default function Templates() {
     setPaymentTemplate(null);
   };
 
-  const handlePaymentSuccess = () => {
-    const purchasedName = paymentTemplate?.name;
-    if (purchasedName) {
-      showInfo(`"${purchasedName}" unlocked. Check your workspace for the template shortly.`);
+  const handlePaymentSuccess = async (purchasedTemplate: TemplateCardModel) => {
+
+    const token = sessionStorage.getItem("dd_token");
+    const userId = sessionStorage.getItem("dd_user_id");
+
+    if (!token || !userId) {
+      showError("Payment received, but you must sign in to assign the template.");
+      return;
     }
-    setPaymentTemplate(null);
+
+    const payload = {
+      userId,
+      templateId: purchasedTemplate.id,
+      templateDesign: finalizeTemplateDesign(getAssignmentDesign(purchasedTemplate), placeholders),
+    };
+
+    try {
+      setAssigningTemplateId(purchasedTemplate.id);
+      const response = await assignTemplate(payload, token);
+      const successMessage =
+        (response as { message?: string; Message?: string })?.message ??
+        (response as { message?: string; Message?: string })?.Message ??
+        `"${purchasedTemplate.name}" assigned to your workspace.`;
+      showSuccess(successMessage);
+      showInfo(`"${purchasedTemplate.name}" unlocked. Check your workspace for the template shortly.`);
+      setPaymentTemplate(null);
+    } catch (err) {
+      const apiMessage =
+        (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
+          ?.message ??
+        (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
+          ?.Message;
+      showError(apiMessage ?? "Payment succeeded, but template assignment failed. Please try again.");
+      console.error("assignTemplate after payment failed", err);
+    } finally {
+      setAssigningTemplateId(null);
+    }
   };
 
   const showEmptyState = !isLoading && filteredTemplates.length === 0;
@@ -766,7 +801,7 @@ function TemplatePreviewModal({ template, placeholders, onClose }: TemplatePrevi
 type TemplatePaymentModalProps = {
   template: TemplateCardModel;
   onClose: () => void;
-  onPaymentSuccess: () => void;
+  onPaymentSuccess: (template: TemplateCardModel) => void;
 };
 
 function TemplatePaymentModal({ template, onClose, onPaymentSuccess }: TemplatePaymentModalProps) {
@@ -793,7 +828,7 @@ function TemplatePaymentModal({ template, onClose, onPaymentSuccess }: TemplateP
 
         <div className="template-modal__body template-modal__body--payment">
           <div className="template-payment__grid">
-            <CardPayment totalAmount={template.priceValue ?? 0} onPaid={onPaymentSuccess} />
+            <CardPayment totalAmount={template.priceValue ?? 0} onPaid={() => onPaymentSuccess(template)} />
           </div>
         </div>
       </div>
@@ -991,6 +1026,15 @@ const fillTemplatePlaceholders = (templateDesign: string, placeholders: Placehol
     result = result.replace(new RegExp(escapeRegExp(placeholder), "g"), replacement);
   });
   return result;
+};
+
+const finalizeTemplateDesign = (templateDesign: string, placeholders: PlaceholderMap) => {
+  const filled = fillTemplatePlaceholders(templateDesign, placeholders);
+  const parsed = parseDesign(filled);
+  if (!parsed) {
+    return filled;
+  }
+  return JSON.stringify(parsed);
 };
 
 const tryStandardJsonParse = (payload: string): TemplateDesign | null => {

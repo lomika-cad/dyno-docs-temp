@@ -75,22 +75,8 @@ export default function CardPayment({
 
 		setIsSubmitting(true);
 		try {
-			const payload = {
-				totalAmount,
-				currency,
-				cardHolder: cardHolder.trim(),
-				cardNumber: cardNumberSegments.join(""),
-				expiryMonth,
-				expiryYear,
-				cvv,
-			};
-
-			await submitCardPayment(payload, paymentPath);
-			showSuccess("Payment submitted successfully.");
 			onPaid?.();
 		} catch (error) {
-			showError("Payment failed. Please try again.");
-			throw error;
 		} finally {
 			setIsSubmitting(false);
 		}
