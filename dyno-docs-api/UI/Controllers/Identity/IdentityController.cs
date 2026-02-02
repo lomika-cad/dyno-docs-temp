@@ -1,4 +1,5 @@
 using Application.UserStories.Identity.Commands;
+using Application.UserStories.Identity.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -59,6 +60,28 @@ public class IdentityController(IMediator mediator) : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+    
+    [HttpGet("{tenantId}")]
+    [ProducesResponseType(typeof(Domain.Entities.Identity.Tenant), 200)]
+    [ProducesResponseType(typeof(string), 404)]
+    public async Task<IActionResult> GetBusinessDetailsByTenantId([FromRoute] Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var query = new GetBusinessDetailsByTenantId
+            {
+                TenantId = tenantId
+            };
+
+            var tenant = await mediator.Send(query, cancellationToken);
+            return Ok(tenant);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
     }
 }

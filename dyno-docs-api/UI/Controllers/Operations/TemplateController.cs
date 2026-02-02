@@ -1,6 +1,7 @@
 ﻿using Application.Common;
 using Application.UserStories.Operations.Templates.Commands;
 using Application.UserStories.Operations.Templates.Queries;
+using Application.UserStories.Operations.UserTemplates.Commands;
 using Domain.Entities.Operations;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -30,5 +31,17 @@ public class TemplateController (IMediator mediator) : ControllerBase
         var query = new GetTemplatesQuery();
         var templates = await mediator.Send(query);
         return Ok(templates);
+    }
+    
+    [HttpPost("assign-to-user")]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Result>> AssignTemplateToUser([FromBody] AssignTemplateCommand command)
+    {
+        var res = await mediator.Send(command);
+        if (res.Succeeded)
+        {
+            return Ok(res);
+        }
+        return BadRequest(res);
     }
 }

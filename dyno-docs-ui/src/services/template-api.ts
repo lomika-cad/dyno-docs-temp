@@ -11,3 +11,16 @@ export const getTemplates = async () => {
         throw error;
     }
 }
+
+export const assignTemplate = async (data: any, token: string) => {
+    try {
+        const response = await axios.post(`${API_URL}/assign`, data, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}

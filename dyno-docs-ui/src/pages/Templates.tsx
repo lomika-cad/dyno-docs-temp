@@ -14,6 +14,7 @@ import CardPayment from "../components/CardPayment";
 import { EyeIcon } from "lucide-react";
 import { MonetizationOn } from "@mui/icons-material";
 import { Divider } from "@mui/material";
+import { getTenantInfo } from "../services/auth-api";
 
 type TemplateFilter = "all" | "free" | "paid";
 
@@ -116,6 +117,21 @@ export default function Templates() {
   const [error, setError] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateCardModel | null>(null);
   const [paymentTemplate, setPaymentTemplate] = useState<TemplateCardModel | null>(null);
+
+  const tenantId = sessionStorage.getItem("dd_tenant_id") || "";
+
+  const handleGetTenantInfo = async () => {
+    try {
+      const res = await getTenantInfo(tenantId);
+      console.log(res);
+    } catch (error) {
+      console.error("Failed to fetch tenant info:", error);
+    }
+  }
+
+  useEffect(() => {
+    handleGetTenantInfo();
+  }, [tenantId]);
 
   useEffect(() => {
     let ignore = false;
@@ -569,19 +585,7 @@ type TemplatePillElement = TemplateBaseElement & {
 };
 
 const SAMPLE_PLACEHOLDERS: Record<string, string> = {
-  "{{report_title}}": "Summer Escape 2026",
-  "{{customer_name}}": "Ayesha Fernando",
-  "{{destination_city}}": "Bali",
-  "{{destination_country}}": "Indonesia",
-  "{{bottom_logo}}": "https://drive.google.com/file/d/1ezJue6VOcxvhvFZetr2Lk_QbyW0C2o5T/view?usp=sharing",
-  "{{trip_length}}": "6",
-  "{{traveler_count}}": "02",
-  "{{summary_highlights}}":
-    "Curated coastal experiences, private transfers, and bespoke dining that capture the essence of Bali.",
-  "{{generated_date}}": "31 Jan 2026",
-  "{{cover_image_url}}": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",
   "{{agency_name}}": "Tour Travels LK",
-  "{{welcome_message}}": "Welcome to Sri Lanka",
   "{{agency_logo_url}}": "https://static.vecteezy.com/system/resources/previews/000/511/437/original/travel-tourism-logo-isolated-on-white-background-vector.jpg",
   "{{hero_image_url}}": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/39598465939125.5b055c778c346.jpg",
   "{{footer_texture_url}}": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/39598465939125.5b055c778c346.jpg",

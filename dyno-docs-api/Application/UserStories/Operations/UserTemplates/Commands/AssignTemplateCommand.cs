@@ -45,24 +45,6 @@ public class AssignTemplateCommandHandler : IRequestHandler<AssignTemplateComman
             return Result.Failure("Tenant not found.");
         }
         
-        var agencyName = tenant.AgencyName;
-        var contactNo = tenant.ContactNo;
-        var address = tenant.AgencyAddress;
-        // Tenant.AgencyLogo is stored as byte[]; convert to a base64 data URL string before using Replace
-        string logoUrl = string.Empty;
-        if (tenant.AgencyLogo != null && tenant.AgencyLogo.Length > 0)
-        {
-            // Assume PNG/JPEG — if you know the actual mime type, replace image/png accordingly.
-            // Optionally, detect mime type from bytes if necessary.
-            logoUrl = $"data:image/png;base64,{Convert.ToBase64String(tenant.AgencyLogo)}";
-        }
-        
-        request.TemplateDesign = request.TemplateDesign
-            .Replace("{{AgencyName}}", agencyName)
-            .Replace("{{ContactNo}}", contactNo)
-            .Replace("{{Address}}", address)
-            .Replace("{{LogoUrl}}", logoUrl);
-        
         var userTemplate = new UserTemplate
         {
             UserId = request.UserId,

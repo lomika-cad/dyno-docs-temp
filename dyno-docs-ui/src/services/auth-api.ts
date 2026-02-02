@@ -14,3 +14,12 @@ export const login = async (email: string, password: string) => {
         throw error;
     }
 }
+
+export const getTenantInfo = async (tenantId: string) => {
+    try {
+        const response = await axios.get(`${API_URL}/${tenantId}`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}
