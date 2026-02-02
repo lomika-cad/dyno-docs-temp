@@ -54,4 +54,16 @@ public class TemplateController (IMediator mediator) : ControllerBase
         var userTemplates = await mediator.Send(query);
         return Ok(userTemplates);
     }
+    
+    [HttpPost("unassign-from-user")]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Result>> UnassignTemplateFromUser([FromBody] UnassignTemplateCommand command)
+    {
+        var res = await mediator.Send(command);
+        if (res.Succeeded)
+        {
+            return Ok(res);
+        }
+        return BadRequest(res);
+    }
 }

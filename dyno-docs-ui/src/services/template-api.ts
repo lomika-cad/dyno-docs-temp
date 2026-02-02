@@ -37,3 +37,16 @@ export const getUserTemplates = async (userId: string, token: string) => {
         throw error;
     }
 }
+
+export const unassignTemplate = async (data: any, token: string) => {
+    try {
+        const response = await axios.post(`${API_URL}/unassign-from-user`, data, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}

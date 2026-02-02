@@ -8,7 +8,7 @@ import JSON5 from "json5";
 import Navbar from "../layouts/Navbar";
 import "../styles/templates.css";
 import "../styles/agencyData.css";
-import { assignTemplate, getTemplates, getUserTemplates } from "../services/template-api";
+import { assignTemplate, getTemplates, getUserTemplates, unassignTemplate } from "../services/template-api";
 import { showError, showInfo, showSuccess } from "../components/Toast";
 import CardPayment from "../components/CardPayment";
 import { EyeIcon } from "lucide-react";
@@ -21,6 +21,14 @@ type TemplateFilter = "all" | "free" | "paid";
 type TemplateApiResponse = {
   id?: string;
   Id?: string;
+  userTemplateId?: string;
+  UserTemplateId?: string;
+  assignmentId?: string;
+  AssignmentId?: string;
+  templateId?: string;
+  TemplateId?: string;
+  templateID?: string;
+  TemplateID?: string;
   templateName?: string;
   TemplateName?: string;
   templateThumbnail?: string | null;
@@ -35,6 +43,7 @@ type TemplateApiResponse = {
 
 type TemplateCardModel = {
   id: string;
+  templateId: string;
   name: string;
   description: string;
   thumbnail: string | null;
@@ -287,8 +296,55 @@ const sanitizeText = (text?: string | null) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const toNonEmptyString = (value?: string | null) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const resolveTemplateIdentifiers = (
+  entity: TemplateApiResponse | undefined,
+  defaults: { assignmentId: string; templateId: string },
+) => {
+  const templateIdCandidates = [
+    entity?.templateId,
+    entity?.TemplateId,
+    entity?.templateID,
+    entity?.TemplateID,
+    entity?.id,
+    entity?.Id,
+  ];
+  const resolvedTemplateId =
+    templateIdCandidates.map(toNonEmptyString).find((value) => value) ?? defaults.templateId;
+
+  const assignmentIdCandidates = [
+    entity?.userTemplateId,
+    entity?.UserTemplateId,
+    entity?.assignmentId,
+    entity?.AssignmentId,
+    entity?.id,
+    entity?.Id,
+  ];
+  const resolvedAssignmentId =
+    assignmentIdCandidates.map(toNonEmptyString).find((value) => value) ?? defaults.assignmentId;
+
+  return {
+    templateId: resolvedTemplateId,
+    assignmentId: resolvedAssignmentId,
+  };
+};
+
 const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[] =>
   payload.map((template, index) => {
+    const fallbackAssignmentId = template.id ?? template.Id ?? `template-${index}`;
+    // TemplateId should always come from backend Id/TemplateId fields, never from synthetic keys
+    const fallbackTemplateId = template.templateId ?? template.TemplateId ?? template.id ?? template.Id ?? "";
+    const { assignmentId, templateId } = resolveTemplateIdentifiers(template, {
+      assignmentId: fallbackAssignmentId,
+      templateId: fallbackTemplateId,
+    });
     const name = template.templateName ?? template.TemplateName ?? "Untitled Template";
     const rawDesign = template.templateDesign ?? template.TemplateDesign ?? "";
     const safeDesign = stripUnsafeMarkup(rawDesign).trim();
@@ -311,7 +367,8 @@ const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[]
         : "Free";
 
     return {
-      id: template.id ?? template.Id ?? `template-${index}`,
+      id: assignmentId,
+      templateId,
       name,
       description: truncatedDescription,
       thumbnail: template.templateThumbnail ?? template.TemplateThumbnail ?? null,
@@ -369,6 +426,8 @@ export default function Templates() {
   const [tenantPlaceholders, setTenantPlaceholders] = useState<PlaceholderMap>(DEFAULT_PLACEHOLDERS);
   const [hasTenantPlaceholders, setHasTenantPlaceholders] = useState(false);
   const [previewPlaceholders, setPreviewPlaceholders] = useState<PlaceholderMap>(DEFAULT_PLACEHOLDERS);
+  const [templateToUnassign, setTemplateToUnassign] = useState<TemplateCardModel | null>(null);
+  const [isUnassigning, setIsUnassigning] = useState(false);
   const tenantPlaceholderPromiseRef = useRef<Promise<PlaceholderMap> | null>(null);
 
   const resolveUserSession = (): UserSession | null => {
@@ -451,6 +510,10 @@ export default function Templates() {
     });
   };
 
+  const removeTemplateFromLibrary = (assignmentId: string) => {
+    setMyTemplates((current) => current.filter((entry) => entry.id !== assignmentId));
+  };
+
   useEffect(() => {
     let ignore = false;
 
@@ -531,7 +594,7 @@ export default function Templates() {
 
     const payload = {
       userId,
-      templateId: pendingAssignment.id,
+      templateId: pendingAssignment.templateId,
       templateDesign: finalizeTemplateDesign(
         getAssignmentDesign(pendingAssignment),
         assignmentPlaceholders,
@@ -541,12 +604,21 @@ export default function Templates() {
     try {
       setAssigningTemplateId(pendingAssignment.id);
       const response = await assignTemplate(payload, token);
+      const identifiers = resolveTemplateIdentifiers(response as TemplateApiResponse, {
+        assignmentId: pendingAssignment.id,
+        templateId: pendingAssignment.templateId,
+      });
+      const normalizedAssignment: TemplateCardModel = {
+        ...pendingAssignment,
+        id: identifiers.assignmentId,
+        templateId: identifiers.templateId,
+      };
       const successMessage =
         (response as { message?: string; Message?: string })?.message ??
         (response as { message?: string; Message?: string })?.Message ??
         `"${pendingAssignment.name}" assigned to your workspace.`;
       showSuccess(successMessage);
-      appendTemplateToLibrary(pendingAssignment);
+      appendTemplateToLibrary(normalizedAssignment);
       setPendingAssignment(null);
     } catch (err) {
       const apiMessage = resolveApiErrorMessage(err);
@@ -607,6 +679,57 @@ export default function Templates() {
     setPreviewTemplate(null);
   };
 
+  const handleUnassignTemplateRequest = (template: any) => {
+    console.log(template);
+    
+    setTemplateToUnassign(template);
+  };
+
+  const handleCloseUnassignModal = () => {
+    if (isUnassigning) {
+      return;
+    }
+    setTemplateToUnassign(null);
+  };
+
+  const handleConfirmUnassign = async () => {
+    if (!templateToUnassign) {
+      return;
+    }
+
+    const session = resolveUserSession();
+    if (!session) {
+      setTemplateToUnassign(null);
+      return;
+    }
+
+    setIsUnassigning(true);
+    const payload = {
+      userId: session.userId,
+      templateId: templateToUnassign.templateId,
+    };
+
+    try {
+      const response = await unassignTemplate(payload, session.token);
+      const successMessage =
+        (response as { message?: string; Message?: string })?.message ??
+        (response as { message?: string; Message?: string })?.Message ??
+        `"${templateToUnassign.name}" removed from your workspace.`;
+      showSuccess(successMessage);
+      removeTemplateFromLibrary(templateToUnassign.id);
+      if (previewTemplate?.id === templateToUnassign.id) {
+        setPreviewTemplate(null);
+      }
+      setTemplateToUnassign(null);
+    } catch (err) {
+      const apiMessage = resolveApiErrorMessage(err);
+      showError(apiMessage ?? "Unable to unassign template. Please try again.");
+      console.error("unassignTemplate failed", err);
+    } finally {
+      setIsUnassigning(false);
+    }
+  };
+
   const handlePurchaseTemplate = (template: TemplateCardModel) => {
     if (template.priceValue === null) {
       showError("Pricing information is not available for this template yet.");
@@ -633,7 +756,7 @@ export default function Templates() {
 
     const payload = {
       userId,
-      templateId: purchasedTemplate.id,
+      templateId: purchasedTemplate.templateId,
       templateDesign: finalizeTemplateDesign(
         getAssignmentDesign(purchasedTemplate),
         assignmentPlaceholders,
@@ -643,13 +766,22 @@ export default function Templates() {
     try {
       setAssigningTemplateId(purchasedTemplate.id);
       const response = await assignTemplate(payload, token);
+      const identifiers = resolveTemplateIdentifiers(response as TemplateApiResponse, {
+        assignmentId: purchasedTemplate.id,
+        templateId: purchasedTemplate.templateId,
+      });
+      const normalizedAssignment: TemplateCardModel = {
+        ...purchasedTemplate,
+        id: identifiers.assignmentId,
+        templateId: identifiers.templateId,
+      };
       const successMessage =
         (response as { message?: string; Message?: string })?.message ??
         (response as { message?: string; Message?: string })?.Message ??
         `"${purchasedTemplate.name}" assigned to your workspace.`;
       showSuccess(successMessage);
       showInfo(`"${purchasedTemplate.name}" unlocked. Check your workspace for the template shortly.`);
-      appendTemplateToLibrary(purchasedTemplate);
+      appendTemplateToLibrary(normalizedAssignment);
       setPaymentTemplate(null);
     } catch (err) {
       const apiMessage = resolveApiErrorMessage(err);
@@ -753,6 +885,9 @@ export default function Templates() {
             onClose={handleCloseMyTemplatesModal}
             onPreviewAssigned={(template) => handleCardPreview(template, true)}
             onReload={handleReloadMyTemplates}
+            onUnassignRequest={handleUnassignTemplateRequest}
+            isUnassigning={isUnassigning}
+            unassigningTemplateId={templateToUnassign?.id ?? null}
           />
         )}
 
@@ -780,6 +915,15 @@ export default function Templates() {
             onCancel={handleCloseAssignmentModal}
           />
         )}
+
+        {templateToUnassign && (
+          <TemplateUnassignConfirmModal
+            template={templateToUnassign}
+            isSubmitting={isUnassigning}
+            onConfirm={handleConfirmUnassign}
+            onCancel={handleCloseUnassignModal}
+          />
+        )}
       </section>
     </Navbar>
   );
@@ -792,6 +936,9 @@ type TemplateCardProps = {
   onPreview: (template: TemplateCardModel) => void;
   isAssigning?: boolean;
   variant?: "marketplace" | "assigned";
+  onUnassignRequest?: (template: TemplateCardModel) => void;
+  isUnassigning?: boolean;
+  unassigningTemplateId?: string | null;
 };
 
 function TemplateCard({
@@ -801,6 +948,9 @@ function TemplateCard({
   onPreview,
   isAssigning = false,
   variant = "marketplace",
+  onUnassignRequest,
+  isUnassigning = false,
+  unassigningTemplateId = null,
 }: TemplateCardProps) {
   const { name, thumbnail, isPaid, priceLabel } = template;
   const thumbnailSrc = thumbnail
@@ -809,6 +959,8 @@ function TemplateCard({
       : `data:image/png;base64,${thumbnail}`
     : null;
   const isAssignedCard = variant === "assigned";
+  const isUnassigningThisTemplate =
+    isAssignedCard && isUnassigning && unassigningTemplateId === template.id;
 
   const handleCardClick = () => {
     onPreview(template);
@@ -834,6 +986,14 @@ function TemplateCard({
     }
 
     onAddRequest?.(template);
+  };
+
+  const handleUnassignClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!isAssignedCard || !onUnassignRequest) {
+      return;
+    }
+    onUnassignRequest(template);
   };
 
   return (
@@ -884,6 +1044,17 @@ function TemplateCard({
             </>
           )}
         </button>
+
+        {isAssignedCard && onUnassignRequest && (
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleUnassignClick}
+            disabled={isUnassigningThisTemplate}
+          >
+            {isUnassigningThisTemplate ? "Removing..." : "Unassign"}
+          </button>
+        )}
 
         <div className="template-card__badges">
           {!(isAssignedCard && !isPaid) && (
@@ -951,9 +1122,22 @@ type MyTemplatesModalProps = {
   onClose: () => void;
   onPreviewAssigned: (template: TemplateCardModel) => void;
   onReload: () => void;
+  onUnassignRequest: (template: TemplateCardModel) => void;
+  isUnassigning: boolean;
+  unassigningTemplateId: string | null;
 };
 
-function MyTemplatesModal({ templates, isLoading, error, onClose, onPreviewAssigned, onReload }: MyTemplatesModalProps) {
+function MyTemplatesModal({
+  templates,
+  isLoading,
+  error,
+  onClose,
+  onPreviewAssigned,
+  onReload,
+  onUnassignRequest,
+  isUnassigning,
+  unassigningTemplateId,
+}: MyTemplatesModalProps) {
   const handleBackdropClick = () => {
     onClose();
   };
@@ -1006,6 +1190,9 @@ function MyTemplatesModal({ templates, isLoading, error, onClose, onPreviewAssig
                   key={`my-${template.id}`}
                   template={template}
                   onPreview={onPreviewAssigned}
+                  onUnassignRequest={onUnassignRequest}
+                  isUnassigning={isUnassigning}
+                  unassigningTemplateId={unassigningTemplateId}
                   variant="assigned"
                 />
               ))}
@@ -1127,6 +1314,85 @@ function TemplateAssignConfirmModal({ template, isSubmitting, onConfirm, onCance
             disabled={isSubmitting}
           >
             {isSubmitting ? "Assigning..." : "Confirm & Add"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type TemplateUnassignConfirmModalProps = {
+  template: TemplateCardModel;
+  isSubmitting: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+function TemplateUnassignConfirmModal({ template, isSubmitting, onConfirm, onCancel }: TemplateUnassignConfirmModalProps) {
+  const handleBackdropClick = () => {
+    if (isSubmitting) {
+      return;
+    }
+    onCancel();
+  };
+
+  const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
+
+  const handleCloseClick = () => {
+    if (isSubmitting) {
+      return;
+    }
+    onCancel();
+  };
+
+  return (
+    <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
+      <div className="template-modal__panel template-modal__panel--confirm" onClick={handlePanelClick}>
+        <header className="template-modal__header">
+          <div>
+            <p className="template-modal__eyebrow">Remove Template</p>
+            <h2>{template.name}</h2>
+          </div>
+          <button
+            type="button"
+            className="template-modal__close"
+            onClick={handleCloseClick}
+            aria-label="Close unassign confirmation"
+          >
+            <CloseRoundedIcon />
+          </button>
+        </header>
+
+        <div className="template-modal__body template-modal__body--confirm">
+          <p className="template-confirm__text">
+            This will remove the template from your workspace. You can reassign it later from the marketplace
+            if needed.
+          </p>
+          <ul className="template-confirm__list">
+            <li>Any custom edits you made in My Templates will be lost.</li>
+            <li>No charges apply for unassigning a template.</li>
+            <li>You can repurchase paid templates again when required.</li>
+          </ul>
+        </div>
+
+        <div className="ddModal__actions">
+          <button
+            type="button"
+            className="ddModal__btn ddModal__btn--ghost"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="ddModal__btn ddModal__btn--primary"
+            onClick={onConfirm}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Removing..." : "Unassign Template"}
           </button>
         </div>
       </div>
