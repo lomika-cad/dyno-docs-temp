@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
@@ -47,6 +47,13 @@ type TemplateCardModel = {
 type UserSession = {
   userId: string;
   token: string;
+};
+
+type TenantProfile = {
+  agencyLogo?: string | null;
+  agencyName?: string | null;
+  contactNo?: string | null;
+  agencyAddress?: string | null;
 };
 
 type FilterOption = {
@@ -354,35 +361,15 @@ export default function Templates() {
   const [paymentTemplate, setPaymentTemplate] = useState<TemplateCardModel | null>(null);
   const [pendingAssignment, setPendingAssignment] = useState<TemplateCardModel | null>(null);
   const [assigningTemplateId, setAssigningTemplateId] = useState<string | null>(null);
-  const [agencyLogoUrl, setAgencyLogoUrl] = useState<string | null>(null);
-  const [agencyName, setAgencyName] = useState<string | null>(null);
-  const [contactNo, setContactNo] = useState<string>("");
-  const [agencyAddress, setAgencyAddress] = useState<string>("");
   const [isMyTemplatesModalOpen, setIsMyTemplatesModalOpen] = useState(false);
   const [myTemplates, setMyTemplates] = useState<TemplateCardModel[]>([]);
   const [isLoadingMyTemplates, setIsLoadingMyTemplates] = useState(false);
   const [myTemplatesError, setMyTemplatesError] = useState<string | null>(null);
   const [hasLoadedMyTemplates, setHasLoadedMyTemplates] = useState(false);
-
-  const placeholders = useMemo<PlaceholderMap>(() => {
-    return {
-      ...DEFAULT_PLACEHOLDERS,
-      "{{agency_logo_url}}": agencyLogoUrl
-        ? normalizeImageTokenValue(agencyLogoUrl)
-        : DEFAULT_PLACEHOLDERS["{{agency_logo_url}}"],
-      "{{agency_name}}": agencyName?.trim()
-        ? agencyName.trim()
-        : DEFAULT_PLACEHOLDERS["{{agency_name}}"],
-      "{{contact_phone}}": contactNo?.trim()
-        ? contactNo.trim()
-        : DEFAULT_PLACEHOLDERS["{{contact_phone}}"],
-      "{{contact_address}}": agencyAddress?.trim()
-        ? agencyAddress.trim()
-        : DEFAULT_PLACEHOLDERS["{{contact_address}}"],
-    };
-  }, [agencyAddress, agencyLogoUrl, agencyName, contactNo]);
-
-  const tenantId = sessionStorage.getItem("dd_tenant_id") || "";
+  const [tenantPlaceholders, setTenantPlaceholders] = useState<PlaceholderMap>(DEFAULT_PLACEHOLDERS);
+  const [hasTenantPlaceholders, setHasTenantPlaceholders] = useState(false);
+  const [previewPlaceholders, setPreviewPlaceholders] = useState<PlaceholderMap>(DEFAULT_PLACEHOLDERS);
+  const tenantPlaceholderPromiseRef = useRef<Promise<PlaceholderMap> | null>(null);
 
   const resolveUserSession = (): UserSession | null => {
     const token = sessionStorage.getItem("dd_token");
@@ -394,6 +381,39 @@ export default function Templates() {
     }
 
     return { userId, token };
+  };
+
+  const ensureTenantPlaceholders = async (): Promise<PlaceholderMap> => {
+    if (hasTenantPlaceholders) {
+      return tenantPlaceholders;
+    }
+
+    if (tenantPlaceholderPromiseRef.current) {
+      return tenantPlaceholderPromiseRef.current;
+    }
+
+    const tenantId = sessionStorage.getItem("dd_tenant_id");
+    if (!tenantId) {
+      return tenantPlaceholders;
+    }
+
+    const fetchPromise = (async () => {
+      try {
+        const tenantInfo = (await getTenantInfo(tenantId)) as TenantProfile;
+        const mapped = buildTenantPlaceholders(tenantInfo);
+        setTenantPlaceholders(mapped);
+        setHasTenantPlaceholders(true);
+        return mapped;
+      } catch (error) {
+        console.error("Failed to fetch tenant info:", error);
+        return tenantPlaceholders;
+      } finally {
+        tenantPlaceholderPromiseRef.current = null;
+      }
+    })();
+
+    tenantPlaceholderPromiseRef.current = fetchPromise;
+    return fetchPromise;
   };
 
   const fetchUserTemplates = async ({ userId, token }: UserSession) => {
@@ -430,23 +450,6 @@ export default function Templates() {
       return [template, ...current];
     });
   };
-
-  const handleGetTenantInfo = async () => {
-    try {
-      const res = await getTenantInfo(tenantId);
-      setAgencyLogoUrl(res.agencyLogo || null);
-      setAgencyName(res.agencyName || null);
-      setContactNo(res.contactNo || "");
-      setAgencyAddress(res.agencyAddress || "");
-      console.log(res);
-    } catch (error) {
-      console.error("Failed to fetch tenant info:", error);
-    }
-  }
-
-  useEffect(() => {
-    handleGetTenantInfo();
-  }, [tenantId]);
 
   useEffect(() => {
     let ignore = false;
@@ -524,10 +527,15 @@ export default function Templates() {
       return;
     }
 
+    const assignmentPlaceholders = await ensureTenantPlaceholders();
+
     const payload = {
       userId,
       templateId: pendingAssignment.id,
-      templateDesign: finalizeTemplateDesign(getAssignmentDesign(pendingAssignment), placeholders),
+      templateDesign: finalizeTemplateDesign(
+        getAssignmentDesign(pendingAssignment),
+        assignmentPlaceholders,
+      ),
     };
 
     try {
@@ -549,23 +557,23 @@ export default function Templates() {
     }
   };
 
-  const handleMyTemplatesClick = () => {
+  const handleMyTemplatesClick = async () => {
     const session = resolveUserSession();
     if (!session) {
       return;
     }
 
     setIsMyTemplatesModalOpen(true);
-    fetchUserTemplates(session);
+    await Promise.all([fetchUserTemplates(session), ensureTenantPlaceholders()]);
   };
 
-  const handleReloadMyTemplates = () => {
+  const handleReloadMyTemplates = async () => {
     const session = resolveUserSession();
     if (!session) {
       setIsMyTemplatesModalOpen(false);
       return;
     }
-    fetchUserTemplates(session);
+    await Promise.all([fetchUserTemplates(session), ensureTenantPlaceholders()]);
   };
 
   const handleCloseMyTemplatesModal = () => {
@@ -577,8 +585,22 @@ export default function Templates() {
     setSearchTerm("");
   };
 
-  const handleCardPreview = (template: TemplateCardModel) => {
+  const handleCardPreview = (template: TemplateCardModel, useTenantData = false) => {
     setPreviewTemplate(template);
+
+    if (useTenantData) {
+      const active = hasTenantPlaceholders ? tenantPlaceholders : DEFAULT_PLACEHOLDERS;
+      setPreviewPlaceholders(active);
+
+      if (!hasTenantPlaceholders) {
+        ensureTenantPlaceholders().then((resolved) => {
+          setPreviewPlaceholders(resolved);
+        });
+      }
+      return;
+    }
+
+    setPreviewPlaceholders(DEFAULT_PLACEHOLDERS);
   };
 
   const handleClosePreview = () => {
@@ -607,10 +629,15 @@ export default function Templates() {
       return;
     }
 
+    const assignmentPlaceholders = await ensureTenantPlaceholders();
+
     const payload = {
       userId,
       templateId: purchasedTemplate.id,
-      templateDesign: finalizeTemplateDesign(getAssignmentDesign(purchasedTemplate), placeholders),
+      templateDesign: finalizeTemplateDesign(
+        getAssignmentDesign(purchasedTemplate),
+        assignmentPlaceholders,
+      ),
     };
 
     try {
@@ -724,7 +751,7 @@ export default function Templates() {
             isLoading={isLoadingMyTemplates}
             error={myTemplatesError}
             onClose={handleCloseMyTemplatesModal}
-            onPreview={handleCardPreview}
+            onPreviewAssigned={(template) => handleCardPreview(template, true)}
             onReload={handleReloadMyTemplates}
           />
         )}
@@ -732,7 +759,7 @@ export default function Templates() {
         {previewTemplate && (
           <TemplatePreviewModal
             template={previewTemplate}
-            placeholders={placeholders}
+            placeholders={previewPlaceholders}
             onClose={handleClosePreview}
           />
         )}
@@ -922,11 +949,11 @@ type MyTemplatesModalProps = {
   isLoading: boolean;
   error: string | null;
   onClose: () => void;
-  onPreview: (template: TemplateCardModel) => void;
+  onPreviewAssigned: (template: TemplateCardModel) => void;
   onReload: () => void;
 };
 
-function MyTemplatesModal({ templates, isLoading, error, onClose, onPreview, onReload }: MyTemplatesModalProps) {
+function MyTemplatesModal({ templates, isLoading, error, onClose, onPreviewAssigned, onReload }: MyTemplatesModalProps) {
   const handleBackdropClick = () => {
     onClose();
   };
@@ -978,7 +1005,7 @@ function MyTemplatesModal({ templates, isLoading, error, onClose, onPreview, onR
                 <TemplateCard
                   key={`my-${template.id}`}
                   template={template}
-                  onPreview={onPreview}
+                  onPreview={onPreviewAssigned}
                   variant="assigned"
                 />
               ))}
@@ -1198,6 +1225,16 @@ const DEFAULT_PLACEHOLDERS: PlaceholderMap = {
   "{{tourism_board_logo}}": "https://www.sltda.gov.lk/images/sltda_logo.png",
   "{{cover_image_url}}": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",
 };
+
+const buildTenantPlaceholders = (tenant?: TenantProfile | null): PlaceholderMap => ({
+  ...DEFAULT_PLACEHOLDERS,
+  "{{agency_logo_url}}": tenant?.agencyLogo
+    ? normalizeImageTokenValue(tenant.agencyLogo)
+    : DEFAULT_PLACEHOLDERS["{{agency_logo_url}}"],
+  "{{agency_name}}": tenant?.agencyName?.trim() || DEFAULT_PLACEHOLDERS["{{agency_name}}"],
+  "{{contact_phone}}": tenant?.contactNo?.trim() || DEFAULT_PLACEHOLDERS["{{contact_phone}}"],
+  "{{contact_address}}": tenant?.agencyAddress?.trim() || DEFAULT_PLACEHOLDERS["{{contact_address}}"],
+});
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
