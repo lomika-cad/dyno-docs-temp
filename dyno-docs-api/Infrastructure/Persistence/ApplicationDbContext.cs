@@ -27,6 +27,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PricingPlan> PricingPlan => Set<PricingPlan>();
     public DbSet<Partnership> Partnership => Set<Partnership>();
     public DbSet<Template> Template => Set<Template>();
+    public DbSet<UserTemplate> UserTemplate => Set<UserTemplate>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
