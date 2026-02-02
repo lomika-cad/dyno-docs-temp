@@ -8,8 +8,8 @@ import JSON5 from "json5";
 import Navbar from "../layouts/Navbar";
 import "../styles/templates.css";
 import "../styles/agencyData.css";
-import { getTemplates } from "../services/template-api";
-import { showError, showInfo } from "../components/Toast";
+import { assignTemplate, getTemplates } from "../services/template-api";
+import { showError, showInfo, showSuccess } from "../components/Toast";
 import CardPayment from "../components/CardPayment";
 import { EyeIcon } from "lucide-react";
 import { MonetizationOn } from "@mui/icons-material";
@@ -64,6 +64,207 @@ const LKR_FORMATTER = new Intl.NumberFormat("en-LK", {
   maximumFractionDigits: 0,
 });
 
+const DEFAULT_ASSIGNMENT_DESIGN = `{
+  "version": "1.0",
+  "pageSize": "A4",
+  "background": "#ffffff",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "elements": [
+        {
+          "id": "header_strip",
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "width": 595,
+          "height": 130,
+          "fill": "#ffffff"
+        },
+        {
+          "id": "brand_mark",
+          "type": "image",
+          "x": 470,
+          "y": 25,
+          "width": 80,
+          "height": 80,
+          "borderRadius": 12,
+          "src": "{{agency_logo_url}}",
+          "fallback": "{{agency_logo_url}}"
+        },
+        {
+          "id": "title_text",
+          "type": "text",
+          "x": 40,
+          "y": 30,
+          "fontSize": 34,
+          "fontFamily": "Playfair Display, serif",
+          "fontWeight": 600,
+          "color": "#111827",
+          "content": "{{agency_name}}"
+        },
+        {
+          "id": "subtitle_text",
+          "type": "text",
+          "x": 40,
+          "y": 75,
+          "fontSize": 18,
+          "fontFamily": "Poppins, sans-serif",
+          "fontWeight": 500,
+          "color": "#b3b6c3",
+          "content": "Welcome to Sri Lanka"
+        },
+        {
+          "id": "hero_photo",
+          "type": "image",
+          "x": 0,
+          "y": 130,
+          "width": 595,
+          "height": 540,
+          "src": "{{hero_image_url}}",
+          "fallback": "{{hero_image_url}}"
+        },
+        {
+          "id": "footer_texture",
+          "type": "image",
+          "x": 0,
+          "y": 670,
+          "width": 595,
+          "height": 172,
+          "src": "{{footer_texture_url}}",
+          "fallback": "{{footer_texture_url}}"
+        },
+        {
+          "id": "footer_overlay",
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 670,
+          "width": 595,
+          "height": 172,
+          "fill": "#ffffff"
+        },
+        {
+          "id": "contact_box",
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 30,
+          "y": 690,
+          "width": 330,
+          "height": 120,
+          "borderRadius": 16,
+          "fill": "rgba(255,255,255,0.92)"
+        },
+        {
+          "id": "contact_phone_icon",
+          "type": "shape",
+          "shape": "circle",
+          "x": 50,
+          "y": 712,
+          "width": 30,
+          "height": 30,
+          "fill": "#000000"
+        },
+        {
+          "id": "contact_phone_icon_text",
+          "type": "text",
+          "x": 57,
+          "y": 716,
+          "fontSize": 16,
+          "fontFamily": "Poppins, sans-serif",
+          "fontWeight": 600,
+          "color": "#ffffff",
+          "content": "\\u260E"
+        },
+        {
+          "id": "contact_phone_text",
+          "type": "text",
+          "x": 92,
+          "y": 715,
+          "fontSize": 14,
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": 600,
+          "color": "#1f2937",
+          "content": "{{contact_phone}}"
+        },
+        {
+          "id": "contact_web_icon",
+          "type": "shape",
+          "shape": "circle",
+          "x": 50,
+          "y": 750,
+          "width": 30,
+          "height": 30,
+          "fill": "#000000"
+        },
+        {
+          "id": "contact_web_icon_text",
+          "type": "text",
+          "x": 55,
+          "y": 754,
+          "fontSize": 16,
+          "fontFamily": "Poppins, sans-serif",
+          "fontWeight": 600,
+          "color": "#ffffff",
+          "content": "\\uD83C\\uDF10"
+        },
+        {
+          "id": "contact_web_text",
+          "type": "text",
+          "x": 92,
+          "y": 752,
+          "fontSize": 13,
+          "fontFamily": "Inter, sans-serif",
+          "color": "#1f2937",
+          "content": "{{contact_website}}"
+        },
+        {
+          "id": "contact_address_icon",
+          "type": "shape",
+          "shape": "circle",
+          "x": 50,
+          "y": 788,
+          "width": 30,
+          "height": 30,
+          "fill": "#000000"
+        },
+        {
+          "id": "contact_address_icon_text",
+          "type": "text",
+          "x": 55,
+          "y": 792,
+          "fontSize": 16,
+          "fontFamily": "Poppins, sans-serif",
+          "fontWeight": 600,
+          "color": "#ffffff",
+          "content": "\\uD83D\\uDCCD"
+        },
+        {
+          "id": "contact_address_text",
+          "type": "text",
+          "x": 92,
+          "y": 792,
+          "fontSize": 13,
+          "fontFamily": "Inter, sans-serif",
+          "color": "#1f2937",
+          "content": "{{contact_address}}"
+        },
+        {
+          "id": "footer_logo",
+          "type": "image",
+          "x": 470,
+          "y": 700,
+          "width": 90,
+          "height": 90,
+          "src": "{{tourism_board_logo}}",
+          "fallback": "{{tourism_board_logo}}"
+        }
+      ]
+    }
+  ]
+}`;
+
 const stripUnsafeMarkup = (markup: string) =>
   markup.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
 
@@ -109,6 +310,14 @@ const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[]
     };
   });
 
+const getAssignmentDesign = (template: TemplateCardModel) => {
+  const markup = template.designMarkup?.trim();
+  if (markup && markup !== FALLBACK_PREVIEW) {
+    return markup;
+  }
+  return DEFAULT_ASSIGNMENT_DESIGN;
+};
+
 export default function Templates() {
   const [templates, setTemplates] = useState<TemplateCardModel[]>([]);
   const [filter, setFilter] = useState<TemplateFilter>("all");
@@ -117,12 +326,40 @@ export default function Templates() {
   const [error, setError] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateCardModel | null>(null);
   const [paymentTemplate, setPaymentTemplate] = useState<TemplateCardModel | null>(null);
+  const [pendingAssignment, setPendingAssignment] = useState<TemplateCardModel | null>(null);
+  const [assigningTemplateId, setAssigningTemplateId] = useState<string | null>(null);
+  const [agencyLogoUrl, setAgencyLogoUrl] = useState<string | null>(null);
+  const [agencyName, setAgencyName] = useState<string | null>(null);
+  const [contactNo, setContactNo] = useState<string>("");
+  const [agencyAddress, setAgencyAddress] = useState<string>("");
+
+  const placeholders = useMemo<PlaceholderMap>(() => {
+    return {
+      ...DEFAULT_PLACEHOLDERS,
+      "{{agency_logo_url}}": agencyLogoUrl
+        ? normalizeImageTokenValue(agencyLogoUrl)
+        : DEFAULT_PLACEHOLDERS["{{agency_logo_url}}"],
+      "{{agency_name}}": agencyName?.trim()
+        ? agencyName.trim()
+        : DEFAULT_PLACEHOLDERS["{{agency_name}}"],
+      "{{contact_phone}}": contactNo?.trim()
+        ? contactNo.trim()
+        : DEFAULT_PLACEHOLDERS["{{contact_phone}}"],
+      "{{contact_address}}": agencyAddress?.trim()
+        ? agencyAddress.trim()
+        : DEFAULT_PLACEHOLDERS["{{contact_address}}"],
+    };
+  }, [agencyAddress, agencyLogoUrl, agencyName, contactNo]);
 
   const tenantId = sessionStorage.getItem("dd_tenant_id") || "";
 
   const handleGetTenantInfo = async () => {
     try {
       const res = await getTenantInfo(tenantId);
+      setAgencyLogoUrl(res.agencyLogo || null);
+      setAgencyName(res.agencyName || null);
+      setContactNo(res.contactNo || "");
+      setAgencyAddress(res.agencyAddress || "");
       console.log(res);
     } catch (error) {
       console.error("Failed to fetch tenant info:", error);
@@ -194,8 +431,52 @@ export default function Templates() {
     });
   }, [filter, searchTerm, templates]);
 
-  const handleAddTemplate = (template: TemplateCardModel) => {
-    showInfo(`"${template.name}" added to your workspace.`);
+  const handleAddTemplateRequest = (template: TemplateCardModel) => {
+    setPendingAssignment(template);
+  };
+
+  const handleCloseAssignmentModal = () => {
+    if (assigningTemplateId) {
+      return;
+    }
+    setPendingAssignment(null);
+  };
+
+  const handleConfirmAssignment = async () => {
+    if (!pendingAssignment) {
+      return;
+    }
+
+    const token = sessionStorage.getItem("dd_token");
+    const userId = sessionStorage.getItem("dd_user_id");
+
+    if (!token || !userId) {
+      showError("Please sign in to add templates to your workspace.");
+      return;
+    }
+
+    const payload = {
+      userId,
+      templateId: pendingAssignment.id,
+      templateDesign: fillTemplatePlaceholders(getAssignmentDesign(pendingAssignment), placeholders),
+    };
+
+    try {
+      setAssigningTemplateId(pendingAssignment.id);
+      const response = await assignTemplate(payload, token);
+      const successMessage =
+        (response as { message?: string })?.message ??
+        `"${pendingAssignment.name}" assigned to your workspace.`;
+      showSuccess(successMessage);
+      setPendingAssignment(null);
+    } catch (err) {
+      const apiMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(apiMessage ?? "Unable to assign template. Please try again.");
+      console.error("assignTemplate failed", err);
+    } finally {
+      setAssigningTemplateId(null);
+    }
   };
 
   const handleMyTemplatesClick = () => {
@@ -301,9 +582,10 @@ export default function Templates() {
               <TemplateCard
                 key={template.id}
                 template={template}
-                onAdd={handleAddTemplate}
+                onAddRequest={handleAddTemplateRequest}
                 onPurchase={handlePurchaseTemplate}
                 onPreview={handleCardPreview}
+                isAssigning={assigningTemplateId === template.id}
               />
             ))}
         </div>
@@ -322,6 +604,7 @@ export default function Templates() {
         {previewTemplate && (
           <TemplatePreviewModal
             template={previewTemplate}
+            placeholders={placeholders}
             onClose={handleClosePreview}
           />
         )}
@@ -333,6 +616,15 @@ export default function Templates() {
             onPaymentSuccess={handlePaymentSuccess}
           />
         )}
+
+        {pendingAssignment && (
+          <TemplateAssignConfirmModal
+            template={pendingAssignment}
+            isSubmitting={assigningTemplateId === pendingAssignment.id}
+            onConfirm={handleConfirmAssignment}
+            onCancel={handleCloseAssignmentModal}
+          />
+        )}
       </section>
     </Navbar>
   );
@@ -340,12 +632,13 @@ export default function Templates() {
 
 type TemplateCardProps = {
   template: TemplateCardModel;
-  onAdd: (template: TemplateCardModel) => void;
+  onAddRequest: (template: TemplateCardModel) => void;
   onPurchase?: (template: TemplateCardModel) => void;
   onPreview: (template: TemplateCardModel) => void;
+  isAssigning?: boolean;
 };
 
-function TemplateCard({ template, onAdd, onPurchase, onPreview }: TemplateCardProps) {
+function TemplateCard({ template, onAddRequest, onPurchase, onPreview, isAssigning = false }: TemplateCardProps) {
   const { name, thumbnail, isPaid, priceLabel } = template;
   const thumbnailSrc = thumbnail
     ? thumbnail.startsWith("data:")
@@ -370,7 +663,7 @@ function TemplateCard({ template, onAdd, onPurchase, onPreview }: TemplateCardPr
       onPurchase?.(template);
       return;
     }
-    onAdd(template);
+    onAddRequest(template);
   };
 
   return (
@@ -407,9 +700,10 @@ function TemplateCard({ template, onAdd, onPurchase, onPreview }: TemplateCardPr
           type="button"
           className="btn btn--orange"
           onClick={handleAddClick}
+          disabled={!isPaid && isAssigning}
         >
           {isPaid ? <MonetizationOn fontSize="small" /> : <AddRoundedIcon fontSize="small" />}
-          {isPaid ? "Purchase" : "Add Template"}
+          {isPaid ? "Purchase" : isAssigning ? "Assigning..." : "Add Template"}
         </button>
 
         <div className="template-card__badges">
@@ -429,10 +723,11 @@ function TemplateCard({ template, onAdd, onPurchase, onPreview }: TemplateCardPr
 
 type TemplatePreviewModalProps = {
   template: TemplateCardModel;
+  placeholders: PlaceholderMap;
   onClose: () => void;
 };
 
-function TemplatePreviewModal({ template, onClose }: TemplatePreviewModalProps) {
+function TemplatePreviewModal({ template, placeholders, onClose }: TemplatePreviewModalProps) {
   const parsedDesign = useMemo(() => parseDesign(template.designMarkup), [template.designMarkup]);
 
   const handleBackdropClick = () => {
@@ -458,7 +753,7 @@ function TemplatePreviewModal({ template, onClose }: TemplatePreviewModalProps) 
 
         <div className="template-modal__body">
           {parsedDesign ? (
-            <TemplateDesignRenderer design={parsedDesign} />
+            <TemplateDesignRenderer design={parsedDesign} placeholders={placeholders} />
           ) : (
             <pre className="template-modal__raw">{template.designMarkup}</pre>
           )}
@@ -500,6 +795,85 @@ function TemplatePaymentModal({ template, onClose, onPaymentSuccess }: TemplateP
           <div className="template-payment__grid">
             <CardPayment totalAmount={template.priceValue ?? 0} onPaid={onPaymentSuccess} />
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type TemplateAssignConfirmModalProps = {
+  template: TemplateCardModel;
+  isSubmitting: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+function TemplateAssignConfirmModal({ template, isSubmitting, onConfirm, onCancel }: TemplateAssignConfirmModalProps) {
+  const handleBackdropClick = () => {
+    if (isSubmitting) {
+      return;
+    }
+    onCancel();
+  };
+
+  const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
+
+  const handleCloseClick = () => {
+    if (isSubmitting) {
+      return;
+    }
+    onCancel();
+  };
+
+  return (
+    <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
+      <div className="template-modal__panel template-modal__panel--confirm" onClick={handlePanelClick}>
+        <header className="template-modal__header">
+          <div>
+            <p className="template-modal__eyebrow">Confirm Assignment</p>
+            <h2>{template.name}</h2>
+          </div>
+          <button
+            type="button"
+            className="template-modal__close"
+            onClick={handleCloseClick}
+            aria-label="Close confirmation"
+          >
+            <CloseRoundedIcon />
+          </button>
+        </header>
+
+        <div className="template-modal__body template-modal__body--confirm">
+          <p className="template-confirm__text">
+            This template will be copied to your workspace with tenant-specific placeholders so you can
+            update the actual branding details after assignment.
+          </p>
+          <ul className="template-confirm__list">
+            <li>Includes dynamic fields for agency name, logo, and contact details.</li>
+            <li>Assignment is instant and does not consume credits.</li>
+            <li>You can personalize the design later from My Templates.</li>
+          </ul>
+        </div>
+
+        <div className="ddModal__actions">
+          <button
+            type="button"
+            className="ddModal__btn ddModal__btn--ghost"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="ddModal__btn ddModal__btn--primary"
+            onClick={onConfirm}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Assigning..." : "Confirm & Add"}
+          </button>
         </div>
       </div>
     </div>
@@ -584,7 +958,9 @@ type TemplatePillElement = TemplateBaseElement & {
   colors?: { bg?: string; text?: string };
 };
 
-const SAMPLE_PLACEHOLDERS: Record<string, string> = {
+type PlaceholderMap = Record<string, string>;
+
+const DEFAULT_PLACEHOLDERS: PlaceholderMap = {
   "{{agency_name}}": "Tour Travels LK",
   "{{agency_logo_url}}": "https://static.vecteezy.com/system/resources/previews/000/511/437/original/travel-tourism-logo-isolated-on-white-background-vector.jpg",
   "{{hero_image_url}}": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/39598465939125.5b055c778c346.jpg",
@@ -593,6 +969,28 @@ const SAMPLE_PLACEHOLDERS: Record<string, string> = {
   "{{contact_website}}": "www.tourtravels.lk",
   "{{contact_address}}": "45 Galle Road, Colombo 03",
   "{{tourism_board_logo}}": "https://www.sltda.gov.lk/images/sltda_logo.png",
+  "{{cover_image_url}}": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",
+};
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const normalizeImageTokenValue = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("http") || trimmed.startsWith("data:")) {
+    return trimmed;
+  }
+  return `data:image/png;base64,${trimmed}`;
+};
+
+const fillTemplatePlaceholders = (templateDesign: string, placeholders: PlaceholderMap) => {
+  let result = templateDesign;
+  Object.entries(placeholders).forEach(([placeholder, replacement]) => {
+    result = result.replace(new RegExp(escapeRegExp(placeholder), "g"), replacement);
+  });
+  return result;
 };
 
 const tryStandardJsonParse = (payload: string): TemplateDesign | null => {
@@ -690,9 +1088,10 @@ const parseDesign = (markup: string): TemplateDesign | null => {
 
 type TemplateDesignRendererProps = {
   design: TemplateDesign;
+  placeholders: PlaceholderMap;
 };
 
-function TemplateDesignRenderer({ design }: TemplateDesignRendererProps) {
+function TemplateDesignRenderer({ design, placeholders }: TemplateDesignRendererProps) {
   const page = design.pages?.[0];
   if (!page) {
     return <pre className="template-modal__raw">No page definition found.</pre>;
@@ -720,6 +1119,7 @@ function TemplateDesignRenderer({ design }: TemplateDesignRendererProps) {
             canvasHeight={height}
             baseWidth={BASE_WIDTH}
             baseHeight={BASE_HEIGHT}
+            placeholders={placeholders}
           />
         ))}
       </div>
@@ -734,6 +1134,7 @@ type TemplateDesignElementViewProps = {
   canvasHeight: number;
   baseWidth: number;
   baseHeight: number;
+  placeholders: PlaceholderMap;
 };
 
 function TemplateDesignElementView({
@@ -743,6 +1144,7 @@ function TemplateDesignElementView({
   canvasHeight,
   baseWidth,
   baseHeight,
+  placeholders,
 }: TemplateDesignElementViewProps) {
   if (!element || !element.type) {
     return null;
@@ -775,7 +1177,7 @@ function TemplateDesignElementView({
           lineHeight: textEl.lineHeight ?? 1.4,
         }}
       >
-        {resolvePlaceholders(textEl.content ?? "")}
+        {resolvePlaceholders(textEl.content ?? "", placeholders)}
       </div>
     );
   }
@@ -789,7 +1191,7 @@ function TemplateDesignElementView({
           ...baseStyle,
           borderRadius: (imageEl.borderRadius ?? 0) * scale,
         }}
-        src={resolveImageSource(imageEl.src, imageEl.fallback)}
+        src={resolveImageSource(imageEl.src, imageEl.fallback, placeholders)}
         alt={imageEl.id ?? "Template preview"}
       />
     );
@@ -808,7 +1210,7 @@ function TemplateDesignElementView({
         }}
       >
         <span className="design-pill__label">{pillEl.label}</span>
-        <span className="design-pill__value">{resolvePlaceholders(pillEl.value ?? "")}</span>
+        <span className="design-pill__value">{resolvePlaceholders(pillEl.value ?? "", placeholders)}</span>
       </div>
     );
   }
@@ -890,20 +1292,20 @@ function TemplateDesignElementView({
   return null;
 }
 
-const resolvePlaceholders = (value: string) => {
+const resolvePlaceholders = (value: string, placeholders: PlaceholderMap) => {
   let result = value;
-  Object.entries(SAMPLE_PLACEHOLDERS).forEach(([placeholder, sample]) => {
-    result = result.replace(new RegExp(placeholder, "g"), sample);
+  Object.entries(placeholders).forEach(([placeholder, sample]) => {
+    result = result.replace(new RegExp(escapeRegExp(placeholder), "g"), sample);
   });
   return result;
 };
 
-const resolveImageSource = (src?: string, fallback?: string) => {
+const resolveImageSource = (src: string | undefined, fallback: string | undefined, placeholders: PlaceholderMap) => {
   if (!src) {
-    return fallback ?? SAMPLE_PLACEHOLDERS["{{cover_image_url}}"];
+    return fallback ? resolvePlaceholders(fallback, placeholders) : placeholders["{{cover_image_url}}"];
   }
   if (src.startsWith("http") || src.startsWith("data:")) {
     return src;
   }
-  return SAMPLE_PLACEHOLDERS[src] ?? fallback ?? SAMPLE_PLACEHOLDERS["{{cover_image_url}}"];
+  return placeholders[src] ?? (fallback ? resolvePlaceholders(fallback, placeholders) : placeholders["{{cover_image_url}}"]);
 };

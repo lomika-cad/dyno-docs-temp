@@ -322,6 +322,11 @@
   width: min(1050px, 100%);
 }
 
+.template-modal__panel--confirm {
+  width: min(520px, 90%);
+  padding-bottom: 0;
+}
+
 .template-modal__header {
   display: flex;
   align-items: center;
@@ -374,6 +379,30 @@
   padding: 0;
   align-items: start;
   justify-content: stretch;
+}
+
+.template-modal__body--confirm {
+  background: transparent;
+  border: none;
+  padding: 0 var(--spacing-1) var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.template-confirm__text {
+  color: var(--color-text-gray);
+  line-height: 1.5;
+}
+
+.template-confirm__list {
+  margin: 0;
+  padding-left: 1.4rem;
+  color: var(--color-text-black);
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
 }
 
 .template-payment__summary {

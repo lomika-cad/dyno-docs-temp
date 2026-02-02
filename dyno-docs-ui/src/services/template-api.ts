@@ -14,7 +14,7 @@ export const getTemplates = async () => {
 
 export const assignTemplate = async (data: any, token: string) => {
     try {
-        const response = await axios.post(`${API_URL}/assign`, data, {
+        const response = await axios.post(`${API_URL}/assign-to-user`, data, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }

@@ -33,18 +33,6 @@ public class AssignTemplateCommandHandler : IRequestHandler<AssignTemplateComman
             return Result.Failure("Template is already assigned to the user.");
         }
         
-        var user = await _context.Users.Where(u => u.Id == request.UserId).FirstOrDefaultAsync(cancellationToken);
-        if (user == null)
-        {
-            return Result.Failure("User not found.");
-        }
-
-        var tenant = await _context.Tenants.Where(t => t.Id == user.TenantId).FirstOrDefaultAsync(cancellationToken);
-        if (tenant == null)
-        {
-            return Result.Failure("Tenant not found.");
-        }
-        
         var userTemplate = new UserTemplate
         {
             UserId = request.UserId,
