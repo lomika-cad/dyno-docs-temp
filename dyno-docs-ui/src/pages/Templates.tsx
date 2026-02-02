@@ -4,6 +4,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import JSON5 from "json5";
 import Navbar from "../layouts/Navbar";
 import "../styles/templates.css";
 import "../styles/agencyData.css";
@@ -527,6 +528,7 @@ type TemplateBaseElement = {
   y?: number;
   width?: number;
   height?: number;
+  opacity?: number;
 };
 
 type TemplateTextElement = TemplateBaseElement & {
@@ -542,7 +544,7 @@ type TemplateTextElement = TemplateBaseElement & {
 
 type TemplateShapeElement = TemplateBaseElement & {
   type?: "shape";
-  shape?: "rectangle" | "line" | "polygon";
+  shape?: "rectangle" | "line" | "polygon" | "circle";
   fill?: string;
   stroke?: string;
   points?: { x: number; y: number }[];
@@ -578,15 +580,105 @@ const SAMPLE_PLACEHOLDERS: Record<string, string> = {
     "Curated coastal experiences, private transfers, and bespoke dining that capture the essence of Bali.",
   "{{generated_date}}": "31 Jan 2026",
   "{{cover_image_url}}": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",
+  "{{agency_name}}": "Tour Travels LK",
+  "{{welcome_message}}": "Welcome to Sri Lanka",
+  "{{agency_logo_url}}": "https://static.vecteezy.com/system/resources/previews/000/511/437/original/travel-tourism-logo-isolated-on-white-background-vector.jpg",
+  "{{hero_image_url}}": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/39598465939125.5b055c778c346.jpg",
+  "{{footer_texture_url}}": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/39598465939125.5b055c778c346.jpg",
+  "{{contact_phone}}": "+94 77 123 4567",
+  "{{contact_website}}": "www.tourtravels.lk",
+  "{{contact_address}}": "45 Galle Road, Colombo 03",
+  "{{tourism_board_logo}}": "https://www.sltda.gov.lk/images/sltda_logo.png",
 };
 
-const parseDesign = (markup: string): TemplateDesign | null => {
+const tryStandardJsonParse = (payload: string): TemplateDesign | null => {
   try {
-    const parsed = JSON.parse(markup);
+    const parsed = JSON.parse(payload);
     if (!parsed || !Array.isArray(parsed.pages)) {
       return null;
     }
     return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const repairBareNewlines = (payload: string) => {
+  let inString = false;
+  let escapeNext = false;
+  let quoteChar: string | null = null;
+  let repaired = "";
+
+  for (let index = 0; index < payload.length; index += 1) {
+    const char = payload[index];
+
+    if (inString) {
+      if (escapeNext) {
+        escapeNext = false;
+        repaired += char;
+        continue;
+      }
+
+      if (char === "\\") {
+        escapeNext = true;
+        repaired += char;
+        continue;
+      }
+
+      if (char === quoteChar) {
+        inString = false;
+        quoteChar = null;
+        repaired += char;
+        continue;
+      }
+
+      if (char === "\n") {
+        repaired += "\\n";
+        continue;
+      }
+
+      if (char === "\r") {
+        repaired += "\\r";
+        continue;
+      }
+
+      repaired += char;
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      inString = true;
+      quoteChar = char;
+      repaired += char;
+      continue;
+    }
+
+    repaired += char;
+  }
+
+  return repaired;
+};
+
+const parseDesign = (markup: string): TemplateDesign | null => {
+  const parsed = tryStandardJsonParse(markup);
+  if (parsed) {
+    return parsed;
+  }
+
+  const repairedMarkup = repairBareNewlines(markup);
+  if (repairedMarkup !== markup) {
+    const repairedParsed = tryStandardJsonParse(repairedMarkup);
+    if (repairedParsed) {
+      return repairedParsed;
+    }
+  }
+
+  try {
+    const json5Parsed = JSON5.parse(markup);
+    if (!json5Parsed || !Array.isArray(json5Parsed.pages)) {
+      return null;
+    }
+    return json5Parsed;
   } catch {
     return null;
   }
@@ -658,6 +750,7 @@ function TemplateDesignElementView({
     width: element.width ? element.width * scale : undefined,
     height: element.height ? element.height * scale : undefined,
     position: "absolute",
+    opacity: typeof element.opacity === "number" ? element.opacity : undefined,
   };
 
   if (element.type === "text") {
@@ -731,6 +824,24 @@ function TemplateDesignElementView({
       );
     }
 
+    if (shapeEl.shape === "circle") {
+      const diameter = (shapeEl.width ?? shapeEl.height ?? 0) * scale;
+      return (
+        <div
+          className="design-shape"
+          style={{
+            ...baseStyle,
+            width: diameter,
+            height: diameter,
+            borderRadius: "50%",
+            background: shapeEl.fill ?? "#f3f4f6",
+            border: shapeEl.stroke ? `1px solid ${shapeEl.stroke}` : undefined,
+            boxShadow: shapeEl.shadow,
+          }}
+        />
+      );
+    }
+
     if (shapeEl.shape === "polygon" && shapeEl.points?.length) {
       const polygonPoints = shapeEl.points
         .map((point) => {
@@ -766,6 +877,7 @@ function TemplateDesignElementView({
           borderRadius: (shapeEl.borderRadius ?? 0) * scale,
           boxShadow: shapeEl.shadow,
           backdropFilter: shapeEl.blur ? `blur(${shapeEl.blur}px)` : undefined,
+          border: shapeEl.stroke ? `1px solid ${shapeEl.stroke}` : undefined,
         }}
       />
     );
