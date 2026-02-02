@@ -21,6 +21,7 @@ public record LoginResponse
     public required string MobileNo { get; init; }
     public required string AgencyName { get; init; }
     public required Guid TenantId { get; init; }
+    public required Guid UserId { get; init; }
 }
 
 public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
@@ -68,7 +69,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
             Email = user.Email,
             MobileNo = user.MobileNo,
             AgencyName = tenant.AgencyName,
-            TenantId = user.TenantId
+            TenantId = user.TenantId,
+            UserId = user.Id
         };
 
         return response;
