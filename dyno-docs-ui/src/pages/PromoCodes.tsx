@@ -19,6 +19,22 @@ const DD_TOKEN = "mock-token";
 
 const ITEMS_PER_PAGE = 5;
 
+// Helper to format date for input
+const formatDateForInput = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+};
+
+// Helper to get default valid dates (today to 30 days from now)
+const getDefaultDates = () => {
+    const today = new Date();
+    const thirtyDaysLater = new Date();
+    thirtyDaysLater.setDate(today.getDate() + 30);
+    return {
+        validFrom: formatDateForInput(today),
+        validTo: formatDateForInput(thirtyDaysLater),
+    };
+};
+
 export default function PromoCodes() {
     // Data state
     const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
@@ -27,10 +43,13 @@ export default function PromoCodes() {
     const [isDeleting, setIsDeleting] = useState(false);
 
     // Form state
+    const defaultDates = getDefaultDates();
     const [formData, setFormData] = useState<CreatePromoCodePayload>({
         code: "",
         discountPercentage: 0,
-        status: "available",
+        isActive: true,
+        validFrom: defaultDates.validFrom,
+        validTo: defaultDates.validTo,
     });
 
     // Search & pagination
@@ -65,7 +84,7 @@ export default function PromoCodes() {
         return promoCodes.filter(
             (p) =>
                 p.code.toLowerCase().includes(term) ||
-                p.status.toLowerCase().includes(term)
+                (p.isActive ? "active" : "inactive").includes(term)
         );
     }, [promoCodes, searchTerm]);
 
@@ -98,6 +117,15 @@ export default function PromoCodes() {
         return pages;
     };
 
+    // Check if promo code is valid (active and within date range)
+    const isPromoValid = (promo: PromoCode): boolean => {
+        if (!promo.isActive) return false;
+        const now = new Date();
+        const validFrom = new Date(promo.validFrom);
+        const validTo = new Date(promo.validTo);
+        return now >= validFrom && now <= validTo;
+    };
+
     // Form handlers
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
@@ -107,15 +135,18 @@ export default function PromoCodes() {
         }));
     };
 
-    const handleStatusChange = (status: "available" | "used") => {
-        setFormData((prev) => ({ ...prev, status }));
+    const handleStatusChange = (isActive: boolean) => {
+        setFormData((prev) => ({ ...prev, isActive }));
     };
 
     const handleClear = () => {
+        const dates = getDefaultDates();
         setFormData({
             code: "",
             discountPercentage: 0,
-            status: "available",
+            isActive: true,
+            validFrom: dates.validFrom,
+            validTo: dates.validTo,
         });
     };
 
@@ -129,10 +160,18 @@ export default function PromoCodes() {
             showError("Discount must be between 1 and 100");
             return;
         }
+        if (!formData.validFrom || !formData.validTo) {
+            showError("Valid from and valid to dates are required");
+            return;
+        }
+        if (new Date(formData.validFrom) > new Date(formData.validTo)) {
+            showError("Valid from date must be before valid to date");
+            return;
+        }
 
         try {
             setIsSubmitting(true);
-            await createPromoCode(formData, DD_TOKEN);
+            await createPromoCode(formData);
             showSuccess("Promo code created successfully!");
             handleClear();
             fetchPromoCodes();
@@ -154,7 +193,7 @@ export default function PromoCodes() {
 
         try {
             setIsDeleting(true);
-            await deletePromoCode(promoToDelete.id, DD_TOKEN);
+            await deletePromoCode(promoToDelete.id);
             showSuccess("Promo code deleted successfully");
             setDeleteModalOpen(false);
             setPromoToDelete(null);
@@ -164,6 +203,11 @@ export default function PromoCodes() {
         } finally {
             setIsDeleting(false);
         }
+    };
+
+    // Format date for display
+    const formatDate = (dateString: string): string => {
+        return new Date(dateString).toLocaleDateString();
     };
 
     return (
@@ -219,6 +263,36 @@ export default function PromoCodes() {
                                     />
                                 </div>
 
+                                <div className="promoForm__field">
+                                    <label htmlFor="validFrom" className="promoForm__label">
+                                        Valid From
+                                    </label>
+                                    <input
+                                        id="validFrom"
+                                        type="date"
+                                        name="validFrom"
+                                        className="promoForm__input"
+                                        value={formData.validFrom}
+                                        onChange={handleInputChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="promoForm__field">
+                                    <label htmlFor="validTo" className="promoForm__label">
+                                        Valid To
+                                    </label>
+                                    <input
+                                        id="validTo"
+                                        type="date"
+                                        name="validTo"
+                                        className="promoForm__input"
+                                        value={formData.validTo}
+                                        onChange={handleInputChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
                                 <div className="promoForm__field promoForm__field--status">
                                     <div className="radioGroup">
                                         <span className="promoForm__label">Status</span>
@@ -226,26 +300,26 @@ export default function PromoCodes() {
                                             <label className="radioGroup__option">
                                                 <input
                                                     type="radio"
-                                                    name="status"
-                                                    value="available"
+                                                    name="isActive"
+                                                    value="true"
                                                     className="radioGroup__input"
-                                                    checked={formData.status === "available"}
-                                                    onChange={() => handleStatusChange("available")}
+                                                    checked={formData.isActive === true}
+                                                    onChange={() => handleStatusChange(true)}
                                                     disabled={isSubmitting}
                                                 />
-                                                Available
+                                                Active
                                             </label>
                                             <label className="radioGroup__option">
                                                 <input
                                                     type="radio"
-                                                    name="status"
-                                                    value="used"
+                                                    name="isActive"
+                                                    value="false"
                                                     className="radioGroup__input"
-                                                    checked={formData.status === "used"}
-                                                    onChange={() => handleStatusChange("used")}
+                                                    checked={formData.isActive === false}
+                                                    onChange={() => handleStatusChange(false)}
                                                     disabled={isSubmitting}
                                                 />
-                                                Not Available
+                                                Inactive
                                             </label>
                                         </div>
                                     </div>
@@ -298,6 +372,7 @@ export default function PromoCodes() {
                                 <tr>
                                     <th>Promo Code</th>
                                     <th>Discount</th>
+                                    <th>Valid Period</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -305,13 +380,13 @@ export default function PromoCodes() {
                             <tbody>
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={4} style={{ textAlign: "center", padding: "2rem" }}>
+                                        <td colSpan={5} style={{ textAlign: "center", padding: "2rem" }}>
                                             Loading...
                                         </td>
                                     </tr>
                                 ) : currentCodes.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} style={{ textAlign: "center", padding: "2rem" }}>
+                                        <td colSpan={5} style={{ textAlign: "center", padding: "2rem" }}>
                                             {searchTerm
                                                 ? `No results found for "${searchTerm}"`
                                                 : "No promo codes available"}
@@ -323,10 +398,13 @@ export default function PromoCodes() {
                                             <td>{promo.code}</td>
                                             <td>{promo.discountPercentage}%</td>
                                             <td>
+                                                {formatDate(promo.validFrom)} - {formatDate(promo.validTo)}
+                                            </td>
+                                            <td>
                                                 <span
-                                                    className={`statusBadge statusBadge--${promo.status}`}
+                                                    className={`statusBadge statusBadge--${isPromoValid(promo) ? 'available' : 'used'}`}
                                                 >
-                                                    {promo.status === "available" ? "Available" : "Used"}
+                                                    {isPromoValid(promo) ? "Active" : "Inactive"}
                                                 </span>
                                             </td>
                                             <td>

@@ -12,6 +12,7 @@ public interface IApplicationDbContext
     DbSet<PricingPlan> PricingPlan { get; }
     DbSet<Partnership> Partnership { get; }
     DbSet<Template> Template { get; }
+    DbSet<PromoCode> PromoCode { get; }
 
     #endregion
 
