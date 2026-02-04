@@ -1,24 +1,34 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import JSON5 from "json5";
 import Navbar from "../layouts/Navbar";
 import "../styles/templates.css";
 import "../styles/agencyData.css";
-import { getTemplates } from "../services/template-api";
-import { showError, showInfo } from "../components/Toast";
+import { assignTemplate, getTemplates, getUserTemplates, unassignTemplate } from "../services/template-api";
+import { showError, showInfo, showSuccess } from "../components/Toast";
 import CardPayment from "../components/CardPayment";
 import { EyeIcon } from "lucide-react";
 import { MonetizationOn } from "@mui/icons-material";
 import { Divider } from "@mui/material";
+import { getTenantInfo } from "../services/auth-api";
 
 type TemplateFilter = "all" | "free" | "paid";
 
 type TemplateApiResponse = {
   id?: string;
   Id?: string;
+  userTemplateId?: string;
+  UserTemplateId?: string;
+  assignmentId?: string;
+  AssignmentId?: string;
+  templateId?: string;
+  TemplateId?: string;
+  templateID?: string;
+  TemplateID?: string;
   templateName?: string;
   TemplateName?: string;
   templateThumbnail?: string | null;
@@ -33,6 +43,7 @@ type TemplateApiResponse = {
 
 type TemplateCardModel = {
   id: string;
+  templateId: string;
   name: string;
   description: string;
   thumbnail: string | null;
@@ -40,6 +51,18 @@ type TemplateCardModel = {
   priceLabel: string;
   priceValue: number | null;
   designMarkup: string;
+};
+
+type UserSession = {
+  userId: string;
+  token: string;
+};
+
+type TenantProfile = {
+  agencyLogo?: string | null;
+  agencyName?: string | null;
+  contactNo?: string | null;
+  agencyAddress?: string | null;
 };
 
 type FilterOption = {
@@ -62,6 +85,207 @@ const LKR_FORMATTER = new Intl.NumberFormat("en-LK", {
   maximumFractionDigits: 0,
 });
 
+const DEFAULT_ASSIGNMENT_DESIGN = `{
+  "version": "1.0",
+  "pageSize": "A4",
+  "background": "#ffffff",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "elements": [
+        {
+          "id": "header_strip",
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "width": 595,
+          "height": 130,
+          "fill": "#ffffff"
+        },
+        {
+          "id": "brand_mark",
+          "type": "image",
+          "x": 470,
+          "y": 25,
+          "width": 80,
+          "height": 80,
+          "borderRadius": 12,
+          "src": "{{agency_logo_url}}",
+          "fallback": "{{agency_logo_url}}"
+        },
+        {
+          "id": "title_text",
+          "type": "text",
+          "x": 40,
+          "y": 30,
+          "fontSize": 34,
+          "fontFamily": "Playfair Display, serif",
+          "fontWeight": 600,
+          "color": "#111827",
+          "content": "{{agency_name}}"
+        },
+        {
+          "id": "subtitle_text",
+          "type": "text",
+          "x": 40,
+          "y": 75,
+          "fontSize": 18,
+          "fontFamily": "Poppins, sans-serif",
+          "fontWeight": 500,
+          "color": "#b3b6c3",
+          "content": "Welcome to Sri Lanka"
+        },
+        {
+          "id": "hero_photo",
+          "type": "image",
+          "x": 0,
+          "y": 130,
+          "width": 595,
+          "height": 540,
+          "src": "{{hero_image_url}}",
+          "fallback": "{{hero_image_url}}"
+        },
+        {
+          "id": "footer_texture",
+          "type": "image",
+          "x": 0,
+          "y": 670,
+          "width": 595,
+          "height": 172,
+          "src": "{{footer_texture_url}}",
+          "fallback": "{{footer_texture_url}}"
+        },
+        {
+          "id": "footer_overlay",
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 670,
+          "width": 595,
+          "height": 172,
+          "fill": "#ffffff"
+        },
+        {
+          "id": "contact_box",
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 30,
+          "y": 690,
+          "width": 330,
+          "height": 120,
+          "borderRadius": 16,
+          "fill": "rgba(255,255,255,0.92)"
+        },
+        {
+          "id": "contact_phone_icon",
+          "type": "shape",
+          "shape": "circle",
+          "x": 50,
+          "y": 712,
+          "width": 30,
+          "height": 30,
+          "fill": "#000000"
+        },
+        {
+          "id": "contact_phone_icon_text",
+          "type": "text",
+          "x": 57,
+          "y": 716,
+          "fontSize": 16,
+          "fontFamily": "Poppins, sans-serif",
+          "fontWeight": 600,
+          "color": "#ffffff",
+          "content": "\\u260E"
+        },
+        {
+          "id": "contact_phone_text",
+          "type": "text",
+          "x": 92,
+          "y": 715,
+          "fontSize": 14,
+          "fontFamily": "Inter, sans-serif",
+          "fontWeight": 600,
+          "color": "#1f2937",
+          "content": "{{contact_phone}}"
+        },
+        {
+          "id": "contact_web_icon",
+          "type": "shape",
+          "shape": "circle",
+          "x": 50,
+          "y": 750,
+          "width": 30,
+          "height": 30,
+          "fill": "#000000"
+        },
+        {
+          "id": "contact_web_icon_text",
+          "type": "text",
+          "x": 55,
+          "y": 754,
+          "fontSize": 16,
+          "fontFamily": "Poppins, sans-serif",
+          "fontWeight": 600,
+          "color": "#ffffff",
+          "content": "\\uD83C\\uDF10"
+        },
+        {
+          "id": "contact_web_text",
+          "type": "text",
+          "x": 92,
+          "y": 752,
+          "fontSize": 13,
+          "fontFamily": "Inter, sans-serif",
+          "color": "#1f2937",
+          "content": "{{contact_website}}"
+        },
+        {
+          "id": "contact_address_icon",
+          "type": "shape",
+          "shape": "circle",
+          "x": 50,
+          "y": 788,
+          "width": 30,
+          "height": 30,
+          "fill": "#000000"
+        },
+        {
+          "id": "contact_address_icon_text",
+          "type": "text",
+          "x": 55,
+          "y": 792,
+          "fontSize": 16,
+          "fontFamily": "Poppins, sans-serif",
+          "fontWeight": 600,
+          "color": "#ffffff",
+          "content": "\\uD83D\\uDCCD"
+        },
+        {
+          "id": "contact_address_text",
+          "type": "text",
+          "x": 92,
+          "y": 792,
+          "fontSize": 13,
+          "fontFamily": "Inter, sans-serif",
+          "color": "#1f2937",
+          "content": "{{contact_address}}"
+        },
+        {
+          "id": "footer_logo",
+          "type": "image",
+          "x": 470,
+          "y": 700,
+          "width": 90,
+          "height": 90,
+          "src": "{{tourism_board_logo}}",
+          "fallback": "{{tourism_board_logo}}"
+        }
+      ]
+    }
+  ]
+}`;
+
 const stripUnsafeMarkup = (markup: string) =>
   markup.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
 
@@ -72,8 +296,55 @@ const sanitizeText = (text?: string | null) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const toNonEmptyString = (value?: string | null) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const resolveTemplateIdentifiers = (
+  entity: TemplateApiResponse | undefined,
+  defaults: { assignmentId: string; templateId: string },
+) => {
+  const templateIdCandidates = [
+    entity?.templateId,
+    entity?.TemplateId,
+    entity?.templateID,
+    entity?.TemplateID,
+    entity?.id,
+    entity?.Id,
+  ];
+  const resolvedTemplateId =
+    templateIdCandidates.map(toNonEmptyString).find((value) => value) ?? defaults.templateId;
+
+  const assignmentIdCandidates = [
+    entity?.userTemplateId,
+    entity?.UserTemplateId,
+    entity?.assignmentId,
+    entity?.AssignmentId,
+    entity?.id,
+    entity?.Id,
+  ];
+  const resolvedAssignmentId =
+    assignmentIdCandidates.map(toNonEmptyString).find((value) => value) ?? defaults.assignmentId;
+
+  return {
+    templateId: resolvedTemplateId,
+    assignmentId: resolvedAssignmentId,
+  };
+};
+
 const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[] =>
   payload.map((template, index) => {
+    const fallbackAssignmentId = template.id ?? template.Id ?? `template-${index}`;
+    // TemplateId should always come from backend Id/TemplateId fields, never from synthetic keys
+    const fallbackTemplateId = template.templateId ?? template.TemplateId ?? template.id ?? template.Id ?? "";
+    const { assignmentId, templateId } = resolveTemplateIdentifiers(template, {
+      assignmentId: fallbackAssignmentId,
+      templateId: fallbackTemplateId,
+    });
     const name = template.templateName ?? template.TemplateName ?? "Untitled Template";
     const rawDesign = template.templateDesign ?? template.TemplateDesign ?? "";
     const safeDesign = stripUnsafeMarkup(rawDesign).trim();
@@ -96,7 +367,8 @@ const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[]
         : "Free";
 
     return {
-      id: template.id ?? template.Id ?? `template-${index}`,
+      id: assignmentId,
+      templateId,
       name,
       description: truncatedDescription,
       thumbnail: template.templateThumbnail ?? template.TemplateThumbnail ?? null,
@@ -107,6 +379,35 @@ const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[]
     };
   });
 
+const extractTemplatesPayload = (rawResponse: unknown): TemplateApiResponse[] => {
+  if (Array.isArray(rawResponse)) {
+    return rawResponse as TemplateApiResponse[];
+  }
+
+  if (
+    rawResponse &&
+    typeof rawResponse === "object" &&
+    Array.isArray((rawResponse as { data?: unknown }).data)
+  ) {
+    return ((rawResponse as { data?: TemplateApiResponse[] }).data ?? []) as TemplateApiResponse[];
+  }
+
+  return [];
+};
+
+const resolveApiErrorMessage = (err: unknown) =>
+  (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data?.message ??
+  (err as { response?: { data?: { message?: string; Message?: string } } })?.response?.data?.Message ??
+  null;
+
+const getAssignmentDesign = (template: TemplateCardModel) => {
+  const markup = template.designMarkup?.trim();
+  if (markup && markup !== FALLBACK_PREVIEW) {
+    return markup;
+  }
+  return DEFAULT_ASSIGNMENT_DESIGN;
+};
+
 export default function Templates() {
   const [templates, setTemplates] = useState<TemplateCardModel[]>([]);
   const [filter, setFilter] = useState<TemplateFilter>("all");
@@ -115,6 +416,103 @@ export default function Templates() {
   const [error, setError] = useState<string | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateCardModel | null>(null);
   const [paymentTemplate, setPaymentTemplate] = useState<TemplateCardModel | null>(null);
+  const [pendingAssignment, setPendingAssignment] = useState<TemplateCardModel | null>(null);
+  const [assigningTemplateId, setAssigningTemplateId] = useState<string | null>(null);
+  const [isMyTemplatesModalOpen, setIsMyTemplatesModalOpen] = useState(false);
+  const [myTemplates, setMyTemplates] = useState<TemplateCardModel[]>([]);
+  const [isLoadingMyTemplates, setIsLoadingMyTemplates] = useState(false);
+  const [myTemplatesError, setMyTemplatesError] = useState<string | null>(null);
+  const [hasLoadedMyTemplates, setHasLoadedMyTemplates] = useState(false);
+  const [tenantPlaceholders, setTenantPlaceholders] = useState<PlaceholderMap>(DEFAULT_PLACEHOLDERS);
+  const [hasTenantPlaceholders, setHasTenantPlaceholders] = useState(false);
+  const [previewPlaceholders, setPreviewPlaceholders] = useState<PlaceholderMap>(DEFAULT_PLACEHOLDERS);
+  const [templateToUnassign, setTemplateToUnassign] = useState<TemplateCardModel | null>(null);
+  const [isUnassigning, setIsUnassigning] = useState(false);
+  const tenantPlaceholderPromiseRef = useRef<Promise<PlaceholderMap> | null>(null);
+
+  const resolveUserSession = (): UserSession | null => {
+    const token = sessionStorage.getItem("dd_token");
+    const userId = sessionStorage.getItem("dd_user_id");
+
+    if (!token || !userId) {
+      showError("Please sign in to view your templates.");
+      return null;
+    }
+
+    return { userId, token };
+  };
+
+  const ensureTenantPlaceholders = async (): Promise<PlaceholderMap> => {
+    if (hasTenantPlaceholders) {
+      return tenantPlaceholders;
+    }
+
+    if (tenantPlaceholderPromiseRef.current) {
+      return tenantPlaceholderPromiseRef.current;
+    }
+
+    const tenantId = sessionStorage.getItem("dd_tenant_id");
+    if (!tenantId) {
+      return tenantPlaceholders;
+    }
+
+    const fetchPromise = (async () => {
+      try {
+        const tenantInfo = (await getTenantInfo(tenantId)) as TenantProfile;
+        const mapped = buildTenantPlaceholders(tenantInfo);
+        setTenantPlaceholders(mapped);
+        setHasTenantPlaceholders(true);
+        return mapped;
+      } catch (error) {
+        console.error("Failed to fetch tenant info:", error);
+        return tenantPlaceholders;
+      } finally {
+        tenantPlaceholderPromiseRef.current = null;
+      }
+    })();
+
+    tenantPlaceholderPromiseRef.current = fetchPromise;
+    return fetchPromise;
+  };
+
+  const fetchUserTemplates = async ({ userId, token }: UserSession) => {
+    setIsLoadingMyTemplates(true);
+    setMyTemplatesError(null);
+    try {
+      const response = await getUserTemplates(userId, token);
+      const payload = extractTemplatesPayload(response ?? []);
+      const normalized = normalizeTemplates(payload);
+      setMyTemplates(normalized);
+      setHasLoadedMyTemplates(true);
+    } catch (err) {
+      const message =
+        resolveApiErrorMessage(err) ?? "Unable to load your templates. Please try again.";
+      setMyTemplates([]);
+      setMyTemplatesError(message);
+      showError(message);
+    } finally {
+      setIsLoadingMyTemplates(false);
+    }
+  };
+
+  const appendTemplateToLibrary = (template: TemplateCardModel) => {
+    setMyTemplates((current) => {
+      if (!hasLoadedMyTemplates) {
+        return current;
+      }
+
+      const exists = current.some((entry) => entry.id === template.id);
+      if (exists) {
+        return current;
+      }
+
+      return [template, ...current];
+    });
+  };
+
+  const removeTemplateFromLibrary = (assignmentId: string) => {
+    setMyTemplates((current) => current.filter((entry) => entry.id !== assignmentId));
+  };
 
   useEffect(() => {
     let ignore = false;
@@ -127,18 +525,9 @@ export default function Templates() {
           return;
         }
 
-        const raw = (response as { data?: unknown }).data;
-        let payload: TemplateApiResponse[] = [];
-
-        if (Array.isArray(raw)) {
-          payload = raw as TemplateApiResponse[];
-        } else if (
-          raw &&
-          typeof raw === "object" &&
-          Array.isArray((raw as { data?: unknown }).data)
-        ) {
-          payload = ((raw as { data?: TemplateApiResponse[] }).data ?? []) as TemplateApiResponse[];
-        }
+        const payload = extractTemplatesPayload(
+          (response as { data?: unknown })?.data ?? response,
+        );
 
         setTemplates(normalizeTemplates(payload));
         setError(null);
@@ -177,12 +566,90 @@ export default function Templates() {
     });
   }, [filter, searchTerm, templates]);
 
-  const handleAddTemplate = (template: TemplateCardModel) => {
-    showInfo(`"${template.name}" added to your workspace.`);
+  const handleAddTemplateRequest = (template: TemplateCardModel) => {
+    setPendingAssignment(template);
   };
 
-  const handleMyTemplatesClick = () => {
-    showInfo("Personal template collections are coming soon.");
+  const handleCloseAssignmentModal = () => {
+    if (assigningTemplateId) {
+      return;
+    }
+    setPendingAssignment(null);
+  };
+
+  const handleConfirmAssignment = async () => {
+    if (!pendingAssignment) {
+      return;
+    }
+
+    const token = sessionStorage.getItem("dd_token");
+    const userId = sessionStorage.getItem("dd_user_id");
+
+    if (!token || !userId) {
+      showError("Please sign in to add templates to your workspace.");
+      return;
+    }
+
+    const assignmentPlaceholders = await ensureTenantPlaceholders();
+
+    const payload = {
+      userId,
+      templateId: pendingAssignment.templateId,
+      templateDesign: finalizeTemplateDesign(
+        getAssignmentDesign(pendingAssignment),
+        assignmentPlaceholders,
+      ),
+    };
+
+    try {
+      setAssigningTemplateId(pendingAssignment.id);
+      const response = await assignTemplate(payload, token);
+      const identifiers = resolveTemplateIdentifiers(response as TemplateApiResponse, {
+        assignmentId: pendingAssignment.id,
+        templateId: pendingAssignment.templateId,
+      });
+      const normalizedAssignment: TemplateCardModel = {
+        ...pendingAssignment,
+        id: identifiers.assignmentId,
+        templateId: identifiers.templateId,
+      };
+      const successMessage =
+        (response as { message?: string; Message?: string })?.message ??
+        (response as { message?: string; Message?: string })?.Message ??
+        `"${pendingAssignment.name}" assigned to your workspace.`;
+      showSuccess(successMessage);
+      appendTemplateToLibrary(normalizedAssignment);
+      setPendingAssignment(null);
+    } catch (err) {
+      const apiMessage = resolveApiErrorMessage(err);
+      showError(apiMessage ?? "Unable to assign template. Please try again.");
+      console.error("assignTemplate failed", err);
+    } finally {
+      setAssigningTemplateId(null);
+    }
+  };
+
+  const handleMyTemplatesClick = async () => {
+    const session = resolveUserSession();
+    if (!session) {
+      return;
+    }
+
+    setIsMyTemplatesModalOpen(true);
+    await Promise.all([fetchUserTemplates(session), ensureTenantPlaceholders()]);
+  };
+
+  const handleReloadMyTemplates = async () => {
+    const session = resolveUserSession();
+    if (!session) {
+      setIsMyTemplatesModalOpen(false);
+      return;
+    }
+    await Promise.all([fetchUserTemplates(session), ensureTenantPlaceholders()]);
+  };
+
+  const handleCloseMyTemplatesModal = () => {
+    setIsMyTemplatesModalOpen(false);
   };
 
   const handleResetFilters = () => {
@@ -190,12 +657,77 @@ export default function Templates() {
     setSearchTerm("");
   };
 
-  const handleCardPreview = (template: TemplateCardModel) => {
+  const handleCardPreview = (template: TemplateCardModel, useTenantData = false) => {
     setPreviewTemplate(template);
+
+    if (useTenantData) {
+      const active = hasTenantPlaceholders ? tenantPlaceholders : DEFAULT_PLACEHOLDERS;
+      setPreviewPlaceholders(active);
+
+      if (!hasTenantPlaceholders) {
+        ensureTenantPlaceholders().then((resolved) => {
+          setPreviewPlaceholders(resolved);
+        });
+      }
+      return;
+    }
+
+    setPreviewPlaceholders(DEFAULT_PLACEHOLDERS);
   };
 
   const handleClosePreview = () => {
     setPreviewTemplate(null);
+  };
+
+  const handleUnassignTemplateRequest = (template: any) => {
+    console.log(template);
+    
+    setTemplateToUnassign(template);
+  };
+
+  const handleCloseUnassignModal = () => {
+    if (isUnassigning) {
+      return;
+    }
+    setTemplateToUnassign(null);
+  };
+
+  const handleConfirmUnassign = async () => {
+    if (!templateToUnassign) {
+      return;
+    }
+
+    const session = resolveUserSession();
+    if (!session) {
+      setTemplateToUnassign(null);
+      return;
+    }
+
+    setIsUnassigning(true);
+    const payload = {
+      userId: session.userId,
+      templateId: templateToUnassign.templateId,
+    };
+
+    try {
+      const response = await unassignTemplate(payload, session.token);
+      const successMessage =
+        (response as { message?: string; Message?: string })?.message ??
+        (response as { message?: string; Message?: string })?.Message ??
+        `"${templateToUnassign.name}" removed from your workspace.`;
+      showSuccess(successMessage);
+      removeTemplateFromLibrary(templateToUnassign.id);
+      if (previewTemplate?.id === templateToUnassign.id) {
+        setPreviewTemplate(null);
+      }
+      setTemplateToUnassign(null);
+    } catch (err) {
+      const apiMessage = resolveApiErrorMessage(err);
+      showError(apiMessage ?? "Unable to unassign template. Please try again.");
+      console.error("unassignTemplate failed", err);
+    } finally {
+      setIsUnassigning(false);
+    }
   };
 
   const handlePurchaseTemplate = (template: TemplateCardModel) => {
@@ -210,12 +742,54 @@ export default function Templates() {
     setPaymentTemplate(null);
   };
 
-  const handlePaymentSuccess = () => {
-    const purchasedName = paymentTemplate?.name;
-    if (purchasedName) {
-      showInfo(`"${purchasedName}" unlocked. Check your workspace for the template shortly.`);
+  const handlePaymentSuccess = async (purchasedTemplate: TemplateCardModel) => {
+
+    const token = sessionStorage.getItem("dd_token");
+    const userId = sessionStorage.getItem("dd_user_id");
+
+    if (!token || !userId) {
+      showError("Payment received, but you must sign in to assign the template.");
+      return;
     }
-    setPaymentTemplate(null);
+
+    const assignmentPlaceholders = await ensureTenantPlaceholders();
+
+    const payload = {
+      userId,
+      templateId: purchasedTemplate.templateId,
+      templateDesign: finalizeTemplateDesign(
+        getAssignmentDesign(purchasedTemplate),
+        assignmentPlaceholders,
+      ),
+    };
+
+    try {
+      setAssigningTemplateId(purchasedTemplate.id);
+      const response = await assignTemplate(payload, token);
+      const identifiers = resolveTemplateIdentifiers(response as TemplateApiResponse, {
+        assignmentId: purchasedTemplate.id,
+        templateId: purchasedTemplate.templateId,
+      });
+      const normalizedAssignment: TemplateCardModel = {
+        ...purchasedTemplate,
+        id: identifiers.assignmentId,
+        templateId: identifiers.templateId,
+      };
+      const successMessage =
+        (response as { message?: string; Message?: string })?.message ??
+        (response as { message?: string; Message?: string })?.Message ??
+        `"${purchasedTemplate.name}" assigned to your workspace.`;
+      showSuccess(successMessage);
+      showInfo(`"${purchasedTemplate.name}" unlocked. Check your workspace for the template shortly.`);
+      appendTemplateToLibrary(normalizedAssignment);
+      setPaymentTemplate(null);
+    } catch (err) {
+      const apiMessage = resolveApiErrorMessage(err);
+      showError(apiMessage ?? "Payment succeeded, but template assignment failed. Please try again.");
+      console.error("assignTemplate after payment failed", err);
+    } finally {
+      setAssigningTemplateId(null);
+    }
   };
 
   const showEmptyState = !isLoading && filteredTemplates.length === 0;
@@ -284,9 +858,10 @@ export default function Templates() {
               <TemplateCard
                 key={template.id}
                 template={template}
-                onAdd={handleAddTemplate}
+                onAddRequest={handleAddTemplateRequest}
                 onPurchase={handlePurchaseTemplate}
                 onPreview={handleCardPreview}
+                isAssigning={assigningTemplateId === template.id}
               />
             ))}
         </div>
@@ -302,9 +877,24 @@ export default function Templates() {
           </div>
         )}
 
+        {isMyTemplatesModalOpen && (
+          <MyTemplatesModal
+            templates={myTemplates}
+            isLoading={isLoadingMyTemplates}
+            error={myTemplatesError}
+            onClose={handleCloseMyTemplatesModal}
+            onPreviewAssigned={(template) => handleCardPreview(template, true)}
+            onReload={handleReloadMyTemplates}
+            onUnassignRequest={handleUnassignTemplateRequest}
+            isUnassigning={isUnassigning}
+            unassigningTemplateId={templateToUnassign?.id ?? null}
+          />
+        )}
+
         {previewTemplate && (
           <TemplatePreviewModal
             template={previewTemplate}
+            placeholders={previewPlaceholders}
             onClose={handleClosePreview}
           />
         )}
@@ -316,6 +906,24 @@ export default function Templates() {
             onPaymentSuccess={handlePaymentSuccess}
           />
         )}
+
+        {pendingAssignment && (
+          <TemplateAssignConfirmModal
+            template={pendingAssignment}
+            isSubmitting={assigningTemplateId === pendingAssignment.id}
+            onConfirm={handleConfirmAssignment}
+            onCancel={handleCloseAssignmentModal}
+          />
+        )}
+
+        {templateToUnassign && (
+          <TemplateUnassignConfirmModal
+            template={templateToUnassign}
+            isSubmitting={isUnassigning}
+            onConfirm={handleConfirmUnassign}
+            onCancel={handleCloseUnassignModal}
+          />
+        )}
       </section>
     </Navbar>
   );
@@ -323,18 +931,36 @@ export default function Templates() {
 
 type TemplateCardProps = {
   template: TemplateCardModel;
-  onAdd: (template: TemplateCardModel) => void;
+  onAddRequest?: (template: TemplateCardModel) => void;
   onPurchase?: (template: TemplateCardModel) => void;
   onPreview: (template: TemplateCardModel) => void;
+  isAssigning?: boolean;
+  variant?: "marketplace" | "assigned";
+  onUnassignRequest?: (template: TemplateCardModel) => void;
+  isUnassigning?: boolean;
+  unassigningTemplateId?: string | null;
 };
 
-function TemplateCard({ template, onAdd, onPurchase, onPreview }: TemplateCardProps) {
+function TemplateCard({
+  template,
+  onAddRequest,
+  onPurchase,
+  onPreview,
+  isAssigning = false,
+  variant = "marketplace",
+  onUnassignRequest,
+  isUnassigning = false,
+  unassigningTemplateId = null,
+}: TemplateCardProps) {
   const { name, thumbnail, isPaid, priceLabel } = template;
   const thumbnailSrc = thumbnail
     ? thumbnail.startsWith("data:")
       ? thumbnail
       : `data:image/png;base64,${thumbnail}`
     : null;
+  const isAssignedCard = variant === "assigned";
+  const isUnassigningThisTemplate =
+    isAssignedCard && isUnassigning && unassigningTemplateId === template.id;
 
   const handleCardClick = () => {
     onPreview(template);
@@ -349,11 +975,25 @@ function TemplateCard({ template, onAdd, onPurchase, onPreview }: TemplateCardPr
 
   const handleAddClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
+    if (isAssignedCard) {
+      onPreview(template);
+      return;
+    }
+
     if (isPaid) {
       onPurchase?.(template);
       return;
     }
-    onAdd(template);
+
+    onAddRequest?.(template);
+  };
+
+  const handleUnassignClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!isAssignedCard || !onUnassignRequest) {
+      return;
+    }
+    onUnassignRequest(template);
   };
 
   return (
@@ -390,19 +1030,42 @@ function TemplateCard({ template, onAdd, onPurchase, onPreview }: TemplateCardPr
           type="button"
           className="btn btn--orange"
           onClick={handleAddClick}
+          disabled={!isAssignedCard && !isPaid && isAssigning}
         >
-          {isPaid ? <MonetizationOn fontSize="small" /> : <AddRoundedIcon fontSize="small" />}
-          {isPaid ? "Purchase" : "Add Template"}
+          {isAssignedCard ? (
+            <>
+              <EyeIcon size={16} />
+              View Template
+            </>
+          ) : (
+            <>
+              {isPaid ? <MonetizationOn fontSize="small" /> : <AddRoundedIcon fontSize="small" />}
+              {isPaid ? "Purchase" : isAssigning ? "Assigning..." : "Add Template"}
+            </>
+          )}
         </button>
 
-        <div className="template-card__badges">
-          <span
-            className={`template-card__price-pill ${
-              isPaid ? "template-card__price-pill--paid" : "template-card__price-pill--free"
-            }`}
+        {isAssignedCard && onUnassignRequest && (
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleUnassignClick}
+            disabled={isUnassigningThisTemplate}
           >
-            {isPaid ? "Paid" : "Free"}
-          </span>
+            {isUnassigningThisTemplate ? "Removing..." : "Unassign"}
+          </button>
+        )}
+
+        <div className="template-card__badges">
+          {!(isAssignedCard && !isPaid) && (
+            <span
+              className={`template-card__price-pill ${
+                isPaid ? "template-card__price-pill--paid" : "template-card__price-pill--free"
+              }`}
+            >
+              {isPaid ? "Paid" : "Free"}
+            </span>
+          )}
           {isPaid && <span className="template-card__price">{priceLabel}</span>}
         </div>
       </div>
@@ -412,10 +1075,11 @@ function TemplateCard({ template, onAdd, onPurchase, onPreview }: TemplateCardPr
 
 type TemplatePreviewModalProps = {
   template: TemplateCardModel;
+  placeholders: PlaceholderMap;
   onClose: () => void;
 };
 
-function TemplatePreviewModal({ template, onClose }: TemplatePreviewModalProps) {
+function TemplatePreviewModal({ template, placeholders, onClose }: TemplatePreviewModalProps) {
   const parsedDesign = useMemo(() => parseDesign(template.designMarkup), [template.designMarkup]);
 
   const handleBackdropClick = () => {
@@ -441,9 +1105,98 @@ function TemplatePreviewModal({ template, onClose }: TemplatePreviewModalProps) 
 
         <div className="template-modal__body">
           {parsedDesign ? (
-            <TemplateDesignRenderer design={parsedDesign} />
+            <TemplateDesignRenderer design={parsedDesign} placeholders={placeholders} />
           ) : (
             <pre className="template-modal__raw">{template.designMarkup}</pre>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type MyTemplatesModalProps = {
+  templates: TemplateCardModel[];
+  isLoading: boolean;
+  error: string | null;
+  onClose: () => void;
+  onPreviewAssigned: (template: TemplateCardModel) => void;
+  onReload: () => void;
+  onUnassignRequest: (template: TemplateCardModel) => void;
+  isUnassigning: boolean;
+  unassigningTemplateId: string | null;
+};
+
+function MyTemplatesModal({
+  templates,
+  isLoading,
+  error,
+  onClose,
+  onPreviewAssigned,
+  onReload,
+  onUnassignRequest,
+  isUnassigning,
+  unassigningTemplateId,
+}: MyTemplatesModalProps) {
+  const handleBackdropClick = () => {
+    onClose();
+  };
+
+  const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
+
+  const hasNoTemplates = !isLoading && !error && templates.length === 0;
+
+  return (
+    <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
+      <div className="template-modal__panel" style={{ maxWidth: "960px" }} onClick={handlePanelClick}>
+        <header className="template-modal__header">
+          <div>
+            <p className="template-modal__eyebrow">Assigned Templates</p>
+            <h2>My Templates</h2>
+          </div>
+          <button type="button" className="template-modal__close" onClick={onClose} aria-label="Close my templates">
+            <CloseRoundedIcon />
+          </button>
+        </header>
+
+        <div className="template-modal__body template-modal__body--my-templates">
+          {isLoading && (
+            <div className="templates-empty">
+              <p>Loading your templates...</p>
+            </div>
+          )}
+
+          {!isLoading && error && (
+            <div className="templates-empty">
+              <p>{error}</p>
+              <button type="button" className="btn btn--orange" onClick={onReload}>
+                Try again
+              </button>
+            </div>
+          )}
+
+          {hasNoTemplates && (
+            <div className="templates-empty">
+              <p>You have not assigned any templates yet.</p>
+            </div>
+          )}
+
+          {!isLoading && !error && templates.length > 0 && (
+            <div className="template-grid">
+              {templates.map((template) => (
+                <TemplateCard
+                  key={`my-${template.id}`}
+                  template={template}
+                  onPreview={onPreviewAssigned}
+                  onUnassignRequest={onUnassignRequest}
+                  isUnassigning={isUnassigning}
+                  unassigningTemplateId={unassigningTemplateId}
+                  variant="assigned"
+                />
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -454,7 +1207,7 @@ function TemplatePreviewModal({ template, onClose }: TemplatePreviewModalProps) 
 type TemplatePaymentModalProps = {
   template: TemplateCardModel;
   onClose: () => void;
-  onPaymentSuccess: () => void;
+  onPaymentSuccess: (template: TemplateCardModel) => void;
 };
 
 function TemplatePaymentModal({ template, onClose, onPaymentSuccess }: TemplatePaymentModalProps) {
@@ -481,8 +1234,166 @@ function TemplatePaymentModal({ template, onClose, onPaymentSuccess }: TemplateP
 
         <div className="template-modal__body template-modal__body--payment">
           <div className="template-payment__grid">
-            <CardPayment totalAmount={template.priceValue ?? 0} onPaid={onPaymentSuccess} />
+            <CardPayment totalAmount={template.priceValue ?? 0} onPaid={() => onPaymentSuccess(template)} />
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type TemplateAssignConfirmModalProps = {
+  template: TemplateCardModel;
+  isSubmitting: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+function TemplateAssignConfirmModal({ template, isSubmitting, onConfirm, onCancel }: TemplateAssignConfirmModalProps) {
+  const handleBackdropClick = () => {
+    if (isSubmitting) {
+      return;
+    }
+    onCancel();
+  };
+
+  const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
+
+  const handleCloseClick = () => {
+    if (isSubmitting) {
+      return;
+    }
+    onCancel();
+  };
+
+  return (
+    <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
+      <div className="template-modal__panel template-modal__panel--confirm" onClick={handlePanelClick}>
+        <header className="template-modal__header">
+          <div>
+            <p className="template-modal__eyebrow">Confirm Assignment</p>
+            <h2>{template.name}</h2>
+          </div>
+          <button
+            type="button"
+            className="template-modal__close"
+            onClick={handleCloseClick}
+            aria-label="Close confirmation"
+          >
+            <CloseRoundedIcon />
+          </button>
+        </header>
+
+        <div className="template-modal__body template-modal__body--confirm">
+          <p className="template-confirm__text">
+            This template will be copied to your workspace with tenant-specific placeholders so you can
+            update the actual branding details after assignment.
+          </p>
+          <ul className="template-confirm__list">
+            <li>Includes dynamic fields for agency name, logo, and contact details.</li>
+            <li>Assignment is instant and does not consume credits.</li>
+            <li>You can personalize the design later from My Templates.</li>
+          </ul>
+        </div>
+
+        <div className="ddModal__actions">
+          <button
+            type="button"
+            className="ddModal__btn ddModal__btn--ghost"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="ddModal__btn ddModal__btn--primary"
+            onClick={onConfirm}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Assigning..." : "Confirm & Add"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type TemplateUnassignConfirmModalProps = {
+  template: TemplateCardModel;
+  isSubmitting: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+function TemplateUnassignConfirmModal({ template, isSubmitting, onConfirm, onCancel }: TemplateUnassignConfirmModalProps) {
+  const handleBackdropClick = () => {
+    if (isSubmitting) {
+      return;
+    }
+    onCancel();
+  };
+
+  const handlePanelClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
+
+  const handleCloseClick = () => {
+    if (isSubmitting) {
+      return;
+    }
+    onCancel();
+  };
+
+  return (
+    <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
+      <div className="template-modal__panel template-modal__panel--confirm" onClick={handlePanelClick}>
+        <header className="template-modal__header">
+          <div>
+            <p className="template-modal__eyebrow">Remove Template</p>
+            <h2>{template.name}</h2>
+          </div>
+          <button
+            type="button"
+            className="template-modal__close"
+            onClick={handleCloseClick}
+            aria-label="Close unassign confirmation"
+          >
+            <CloseRoundedIcon />
+          </button>
+        </header>
+
+        <div className="template-modal__body template-modal__body--confirm">
+          <p className="template-confirm__text">
+            This will remove the template from your workspace. You can reassign it later from the marketplace
+            if needed.
+          </p>
+          <ul className="template-confirm__list">
+            <li>Any custom edits you made in My Templates will be lost.</li>
+            <li>No charges apply for unassigning a template.</li>
+            <li>You can repurchase paid templates again when required.</li>
+          </ul>
+        </div>
+
+        <div className="ddModal__actions">
+          <button
+            type="button"
+            className="ddModal__btn ddModal__btn--ghost"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="ddModal__btn ddModal__btn--primary"
+            onClick={onConfirm}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Removing..." : "Unassign Template"}
+          </button>
         </div>
       </div>
     </div>
@@ -527,6 +1438,7 @@ type TemplateBaseElement = {
   y?: number;
   width?: number;
   height?: number;
+  opacity?: number;
 };
 
 type TemplateTextElement = TemplateBaseElement & {
@@ -542,7 +1454,7 @@ type TemplateTextElement = TemplateBaseElement & {
 
 type TemplateShapeElement = TemplateBaseElement & {
   type?: "shape";
-  shape?: "rectangle" | "line" | "polygon";
+  shape?: "rectangle" | "line" | "polygon" | "circle";
   fill?: string;
   stroke?: string;
   points?: { x: number; y: number }[];
@@ -566,23 +1478,63 @@ type TemplatePillElement = TemplateBaseElement & {
   colors?: { bg?: string; text?: string };
 };
 
-const SAMPLE_PLACEHOLDERS: Record<string, string> = {
-  "{{report_title}}": "Summer Escape 2026",
-  "{{customer_name}}": "Ayesha Fernando",
-  "{{destination_city}}": "Bali",
-  "{{destination_country}}": "Indonesia",
-  "{{bottom_logo}}": "https://drive.google.com/file/d/1ezJue6VOcxvhvFZetr2Lk_QbyW0C2o5T/view?usp=sharing",
-  "{{trip_length}}": "6",
-  "{{traveler_count}}": "02",
-  "{{summary_highlights}}":
-    "Curated coastal experiences, private transfers, and bespoke dining that capture the essence of Bali.",
-  "{{generated_date}}": "31 Jan 2026",
+type PlaceholderMap = Record<string, string>;
+
+const DEFAULT_PLACEHOLDERS: PlaceholderMap = {
+  "{{agency_name}}": "Tour Travels LK",
+  "{{agency_logo_url}}": "https://static.vecteezy.com/system/resources/previews/000/511/437/original/travel-tourism-logo-isolated-on-white-background-vector.jpg",
+  "{{hero_image_url}}": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/39598465939125.5b055c778c346.jpg",
+  "{{footer_texture_url}}": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/39598465939125.5b055c778c346.jpg",
+  "{{contact_phone}}": "+94 77 123 4567",
+  "{{contact_website}}": "www.tourtravels.lk",
+  "{{contact_address}}": "45 Galle Road, Colombo 03",
+  "{{tourism_board_logo}}": "https://www.sltda.gov.lk/images/sltda_logo.png",
   "{{cover_image_url}}": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",
 };
 
-const parseDesign = (markup: string): TemplateDesign | null => {
+const buildTenantPlaceholders = (tenant?: TenantProfile | null): PlaceholderMap => ({
+  ...DEFAULT_PLACEHOLDERS,
+  "{{agency_logo_url}}": tenant?.agencyLogo
+    ? normalizeImageTokenValue(tenant.agencyLogo)
+    : DEFAULT_PLACEHOLDERS["{{agency_logo_url}}"],
+  "{{agency_name}}": tenant?.agencyName?.trim() || DEFAULT_PLACEHOLDERS["{{agency_name}}"],
+  "{{contact_phone}}": tenant?.contactNo?.trim() || DEFAULT_PLACEHOLDERS["{{contact_phone}}"],
+  "{{contact_address}}": tenant?.agencyAddress?.trim() || DEFAULT_PLACEHOLDERS["{{contact_address}}"],
+});
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const normalizeImageTokenValue = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("http") || trimmed.startsWith("data:")) {
+    return trimmed;
+  }
+  return `data:image/png;base64,${trimmed}`;
+};
+
+const fillTemplatePlaceholders = (templateDesign: string, placeholders: PlaceholderMap) => {
+  let result = templateDesign;
+  Object.entries(placeholders).forEach(([placeholder, replacement]) => {
+    result = result.replace(new RegExp(escapeRegExp(placeholder), "g"), replacement);
+  });
+  return result;
+};
+
+const finalizeTemplateDesign = (templateDesign: string, placeholders: PlaceholderMap) => {
+  const filled = fillTemplatePlaceholders(templateDesign, placeholders);
+  const parsed = parseDesign(filled);
+  if (!parsed) {
+    return filled;
+  }
+  return JSON.stringify(parsed);
+};
+
+const tryStandardJsonParse = (payload: string): TemplateDesign | null => {
   try {
-    const parsed = JSON.parse(markup);
+    const parsed = JSON.parse(payload);
     if (!parsed || !Array.isArray(parsed.pages)) {
       return null;
     }
@@ -592,11 +1544,93 @@ const parseDesign = (markup: string): TemplateDesign | null => {
   }
 };
 
-type TemplateDesignRendererProps = {
-  design: TemplateDesign;
+const repairBareNewlines = (payload: string) => {
+  let inString = false;
+  let escapeNext = false;
+  let quoteChar: string | null = null;
+  let repaired = "";
+
+  for (let index = 0; index < payload.length; index += 1) {
+    const char = payload[index];
+
+    if (inString) {
+      if (escapeNext) {
+        escapeNext = false;
+        repaired += char;
+        continue;
+      }
+
+      if (char === "\\") {
+        escapeNext = true;
+        repaired += char;
+        continue;
+      }
+
+      if (char === quoteChar) {
+        inString = false;
+        quoteChar = null;
+        repaired += char;
+        continue;
+      }
+
+      if (char === "\n") {
+        repaired += "\\n";
+        continue;
+      }
+
+      if (char === "\r") {
+        repaired += "\\r";
+        continue;
+      }
+
+      repaired += char;
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      inString = true;
+      quoteChar = char;
+      repaired += char;
+      continue;
+    }
+
+    repaired += char;
+  }
+
+  return repaired;
 };
 
-function TemplateDesignRenderer({ design }: TemplateDesignRendererProps) {
+const parseDesign = (markup: string): TemplateDesign | null => {
+  const parsed = tryStandardJsonParse(markup);
+  if (parsed) {
+    return parsed;
+  }
+
+  const repairedMarkup = repairBareNewlines(markup);
+  if (repairedMarkup !== markup) {
+    const repairedParsed = tryStandardJsonParse(repairedMarkup);
+    if (repairedParsed) {
+      return repairedParsed;
+    }
+  }
+
+  try {
+    const json5Parsed = JSON5.parse(markup);
+    if (!json5Parsed || !Array.isArray(json5Parsed.pages)) {
+      return null;
+    }
+    return json5Parsed;
+  } catch {
+    return null;
+  }
+};
+
+type TemplateDesignRendererProps = {
+  design: TemplateDesign;
+  placeholders: PlaceholderMap;
+};
+
+function TemplateDesignRenderer({ design, placeholders }: TemplateDesignRendererProps) {
   const page = design.pages?.[0];
   if (!page) {
     return <pre className="template-modal__raw">No page definition found.</pre>;
@@ -624,6 +1658,7 @@ function TemplateDesignRenderer({ design }: TemplateDesignRendererProps) {
             canvasHeight={height}
             baseWidth={BASE_WIDTH}
             baseHeight={BASE_HEIGHT}
+            placeholders={placeholders}
           />
         ))}
       </div>
@@ -638,6 +1673,7 @@ type TemplateDesignElementViewProps = {
   canvasHeight: number;
   baseWidth: number;
   baseHeight: number;
+  placeholders: PlaceholderMap;
 };
 
 function TemplateDesignElementView({
@@ -647,6 +1683,7 @@ function TemplateDesignElementView({
   canvasHeight,
   baseWidth,
   baseHeight,
+  placeholders,
 }: TemplateDesignElementViewProps) {
   if (!element || !element.type) {
     return null;
@@ -658,6 +1695,7 @@ function TemplateDesignElementView({
     width: element.width ? element.width * scale : undefined,
     height: element.height ? element.height * scale : undefined,
     position: "absolute",
+    opacity: typeof element.opacity === "number" ? element.opacity : undefined,
   };
 
   if (element.type === "text") {
@@ -678,7 +1716,7 @@ function TemplateDesignElementView({
           lineHeight: textEl.lineHeight ?? 1.4,
         }}
       >
-        {resolvePlaceholders(textEl.content ?? "")}
+        {resolvePlaceholders(textEl.content ?? "", placeholders)}
       </div>
     );
   }
@@ -692,7 +1730,7 @@ function TemplateDesignElementView({
           ...baseStyle,
           borderRadius: (imageEl.borderRadius ?? 0) * scale,
         }}
-        src={resolveImageSource(imageEl.src, imageEl.fallback)}
+        src={resolveImageSource(imageEl.src, imageEl.fallback, placeholders)}
         alt={imageEl.id ?? "Template preview"}
       />
     );
@@ -711,7 +1749,7 @@ function TemplateDesignElementView({
         }}
       >
         <span className="design-pill__label">{pillEl.label}</span>
-        <span className="design-pill__value">{resolvePlaceholders(pillEl.value ?? "")}</span>
+        <span className="design-pill__value">{resolvePlaceholders(pillEl.value ?? "", placeholders)}</span>
       </div>
     );
   }
@@ -726,6 +1764,24 @@ function TemplateDesignElementView({
             ...baseStyle,
             height: Math.max(1, (shapeEl.height ?? 1) * scale),
             background: shapeEl.stroke ?? shapeEl.fill ?? "#e5e7eb",
+          }}
+        />
+      );
+    }
+
+    if (shapeEl.shape === "circle") {
+      const diameter = (shapeEl.width ?? shapeEl.height ?? 0) * scale;
+      return (
+        <div
+          className="design-shape"
+          style={{
+            ...baseStyle,
+            width: diameter,
+            height: diameter,
+            borderRadius: "50%",
+            background: shapeEl.fill ?? "#f3f4f6",
+            border: shapeEl.stroke ? `1px solid ${shapeEl.stroke}` : undefined,
+            boxShadow: shapeEl.shadow,
           }}
         />
       );
@@ -766,6 +1822,7 @@ function TemplateDesignElementView({
           borderRadius: (shapeEl.borderRadius ?? 0) * scale,
           boxShadow: shapeEl.shadow,
           backdropFilter: shapeEl.blur ? `blur(${shapeEl.blur}px)` : undefined,
+          border: shapeEl.stroke ? `1px solid ${shapeEl.stroke}` : undefined,
         }}
       />
     );
@@ -774,20 +1831,20 @@ function TemplateDesignElementView({
   return null;
 }
 
-const resolvePlaceholders = (value: string) => {
+const resolvePlaceholders = (value: string, placeholders: PlaceholderMap) => {
   let result = value;
-  Object.entries(SAMPLE_PLACEHOLDERS).forEach(([placeholder, sample]) => {
-    result = result.replace(new RegExp(placeholder, "g"), sample);
+  Object.entries(placeholders).forEach(([placeholder, sample]) => {
+    result = result.replace(new RegExp(escapeRegExp(placeholder), "g"), sample);
   });
   return result;
 };
 
-const resolveImageSource = (src?: string, fallback?: string) => {
+const resolveImageSource = (src: string | undefined, fallback: string | undefined, placeholders: PlaceholderMap) => {
   if (!src) {
-    return fallback ?? SAMPLE_PLACEHOLDERS["{{cover_image_url}}"];
+    return fallback ? resolvePlaceholders(fallback, placeholders) : placeholders["{{cover_image_url}}"];
   }
   if (src.startsWith("http") || src.startsWith("data:")) {
     return src;
   }
-  return SAMPLE_PLACEHOLDERS[src] ?? fallback ?? SAMPLE_PLACEHOLDERS["{{cover_image_url}}"];
+  return placeholders[src] ?? (fallback ? resolvePlaceholders(fallback, placeholders) : placeholders["{{cover_image_url}}"]);
 };

@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/signInModal.css";
+import { login } from "../services/auth-api";
+import { useState } from "react";
+import { showError } from "./Toast";
 
 interface SignInModalProps {
   open: boolean;
@@ -9,6 +12,9 @@ interface SignInModalProps {
 const SignInModal = ({ open, onClose }: SignInModalProps) => {
   if (!open) return null;
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const navigate = useNavigate();
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -17,10 +23,23 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    navigate("/dashboard");
+
+    try {
+      const res = await login(email, password);
+      console.log(res);  
+      sessionStorage.setItem("dd_token", res.token);  
+      sessionStorage.setItem("dd_agency_name", res.agencyName); 
+      sessionStorage.setItem("dd_email", res.email); 
+      sessionStorage.setItem("dd_user_id", res.userId);
+      sessionStorage.setItem("dd_tenant_id", res.tenantId);
+      sessionStorage.setItem("dd_full_name", res.fullName);
+      onClose();
+      navigate("/dashboard");
+    } catch (error) {
+      showError("Login failed. Please check your credentials and try again.");
+    }
   }
 
   return (
@@ -33,6 +52,8 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
             <label className="authForm__label" htmlFor="signin-email">Email</label>
             <input
               id="signin-email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               type="email"
               className="authForm__input"
               placeholder="Enter your email"
@@ -42,6 +63,8 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
           <div className="authForm__field">
             <label className="authForm__label" htmlFor="signin-password">Password</label>
             <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               id="signin-password"
               type="password"
               className="authForm__input"

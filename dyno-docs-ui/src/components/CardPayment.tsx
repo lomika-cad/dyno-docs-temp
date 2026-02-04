@@ -73,24 +73,30 @@ export default function CardPayment({
 		event.preventDefault();
 		if (!canSubmit) return;
 
+		const cardNumber = cardNumberSegments.join("");
+		const payload = {
+			totalAmount,
+			currency,
+			cardHolder: cardHolder.trim(),
+			cardNumber,
+			expiryMonth,
+			expiryYear,
+			cvv,
+		};
+
 		setIsSubmitting(true);
 		try {
-			const payload = {
-				totalAmount,
-				currency,
-				cardHolder: cardHolder.trim(),
-				cardNumber: cardNumberSegments.join(""),
-				expiryMonth,
-				expiryYear,
-				cvv,
-			};
-
 			await submitCardPayment(payload, paymentPath);
-			showSuccess("Payment submitted successfully.");
+			showSuccess(`${amountLabel} payment completed.`);
 			onPaid?.();
 		} catch (error) {
-			showError("Payment failed. Please try again.");
-			throw error;
+			const apiMessage =
+				(error as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
+					?.message ??
+				(error as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
+					?.Message;
+			showError(apiMessage ?? "Unable to process the payment. Please try again.");
+			console.error("submitCardPayment failed", error);
 		} finally {
 			setIsSubmitting(false);
 		}

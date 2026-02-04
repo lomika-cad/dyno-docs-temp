@@ -18,12 +18,12 @@ public class JwtService : IJwtService
         _configuration = configuration;
     }
 
-    public string GenerateToken(Employee user)
+    public string GenerateToken(User user)
     {
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Role, "Employee"),
+            new Claim(ClaimTypes.Role, "User"),
             new Claim(ClaimTypes.Name, user.UserName),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim("TenantId", user.TenantId.ToString()),
