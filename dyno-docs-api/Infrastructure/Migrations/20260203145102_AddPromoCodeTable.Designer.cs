@@ -4,6 +4,7 @@ using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260203145102_AddPromoCodeTable")]
+    partial class AddPromoCodeTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,143 +24,6 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
-
-            modelBuilder.Entity("Domain.Common.User", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("MobileNo")
-                        .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("varchar(25)");
-
-                    b.Property<string>("NICNo")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId")
-                        .IsUnique();
-
-                    b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Identity.Subscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("AvailableToken")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("CurrentToken")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId")
-                        .IsUnique();
-
-                    b.ToTable("Subscriptions");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Identity.Tenant", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("AgencyAddress")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<byte[]>("AgencyLogo")
-                        .HasColumnType("LONGBLOB");
-
-                    b.Property<string>("AgencyName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("BusinessRegNo")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ContactNo")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Tenants");
-                });
 
             modelBuilder.Entity("Domain.Entities.Operations.Partnership", b =>
                 {
@@ -409,70 +275,6 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Template");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Operations.UserTemplate", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("LastModifiedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("TemplateDesign")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<Guid>("TemplateId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UserTemplate");
-                });
-
-            modelBuilder.Entity("Domain.Common.User", b =>
-                {
-                    b.HasOne("Domain.Entities.Identity.Tenant", null)
-                        .WithOne("User")
-                        .HasForeignKey("Domain.Common.User", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Domain.Entities.Identity.Subscription", b =>
-                {
-                    b.HasOne("Domain.Entities.Identity.Tenant", "Tenant")
-                        .WithOne("Subscription")
-                        .HasForeignKey("Domain.Entities.Identity.Subscription", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Identity.Tenant", b =>
-                {
-                    b.Navigation("Subscription");
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

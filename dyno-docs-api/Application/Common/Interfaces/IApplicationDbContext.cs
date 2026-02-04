@@ -14,6 +14,7 @@ public interface IApplicationDbContext
     DbSet<PricingPlan> PricingPlan { get; }
     DbSet<Partnership> Partnership { get; }
     DbSet<Template> Template { get; }
+    DbSet<PromoCode> PromoCode { get; }
     DbSet<UserTemplate> UserTemplate { get; }
     DbSet<User> Users { get; }
     DbSet<Tenant> Tenants { get; }
