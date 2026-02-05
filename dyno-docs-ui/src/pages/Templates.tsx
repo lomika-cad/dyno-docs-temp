@@ -678,7 +678,7 @@ export default function Templates() {
     setPreviewPlaceholders(DEFAULT_PLACEHOLDERS);
   };
 
-  const handleCustomizeTemplate = (template: TemplateCardModel) => {
+  const handleCustomizeTemplate = (template: TemplateCardModel) => {  
     navigate("/templates/customize", { state: { template } });
   };
 

@@ -273,6 +273,7 @@ export default function TemplateCustomize() {
   const [canvasWidth, setCanvasWidth] = useState(720);
 
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
+  const canvasScrollRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
     index: number;
     startX: number;
@@ -327,6 +328,24 @@ export default function TemplateCustomize() {
       .then((info) => setPlaceholders(buildTenantPlaceholders(info as TenantProfile)))
       .catch(() => setPlaceholders(DEFAULT_PLACEHOLDERS));
   }, []);
+
+  useEffect(() => {
+    const container = canvasScrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    const centerCanvas = () => {
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      if (maxScrollLeft <= 0) {
+        return;
+      }
+      container.scrollLeft = maxScrollLeft / 2;
+    };
+
+    const frame = window.requestAnimationFrame(centerCanvas);
+    return () => window.cancelAnimationFrame(frame);
+  }, [canvasWidth, design]);
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -463,7 +482,8 @@ export default function TemplateCustomize() {
         pageSize: "A4",
       };
       const payload = {
-        id: template.id,
+        templateId: template.templateId,
+        userId: sessionStorage.getItem("dd_user_id"),
         templateDesign: JSON.stringify(normalizedDesign),
       };
       const response = await updateDesign(payload, token);
@@ -548,7 +568,11 @@ export default function TemplateCustomize() {
         </aside>
 
         <section className="template-customize__canvas">
-          <div className="template-customize__canvas-scroll" onClick={handleCanvasClick}>
+          <div
+            className="template-customize__canvas-scroll"
+            onClick={handleCanvasClick}
+            ref={canvasScrollRef}
+          >
             <div className="template-customize__canvas-wrapper" ref={canvasWrapperRef}>
               <div
                 className="template-customize__canvas-stage"

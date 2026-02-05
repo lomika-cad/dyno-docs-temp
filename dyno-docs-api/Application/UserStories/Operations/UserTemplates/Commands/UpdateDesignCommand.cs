@@ -8,7 +8,8 @@ namespace Application.UserStories.Operations.UserTemplates.Commands;
 
 public class UpdateDesignCommand : IRequest<Result>
 {
-    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid TemplateId { get; set; }
     public string TemplateDesign { get; set; } = string.Empty;
 }
 
@@ -24,7 +25,7 @@ public class UpdateDesignCommandHandler : IRequestHandler<UpdateDesignCommand, R
     public async Task<Result> Handle(UpdateDesignCommand request, CancellationToken cancellationToken)
     {
         var userTemplate = await _context.UserTemplate
-            .Where(ut => ut.Id == request.Id)
+            .Where(ut => ut.UserId == request.UserId && ut.TemplateId == request.TemplateId)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (userTemplate == null)
