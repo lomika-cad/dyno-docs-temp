@@ -258,6 +258,31 @@
   background: #f9fafb;
 }
 
+.template-customize__size-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.template-customize__size-field {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.template-customize__size-field span {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.template-customize__size-field input[type="number"] {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.85rem;
+}
+
 .template-customize__hint {
   font-size: 0.85rem;
   color: #6b7280;

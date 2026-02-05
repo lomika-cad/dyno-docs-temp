@@ -470,6 +470,29 @@ export default function TemplateCustomize() {
     });
   };
 
+  const handleImageSizeChange = (
+    dimension: "width" | "height",
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (selectedElementIndex === null) {
+      return;
+    }
+
+    const raw = Number(event.target.value);
+    if (Number.isNaN(raw) || raw <= 0) {
+      return;
+    }
+
+    updateElementAtIndex(selectedElementIndex, (current) => {
+      if (current.type !== "image") {
+        return current;
+      }
+      const updated: TemplateImageElement = { ...current } as TemplateImageElement;
+      updated[dimension] = raw;
+      return updated;
+    });
+  };
+
   const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (selectedElementIndex === null) {
       return;
@@ -784,21 +807,49 @@ export default function TemplateCustomize() {
                         onChange={handleTextContentChange}
                       />
                     </div>
-                  <div className="template-customize__control">
-                    <label className="template-customize__color-label">
-                      <PaletteRoundedIcon fontSize="small" />
-                      Text color
-                    </label>
-                    <input
-                      type="color"
-                      value={(selectedElement as TemplateTextElement).color ?? "#111827"}
-                      onChange={handleColorChange}
-                    />
-                  </div>
+                    <div className="template-customize__control">
+                      <label className="template-customize__color-label">
+                        <PaletteRoundedIcon fontSize="small" />
+                        Text color
+                      </label>
+                      <input
+                        type="color"
+                        value={(selectedElement as TemplateTextElement).color ?? "#111827"}
+                        onChange={handleColorChange}
+                      />
+                    </div>
                   </>
                 )}
 
-                {selectedElement.type !== "text" && (
+                {selectedElement.type === "image" && (
+                  <div className="template-customize__control">
+                    <label>Image size (px)</label>
+                    <div className="template-customize__size-row">
+                      <div className="template-customize__size-field">
+                        <span>W</span>
+                        <input
+                          type="number"
+                          min={10}
+                          max={2000}
+                          value={Math.round((selectedElement as TemplateImageElement).width ?? 0)}
+                          onChange={(event) => handleImageSizeChange("width", event)}
+                        />
+                      </div>
+                      <div className="template-customize__size-field">
+                        <span>H</span>
+                        <input
+                          type="number"
+                          min={10}
+                          max={3000}
+                          value={Math.round((selectedElement as TemplateImageElement).height ?? 0)}
+                          onChange={(event) => handleImageSizeChange("height", event)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedElement.type !== "text" && selectedElement.type !== "image" && (
                   <p className="template-customize__hint">
                     Drag elements on the canvas to reposition them.
                   </p>
