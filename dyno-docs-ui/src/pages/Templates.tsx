@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import { useNavigate } from "react-router-dom";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -410,6 +411,7 @@ const getAssignmentDesign = (template: TemplateCardModel) => {
 };
 
 export default function Templates() {
+  const navigate = useNavigate();
   const [templates, setTemplates] = useState<TemplateCardModel[]>([]);
   const [filter, setFilter] = useState<TemplateFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -676,6 +678,10 @@ export default function Templates() {
     setPreviewPlaceholders(DEFAULT_PLACEHOLDERS);
   };
 
+  const handleCustomizeTemplate = (template: TemplateCardModel) => {
+    navigate("/templates/customize", { state: { template } });
+  };
+
   const handleClosePreview = () => {
     setPreviewTemplate(null);
   };
@@ -885,6 +891,7 @@ export default function Templates() {
             error={myTemplatesError}
             onClose={handleCloseMyTemplatesModal}
             onPreviewAssigned={(template) => handleCardPreview(template, true)}
+            onCustomize={handleCustomizeTemplate}
             onReload={handleReloadMyTemplates}
             onUnassignRequest={handleUnassignTemplateRequest}
             isUnassigning={isUnassigning}
@@ -1151,6 +1158,7 @@ type MyTemplatesModalProps = {
   error: string | null;
   onClose: () => void;
   onPreviewAssigned: (template: TemplateCardModel) => void;
+  onCustomize: (template: TemplateCardModel) => void;
   onReload: () => void;
   onUnassignRequest: (template: TemplateCardModel) => void;
   isUnassigning: boolean;
@@ -1163,6 +1171,7 @@ function MyTemplatesModal({
   error,
   onClose,
   onPreviewAssigned,
+  onCustomize,
   onReload,
   onUnassignRequest,
   isUnassigning,
@@ -1220,7 +1229,7 @@ function MyTemplatesModal({
                   key={`my-${template.id}`}
                   template={template}
                   onPreview={onPreviewAssigned}
-                  onEditRequest={onPreviewAssigned}
+                  onEditRequest={onCustomize}
                   onUnassignRequest={onUnassignRequest}
                   isUnassigning={isUnassigning}
                   unassigningTemplateId={unassigningTemplateId}
