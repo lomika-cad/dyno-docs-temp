@@ -247,6 +247,17 @@
   padding: 0.4rem;
 }
 
+.template-customize__textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+  resize: vertical;
+  background: #f9fafb;
+}
+
 .template-customize__hint {
   font-size: 0.85rem;
   color: #6b7280;

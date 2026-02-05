@@ -454,6 +454,22 @@ export default function TemplateCustomize() {
     setSelectedElementIndex(null);
   };
 
+  const handleTextContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (selectedElementIndex === null) {
+      return;
+    }
+    const newValue = event.target.value;
+    updateElementAtIndex(selectedElementIndex, (current) => {
+      if (current.type !== "text") {
+        return current;
+      }
+      return {
+        ...current,
+        content: newValue,
+      } as TemplateTextElement;
+    });
+  };
+
   const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (selectedElementIndex === null) {
       return;
@@ -758,6 +774,16 @@ export default function TemplateCustomize() {
                 </div>
 
                 {selectedElement.type === "text" && (
+                  <>
+                    <div className="template-customize__control">
+                      <label>Text</label>
+                      <textarea
+                        rows={4}
+                        className="template-customize__textarea"
+                        value={(selectedElement as TemplateTextElement).content ?? ""}
+                        onChange={handleTextContentChange}
+                      />
+                    </div>
                   <div className="template-customize__control">
                     <label className="template-customize__color-label">
                       <PaletteRoundedIcon fontSize="small" />
@@ -769,6 +795,7 @@ export default function TemplateCustomize() {
                       onChange={handleColorChange}
                     />
                   </div>
+                  </>
                 )}
 
                 {selectedElement.type !== "text" && (
