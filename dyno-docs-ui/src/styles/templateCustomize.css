@@ -1,8 +1,10 @@
 .template-customize {
   min-height: 100vh;
+  height: 100vh;
   background: #f6f7fb;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .template-customize__header {
@@ -71,6 +73,7 @@
   grid-template-columns: 300px minmax(0, 1fr) 360px;
   gap: 1.75rem;
   padding: 1.75rem 2.5rem 2.5rem;
+  overflow: auto;
 }
 
 .template-customize__canvas {
