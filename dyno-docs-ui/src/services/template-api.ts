@@ -50,3 +50,16 @@ export const unassignTemplate = async (data: any, token: string) => {
         throw error;
     }
 }
+
+export const updateDesign = async (designData: any, token: string) => {
+    try {
+        const response = await axios.put(`${API_URL}/update-design`, designData, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}

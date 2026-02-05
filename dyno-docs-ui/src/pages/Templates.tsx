@@ -4,6 +4,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import JSON5 from "json5";
 import Navbar from "../layouts/Navbar";
 import "../styles/templates.css";
@@ -934,6 +935,7 @@ type TemplateCardProps = {
   onAddRequest?: (template: TemplateCardModel) => void;
   onPurchase?: (template: TemplateCardModel) => void;
   onPreview: (template: TemplateCardModel) => void;
+  onEditRequest?: (template: TemplateCardModel) => void;
   isAssigning?: boolean;
   variant?: "marketplace" | "assigned";
   onUnassignRequest?: (template: TemplateCardModel) => void;
@@ -946,6 +948,7 @@ function TemplateCard({
   onAddRequest,
   onPurchase,
   onPreview,
+  onEditRequest,
   isAssigning = false,
   variant = "marketplace",
   onUnassignRequest,
@@ -996,6 +999,18 @@ function TemplateCard({
     onUnassignRequest(template);
   };
 
+  const handleEditClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!isAssignedCard) {
+      return;
+    }
+    if (onEditRequest) {
+      onEditRequest(template);
+      return;
+    }
+    onPreview(template);
+  };
+
   return (
     <article
       className={`template-card ${isPaid ? "template-card--premium" : "template-card--free"}`}
@@ -1019,6 +1034,19 @@ function TemplateCard({
             <WorkspacePremiumRoundedIcon fontSize="small" />
           </span>
         )}
+
+        {isAssignedCard && (
+          <button
+            type="button"
+            className="template-card__overlay-action"
+            onClick={handleEditClick}
+            aria-label={`Customize ${name}`}
+            data-tooltip="Customize template"
+          >
+            <EditRoundedIcon fontSize="small" />
+            <span>Customize</span>
+          </button>
+        )}
       </div>
 
       <div className="template-card__content">
@@ -1026,35 +1054,37 @@ function TemplateCard({
       </div>
 
       <div className="template-card__actions">
-        <button
-          type="button"
-          className="btn btn--orange"
-          onClick={handleAddClick}
-          disabled={!isAssignedCard && !isPaid && isAssigning}
-        >
-          {isAssignedCard ? (
-            <>
-              <EyeIcon size={16} />
-              View Template
-            </>
-          ) : (
-            <>
-              {isPaid ? <MonetizationOn fontSize="small" /> : <AddRoundedIcon fontSize="small" />}
-              {isPaid ? "Purchase" : isAssigning ? "Assigning..." : "Add Template"}
-            </>
-          )}
-        </button>
-
-        {isAssignedCard && onUnassignRequest && (
+        <div className="template-card__action-buttons">
           <button
             type="button"
-            className="btn btn--ghost"
-            onClick={handleUnassignClick}
-            disabled={isUnassigningThisTemplate}
+            className="btn btn--orange"
+            onClick={handleAddClick}
+            disabled={!isAssignedCard && !isPaid && isAssigning}
           >
-            {isUnassigningThisTemplate ? "Removing..." : "Unassign"}
+            {isAssignedCard ? (
+              <>
+                <EyeIcon size={16} />
+                View Template
+              </>
+            ) : (
+              <>
+                {isPaid ? <MonetizationOn fontSize="small" /> : <AddRoundedIcon fontSize="small" />}
+                {isPaid ? "Purchase" : isAssigning ? "Assigning..." : "Add Template"}
+              </>
+            )}
           </button>
-        )}
+
+          {isAssignedCard && onUnassignRequest && (
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={handleUnassignClick}
+              disabled={isUnassigningThisTemplate}
+            >
+              {isUnassigningThisTemplate ? "Removing..." : "Unassign"}
+            </button>
+          )}
+        </div>
 
         <div className="template-card__badges">
           {!(isAssignedCard && !isPaid) && (
@@ -1190,6 +1220,7 @@ function MyTemplatesModal({
                   key={`my-${template.id}`}
                   template={template}
                   onPreview={onPreviewAssigned}
+                  onEditRequest={onPreviewAssigned}
                   onUnassignRequest={onUnassignRequest}
                   isUnassigning={isUnassigning}
                   unassigningTemplateId={unassigningTemplateId}

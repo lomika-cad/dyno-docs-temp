@@ -66,4 +66,16 @@ public class TemplateController (IMediator mediator) : ControllerBase
         }
         return BadRequest(res);
     }
+
+    [HttpPut("update-design")]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Result>> UpdateTemplateDesign([FromBody] UpdateDesignCommand command)
+    {
+        var res = await mediator.Send(command);
+        if (res.Succeeded)
+        {
+            return Ok(res);
+        }
+        return BadRequest(res);
+    }
 }

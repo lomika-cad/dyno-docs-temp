@@ -249,6 +249,88 @@
   flex-wrap: wrap;
 }
 
+.template-card__action-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.template-card__overlay-action {
+  position: absolute;
+  inset: auto auto 12px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(17, 24, 39, 0.85);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.template-card__overlay-action span {
+  line-height: 1;
+}
+
+.template-card:hover .template-card__overlay-action,
+.template-card:focus-within .template-card__overlay-action {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.template-card__overlay-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.template-card__overlay-action[data-tooltip]::after,
+.template-card__overlay-action[data-tooltip]::before {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -6px);
+  z-index: 20;
+}
+
+.template-card__overlay-action[data-tooltip]::after {
+  content: attr(data-tooltip);
+  bottom: calc(100% + 10px);
+  background: #111827;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.template-card__overlay-action[data-tooltip]::before {
+  content: "";
+  bottom: calc(100% + 4px);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #111827 transparent transparent transparent;
+}
+
+.template-card__overlay-action:hover::after,
+.template-card__overlay-action:hover::before,
+.template-card__overlay-action:focus-visible::after,
+.template-card__overlay-action:focus-visible::before {
+  opacity: 1;
+  transform: translate(-50%, -2px);
+}
+
 .template-card__cta {
   border: none;
   background: var(--color-primary);
