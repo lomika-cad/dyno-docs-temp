@@ -68,7 +68,7 @@
 .template-customize__content {
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: 300px minmax(0, 1fr) 360px;
   gap: 1.75rem;
   padding: 1.75rem 2.5rem 2.5rem;
 }
@@ -166,6 +166,14 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.template-customize__panel--left {
+  align-self: flex-start;
+}
+
+.template-customize__panel--right {
+  align-self: flex-start;
 }
 
 .template-customize__panel-card {

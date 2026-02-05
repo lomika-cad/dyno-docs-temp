@@ -528,6 +528,25 @@ export default function TemplateCustomize() {
       </header>
 
       <main className="template-customize__content">
+        <aside className="template-customize__panel template-customize__panel--left">
+          <div className="template-customize__panel-card">
+            <h3>Layers</h3>
+            <div className="template-customize__layer-list">
+              {elementSummary.length === 0 && <p className="template-customize__hint">No elements found.</p>}
+              {elementSummary.map((summary, index) => (
+                <button
+                  key={`layer-${index}`}
+                  type="button"
+                  className={`template-customize__layer ${selectedElementIndex === index ? "active" : ""}`}
+                  onClick={() => setSelectedElementIndex(index)}
+                >
+                  <span>{summary}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </aside>
+
         <section className="template-customize__canvas">
           <div className="template-customize__canvas-scroll" onClick={handleCanvasClick}>
             <div className="template-customize__canvas-wrapper" ref={canvasWrapperRef}>
@@ -701,24 +720,7 @@ export default function TemplateCustomize() {
           </div>
         </section>
 
-        <aside className="template-customize__panel">
-          <div className="template-customize__panel-card">
-            <h3>Layers</h3>
-            <div className="template-customize__layer-list">
-              {elementSummary.length === 0 && <p className="template-customize__hint">No elements found.</p>}
-              {elementSummary.map((summary, index) => (
-                <button
-                  key={`layer-${index}`}
-                  type="button"
-                  className={`template-customize__layer ${selectedElementIndex === index ? "active" : ""}`}
-                  onClick={() => setSelectedElementIndex(index)}
-                >
-                  <span>{summary}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
+        <aside className="template-customize__panel template-customize__panel--right">
           <div className="template-customize__panel-card">
             <h3>Edit selected</h3>
             {selectedElement ? (
