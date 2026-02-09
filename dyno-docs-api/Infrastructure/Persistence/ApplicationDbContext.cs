@@ -32,6 +32,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<Customer> Customer => Set<Customer>();
     
     #endregion
 

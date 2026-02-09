@@ -8,3 +8,9 @@ public enum PartnershipTypes
     TravelServices = 3,
     Other = 4,
 }
+
+public enum Gender
+{
+    Male = 0,
+    Female = 1,
+}
