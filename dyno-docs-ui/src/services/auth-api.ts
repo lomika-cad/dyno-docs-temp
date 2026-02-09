@@ -23,3 +23,17 @@ export const getTenantInfo = async (tenantId: string) => {
         throw error;
     }
 }
+
+// Register agency (single endpoint expects multipart/form-data)
+export const registerAgency = async (formData: FormData) => {
+    try {
+        const response = await axios.post(`${API_URL}/register-agency`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data ?? response;
+    } catch (error) {
+        throw error;
+    }
+}
