@@ -114,7 +114,6 @@ export default function Partnerships() {
 
     useEffect(() => {
         fetchPartnerships();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const filteredPartnerships = partnerships.filter((item) => {
