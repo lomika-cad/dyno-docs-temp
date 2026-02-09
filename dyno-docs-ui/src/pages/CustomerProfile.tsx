@@ -3,8 +3,10 @@ import { Eye, PenSquare, Search, Trash2 } from "lucide-react";
 import Navbar from "../layouts/Navbar";
 import "../styles/customerProfile.css";
 import "../styles/agencyData.css";
-import { Grid } from "@mui/material";
+import { CircularProgress, Grid } from "@mui/material";
 import { SearchRounded } from "@mui/icons-material";
+import { createCustomer } from "../services/customer-api";
+import { showError, showInfo, showSuccess } from "../components/Toast";
 
 type FormState = {
     fullName: string;
@@ -12,7 +14,7 @@ type FormState = {
     phone: string;
     country: string;
     dob: string;
-    gender: string;
+    gender: number;
 };
 
 type Customer = {
@@ -34,21 +36,20 @@ const COUNTRIES = [
     "France",
 ];
 
-const GENDERS = ["Female", "Male", "Non-binary", "Prefer not to say"];
-
 const createEmptyForm = (): FormState => ({
     fullName: "",
     email: "",
     phone: "",
     country: "",
     dob: "",
-    gender: "",
+    gender: 3,
 });
 
 export default function CustomerProfile() {
     const [form, setForm] = useState<FormState>(createEmptyForm());
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
+    const [isLoading, setIsLoading] = useState(false);
     const pageSize = 5;
 
     const customers = useMemo<Customer[]>(
@@ -149,11 +150,45 @@ export default function CustomerProfile() {
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        // UI only: surface feedback in console for now
-        console.info("Submitted customer form", form);
-        setForm(createEmptyForm());
+
+        if (!form.fullName || !form.email || !form.country || !form.phone || !form.dob || !form.gender) {
+            showInfo("Please fill all fields.");
+            return;
+        }
+
+        if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+            showError("Please enter a valid email address.");
+            return;
+        }
+
+        if (form.phone && !/^\+?[0-9\s\-()]+$/.test(form.phone)) {
+            showError("Please enter a valid phone number.");
+            return;
+        }
+
+        setIsLoading(true);
+
+        const body = {
+            name: form.fullName,
+            email: form.email,
+            contactNo: form.phone,
+            country: form.country,
+            dateOfBirth: form.dob,
+            gender: Number(form.gender),
+            createdBy: sessionStorage.getItem("dd_user_id") || "unknown",
+        }
+
+        try {
+            await createCustomer(body, sessionStorage.getItem("dd_token") || "");
+            setForm(createEmptyForm());
+            showSuccess("Customer created successfully!");
+        } catch (error:any) {
+            showError(error.response?.data?.message || "Failed to create customer. Please try again.")
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleClear = () => {
@@ -192,6 +227,11 @@ export default function CustomerProfile() {
 
     return (
         <Navbar userName="User">
+            {(isLoading) && (
+                <div className="globalLoader" role="status" aria-live="polite">
+                    <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
+                </div>
+            )}
             <section className="customer-profile">
                 <header className="customer-profile__header">
                     <div>
@@ -263,21 +303,14 @@ export default function CustomerProfile() {
                                     <label className="formField__label" htmlFor="country">
                                         Country
                                     </label>
-                                    <select
+                                    <input
+                                        type="text"
                                         name="country"
                                         className="formField__input"
                                         value={form.country}
                                         onChange={handleFormChange}
-                                    >
-                                        <option value="" disabled hidden>
-                                            Select country
-                                        </option>
-                                        {COUNTRIES.map((country) => (
-                                            <option key={country} value={country}>
-                                                {country}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        placeholder="Enter country"
+                                    />
                                 </div>
                             </Grid>
                             <Grid size={4}>
@@ -305,14 +338,11 @@ export default function CustomerProfile() {
                                         value={form.gender}
                                         onChange={handleFormChange}
                                     >
-                                        <option value="" disabled hidden>
+                                        <option value={3} disabled hidden>
                                             Select gender
                                         </option>
-                                        {GENDERS.map((gender) => (
-                                            <option key={gender} value={gender}>
-                                                {gender}
-                                            </option>
-                                        ))}
+                                        <option value={0}>Male</option>
+                                        <option value={1}>Female</option>
                                     </select>
                                 </div>
                             </Grid>
@@ -343,7 +373,7 @@ export default function CustomerProfile() {
                         </div>
                     </div>
 
-                    <div className="tableWrap" style={{marginTop: "8px"}}>
+                    <div className="tableWrap" style={{ marginTop: "8px" }}>
                         <table className="table">
                             <thead>
                                 <tr>
@@ -448,7 +478,7 @@ export default function CustomerProfile() {
                             </button>
                         </div>
                     </footer>
-                    </section>
+                </section>
             </section>
         </Navbar>
     );

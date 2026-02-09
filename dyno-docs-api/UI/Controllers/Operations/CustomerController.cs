@@ -13,7 +13,7 @@ public class CustomerController (IMediator mediator) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Result>> CreateCustomer([FromForm] CreateCustomerCommand command)
+    public async Task<ActionResult<Result>> CreateCustomer([FromBody] CreateCustomerCommand command)
     {
         var res = await mediator.Send(command);
         if (res.Succeeded)
