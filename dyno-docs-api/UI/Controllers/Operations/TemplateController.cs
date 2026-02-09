@@ -14,13 +14,13 @@ namespace UI.Controllers.Operations;
 public class TemplateController (IMediator mediator) : ControllerBase
 {
     [HttpPost]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     public async Task<ActionResult<Result>> CreateTemplate([FromForm] CreateTemplateCommand command)
     {
         var res = await mediator.Send(command);
         if (res.Succeeded)
         {
-            return StatusCode(StatusCodes.Status201Created, res);
+            return StatusCode(StatusCodes.Status200OK, res);
         }
         return BadRequest(res);
     }

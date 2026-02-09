@@ -24,7 +24,7 @@ public class PlacesController : ControllerBase
     /// </summary>
     [HttpPost]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Result>> Create([FromForm] PlaceFormRequest request, CancellationToken cancellationToken)
     {
@@ -33,7 +33,7 @@ public class PlacesController : ControllerBase
 
         if (result.Succeeded)
         {
-            return StatusCode(StatusCodes.Status201Created, result);
+            return StatusCode(StatusCodes.Status200OK, result);
         }
 
         return BadRequest(result);

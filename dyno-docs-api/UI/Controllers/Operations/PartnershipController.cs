@@ -13,7 +13,7 @@ public class PartnershipController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreatePartnership([FromForm] CreatePartnershipCommand command)
     {

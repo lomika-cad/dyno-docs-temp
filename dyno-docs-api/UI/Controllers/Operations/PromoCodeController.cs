@@ -60,7 +60,7 @@ public class PromoCodeController(IMediator mediator) : ControllerBase
     /// Create a new promo code
     /// </summary>
     [HttpPost]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Result>> Create([FromBody] CreatePromoCodeCommand command, CancellationToken cancellationToken)
     {
@@ -68,7 +68,7 @@ public class PromoCodeController(IMediator mediator) : ControllerBase
         
         if (result.Succeeded)
         {
-            return StatusCode(StatusCodes.Status201Created, result);
+            return StatusCode(StatusCodes.Status200OK, result);
         }
         
         return BadRequest(result);
