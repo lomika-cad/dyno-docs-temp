@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { Eye, PenSquare, Search, Trash2 } from "lucide-react";
+import { Eye, PenSquare, Trash2 } from "lucide-react";
 import Navbar from "../layouts/Navbar";
 import "../styles/customerProfile.css";
 import "../styles/agencyData.css";
 import { CircularProgress, Grid } from "@mui/material";
 import { SearchRounded } from "@mui/icons-material";
-import { createCustomer } from "../services/customer-api";
+import {
+    createCustomer,
+    deleteCustomer,
+    getCustomers,
+    updateCustomer,
+} from "../services/customer-api";
 import { showError, showInfo, showSuccess } from "../components/Toast";
+import trashImg from "../assets/trash.png";
 
 type FormState = {
     fullName: string;
@@ -18,12 +24,19 @@ type FormState = {
 };
 
 type Customer = {
-    id: number;
+    id: string;
     name: string;
     country: string;
     email: string;
-    phone: string;
-    registered: string;
+    contactNo: string;
+    gender: number;
+    dateOfBirth?: string;
+};
+
+const GENDER_LABELS: Record<number, string> = {
+    0: "Male",
+    1: "Female",
+    3: "Prefer not to say",
 };
 
 const COUNTRIES = [
@@ -49,70 +62,16 @@ export default function CustomerProfile() {
     const [form, setForm] = useState<FormState>(createEmptyForm());
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
+    const [customers, setCustomers] = useState<Customer[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+    const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
     const pageSize = 5;
-
-    const customers = useMemo<Customer[]>(
-        () => [
-            {
-                id: 1,
-                name: "Ethan Collins",
-                country: "Australia",
-                email: "ethan.collins@example.com",
-                phone: "+61 2 5550 0430",
-                registered: "Jan 12, 2024",
-            },
-            {
-                id: 2,
-                name: "Lily Parker",
-                country: "United Kingdom",
-                email: "lily.parker@example.com",
-                phone: "+44 20 7946 0010",
-                registered: "Jan 26, 2024",
-            },
-            {
-                id: 3,
-                name: "Noah Ramirez",
-                country: "Spain",
-                email: "noah.ramirez@example.com",
-                phone: "+34 91 123 7845",
-                registered: "Feb 02, 2024",
-            },
-            {
-                id: 4,
-                name: "Ava Mitchell",
-                country: "Canada",
-                email: "ava.mitchell@example.com",
-                phone: "+1 416 555 9786",
-                registered: "Feb 18, 2024",
-            },
-            {
-                id: 5,
-                name: "Lucas Bennett",
-                country: "United States",
-                email: "lucas.bennett@example.com",
-                phone: "+1 917 555 8402",
-                registered: "Mar 04, 2024",
-            },
-            {
-                id: 6,
-                name: "Sofia Meyer",
-                country: "Germany",
-                email: "sofia.meyer@example.com",
-                phone: "+49 30 5589 6521",
-                registered: "Mar 22, 2024",
-            },
-            {
-                id: 7,
-                name: "Isla Dupont",
-                country: "France",
-                email: "isla.dupont@example.com",
-                phone: "+33 1 44 55 6677",
-                registered: "Apr 05, 2024",
-            },
-        ],
-        [],
-    );
 
     const filteredCustomers = useMemo(() => {
         const value = query.trim().toLowerCase();
@@ -153,7 +112,7 @@ export default function CustomerProfile() {
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!form.fullName || !form.email || !form.country || !form.phone || !form.dob || !form.gender) {
+        if (!form.fullName || !form.email || !form.country || !form.phone || !form.dob || form.gender === 3) {
             showInfo("Please fill all fields.");
             return;
         }
@@ -168,7 +127,7 @@ export default function CustomerProfile() {
             return;
         }
 
-        setIsLoading(true);
+        setIsSaving(true);
 
         const body = {
             name: form.fullName,
@@ -178,25 +137,102 @@ export default function CustomerProfile() {
             dateOfBirth: form.dob,
             gender: Number(form.gender),
             createdBy: sessionStorage.getItem("dd_user_id") || "unknown",
-        }
+        };
 
         try {
-            await createCustomer(body, sessionStorage.getItem("dd_token") || "");
+            const token = sessionStorage.getItem("dd_token") || "";
+
+            if (editingCustomerId) {
+                await updateCustomer({ ...body, id: editingCustomerId }, token);
+                showSuccess("Customer updated successfully!");
+            } else {
+                await createCustomer(body, token);
+                showSuccess("Customer created successfully!");
+            }
+
             setForm(createEmptyForm());
-            showSuccess("Customer created successfully!");
+            setEditingCustomerId(null);
+            await handleFetchCustomers();
+        } catch (error: any) {
+            const message =
+                error.response?.data?.message ||
+                (editingCustomerId
+                    ? "Failed to update customer. Please try again."
+                    : "Failed to create customer. Please try again.");
+            showError(message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleFetchCustomers = async () => {
+        setIsLoading(true);
+        try {
+            const token = sessionStorage.getItem("dd_token") || "";
+            const data = await getCustomers(token);
+            setCustomers(Array.isArray(data) ? data : []);
         } catch (error:any) {
-            showError(error.response?.data?.message || "Failed to create customer. Please try again.")
+            setCustomers([]);
         } finally {
             setIsLoading(false);
         }
-    };
+    }
+
+    useEffect(() => {
+        handleFetchCustomers();
+    }, []);
 
     const handleClear = () => {
         setForm(createEmptyForm());
+        setEditingCustomerId(null);
     };
 
-    const handleAction = (action: string, customer: Customer) => {
-        console.info(`${action} action triggered for`, customer);
+    const formatDate = (value?: string) => {
+        if (!value) return "";
+        const [datePart] = value.split("T");
+        return datePart;
+    };
+
+    const handleView = (customer: Customer) => {
+        setSelectedCustomer(customer);
+        setViewModalOpen(true);
+    };
+
+    const handleEdit = (customer: Customer) => {
+        setEditingCustomerId(customer.id);
+        setForm({
+            fullName: customer.name || "",
+            email: customer.email || "",
+            phone: customer.contactNo || "",
+            country: customer.country || "",
+            dob: formatDate(customer.dateOfBirth),
+            gender: Number.isFinite(customer.gender) ? customer.gender : 3,
+        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleDelete = (customer: Customer) => {
+        setCustomerToDelete(customer);
+        setDeleteConfirmModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!customerToDelete) return;
+
+        try {
+            setIsDeleting(true);
+            const token = sessionStorage.getItem("dd_token") || "";
+            await deleteCustomer(customerToDelete.id, token);
+            showSuccess("Customer deleted successfully.");
+            setDeleteConfirmModalOpen(false);
+            setCustomerToDelete(null);
+            await handleFetchCustomers();
+        } catch (error: any) {
+            const message = error.response?.data?.message || "Failed to delete customer. Please try again.";
+            showError(message);
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const paginationButtons = useMemo(() => {
@@ -227,7 +263,7 @@ export default function CustomerProfile() {
 
     return (
         <Navbar userName="User">
-            {(isLoading) && (
+            {(isLoading || isSaving || isDeleting) && (
                 <div className="globalLoader" role="status" aria-live="polite">
                     <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
                 </div>
@@ -352,8 +388,8 @@ export default function CustomerProfile() {
                             <button type="button" className="btn ghost" onClick={handleClear}>
                                 Clear
                             </button>
-                            <button type="submit" className="btn primary">
-                                Submit
+                            <button type="submit" className="btn primary" disabled={isSaving}>
+                                {editingCustomerId ? "Update" : "Submit"}
                             </button>
                         </div>
                     </form>
@@ -395,37 +431,36 @@ export default function CustomerProfile() {
                                         <tr key={customer.id}>
                                             <td>
                                                 <p className="customer-name">{customer.name}</p>
-                                                <span className="subtle">Joined {customer.registered}</span>
                                             </td>
                                             <td>
                                                 <span className="badge">{customer.country}</span>
                                             </td>
                                             <td>
                                                 <p className="contact-line">{customer.email}</p>
-                                                <span className="subtle">{customer.phone}</span>
+                                                <span className="subtle">{customer.contactNo}</span>
                                             </td>
                                             <td>
                                                 <div className="actions">
                                                     <button
                                                         type="button"
-                                                        className="icon-btn neutral"
-                                                        onClick={() => handleAction("View", customer)}
+                                                        className="iconBtn iconBtn--view"
+                                                        onClick={() => handleView(customer)}
                                                         aria-label={`View ${customer.name}`}
                                                     >
                                                         <Eye size={15} />
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        className="icon-btn warn"
-                                                        onClick={() => handleAction("Edit", customer)}
+                                                        className="iconBtn iconBtn--edit"
+                                                        onClick={() => handleEdit(customer)}
                                                         aria-label={`Edit ${customer.name}`}
                                                     >
                                                         <PenSquare size={15} />
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        className="icon-btn danger"
-                                                        onClick={() => handleAction("Delete", customer)}
+                                                        className="iconBtn iconBtn--del"
+                                                        onClick={() => handleDelete(customer)}
                                                         aria-label={`Delete ${customer.name}`}
                                                     >
                                                         <Trash2 size={15} />
@@ -480,6 +515,131 @@ export default function CustomerProfile() {
                     </footer>
                 </section>
             </section>
+
+            {viewModalOpen && selectedCustomer && (
+                <div
+                    className="ddModal ddModal--large"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="View customer details"
+                >
+                    <button
+                        type="button"
+                        className="ddModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => {
+                            setViewModalOpen(false);
+                            setSelectedCustomer(null);
+                        }}
+                    />
+
+                    <div className="ddModal__card ddModal__card--large">
+                        <div className="ddModal__header">
+                            <div className="ddModal__title">{selectedCustomer.name}</div>
+                            <button
+                                type="button"
+                                className="ddModal__close"
+                                aria-label="Close"
+                                onClick={() => {
+                                    setViewModalOpen(false);
+                                    setSelectedCustomer(null);
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="ddModal__content">
+                            <div className="detailSection">
+                                <h3 className="detailSection__title">Contact</h3>
+                                <div className="detailGrid">
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">Email:</span>
+                                        <span className="detailItem__value">{selectedCustomer.email || "-"}</span>
+                                    </div>
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">Phone:</span>
+                                        <span className="detailItem__value">{selectedCustomer.contactNo || "-"}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="detailSection">
+                                <h3 className="detailSection__title">Profile</h3>
+                                <div className="detailGrid">
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">Country:</span>
+                                        <span className="detailItem__value">{selectedCustomer.country || "-"}</span>
+                                    </div>
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">Gender:</span>
+                                        <span className="detailItem__value">{GENDER_LABELS[selectedCustomer.gender] || "-"}</span>
+                                    </div>
+                                    <div className="detailItem">
+                                        <span className="detailItem__label">Date of Birth:</span>
+                                        <span className="detailItem__value">{formatDate(selectedCustomer.dateOfBirth) || "-"}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {deleteConfirmModalOpen && customerToDelete && (
+                <div
+                    className="ddModal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Confirm delete customer"
+                >
+                    <button
+                        type="button"
+                        className="ddModal__backdrop"
+                        aria-label="Close"
+                        onClick={() => {
+                            if (!isDeleting) {
+                                setDeleteConfirmModalOpen(false);
+                                setCustomerToDelete(null);
+                            }
+                        }}
+                    />
+
+                    <div className="ddModal__card">
+                        <div className="ddModal__logo" aria-hidden="true">
+                            <img className="ddModal__img" src={trashImg} alt="Delete icon" />
+                        </div>
+
+                        <div className="ddModal__title">Delete Customer</div>
+                        <div className="ddModal__subtitle">
+                            Are you sure you want to delete <strong>{customerToDelete.name || "this customer"}</strong>? This action cannot be undone.
+                        </div>
+
+                        <div className="ddModal__actions">
+                            <button
+                                type="button"
+                                className="ddModal__btn ddModal__btn--ghost"
+                                onClick={() => {
+                                    setDeleteConfirmModalOpen(false);
+                                    setCustomerToDelete(null);
+                                }}
+                                disabled={isDeleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn--danger"
+                                onClick={handleConfirmDelete}
+                                disabled={isDeleting}
+                            >
+                                <Trash2 size={14} />
+                                {isDeleting ? "Deleting..." : "Delete"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Navbar>
     );
 }
