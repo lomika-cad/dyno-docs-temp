@@ -14,6 +14,7 @@ import Partnerships from "./pages/Partnerships"
 import Templates from "./pages/Templates"
 import PromoCodes from "./pages/PromoCodes"
 import TemplateCustomize from "./pages/TemplateCustomize"
+import CustomerProfile from "./pages/CustomerProfile"
 
 function App() {
   useEffect(() => {
@@ -34,6 +35,7 @@ function App() {
         <Route path="/templates" element={<Templates />} />
         <Route path="/templates/customize" element={<TemplateCustomize />} />
         <Route path="/promo-codes" element={<PromoCodes />} />
+        <Route path="/customer-profiles" element={<CustomerProfile />} />
       </Routes>
       <Toast />
     </>
