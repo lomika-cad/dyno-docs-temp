@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Eye, PenSquare, Trash2 } from "lucide-react";
+import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import Navbar from "../layouts/Navbar";
 import "../styles/customerProfile.css";
 import "../styles/agencyData.css";
@@ -633,7 +634,7 @@ export default function CustomerProfile() {
                                 onClick={handleConfirmDelete}
                                 disabled={isDeleting}
                             >
-                                <Trash2 size={14} />
+                                <DeleteRoundedIcon fontSize="small" />
                                 {isDeleting ? "Deleting..." : "Delete"}
                             </button>
                         </div>
