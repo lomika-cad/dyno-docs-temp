@@ -82,7 +82,13 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
         var currentTime = DateTime.UtcNow;
         var currentUser = _currentUserService.UserName ?? "system";
-        var tenantId = _tenantService.TenantId;
+
+        Guid? tenantId = null;
+        var needsTenantId = ChangeTracker.Entries().Any(e => e.Entity is BaseEntity baseEntity && e.State == EntityState.Added && baseEntity.TenantId == Guid.Empty);
+        if (needsTenantId)
+        {
+            tenantId = _tenantService.TenantId;
+        }
 
         foreach (var entry in ChangeTracker.Entries())
         {
@@ -108,7 +114,14 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             // Handle BaseEntity (TenantId)
             if (entry.Entity is BaseEntity baseEntity && entry.State == EntityState.Added && baseEntity.TenantId == Guid.Empty)
             {
-                baseEntity.TenantId = tenantId;
+                if (tenantId.HasValue)
+                {
+                    baseEntity.TenantId = tenantId.Value;
+                }
+                else
+                {
+                    throw new Exception("TenantId is required for new entities but not available in the current context.");
+                }
             }
         }
 

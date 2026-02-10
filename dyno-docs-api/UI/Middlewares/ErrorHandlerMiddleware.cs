@@ -62,6 +62,17 @@ public class ErrorHandlerMiddleware
                 response.ContentType = "application/json";
                 await response.WriteAsync(result);
             }
+            catch (Application.Common.Exceptions.ForbiddenException error)
+            {
+                response.StatusCode = (int)HttpStatusCode.Forbidden;
+                result = JsonSerializer.Serialize(Result.Failure(error.Message), new JsonSerializerOptions()
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+                _logger.LogError("Exception : {@Error}", error);
+                response.ContentType = "application/json";
+                await response.WriteAsync(result);
+            }
             catch (Exception error)
             {
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;

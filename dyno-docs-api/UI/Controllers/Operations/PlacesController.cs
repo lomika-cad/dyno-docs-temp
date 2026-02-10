@@ -2,6 +2,7 @@ using Application.Common;
 using Application.UserStories.Operations.Places.Commands;
 using Application.UserStories.Operations.Places.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using UI.Requests;
@@ -10,6 +11,7 @@ namespace UI.Controllers.Operations;
 
 [ApiController]
 [Route("api/operations/places")]
+[Authorize]
 public class PlacesController : ControllerBase
 {
     private readonly IMediator _mediator;

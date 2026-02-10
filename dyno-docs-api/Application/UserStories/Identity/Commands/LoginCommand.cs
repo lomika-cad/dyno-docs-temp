@@ -2,7 +2,6 @@ using Application.Common;
 using Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-
 using Throw;
 
 namespace Application.UserStories.Identity.Commands;
@@ -42,10 +41,9 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
-        if (user == null)
-        {
-            user.ThrowIfNull("Invalid email or password.");
-        }
+
+        user.ThrowIfNull("Invalid email or password.");
+
 
         // Check password (plain text for now)
         if (user.Password != request.Password)

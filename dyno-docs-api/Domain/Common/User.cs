@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using SoftFluent.ComponentModel.DataAnnotations;
 
 namespace Domain.Common;
 
@@ -20,6 +21,6 @@ public class User : BaseEntity
     
     public bool IsActive { get; set; } = true;
     
-    
+    [Encrypted]
     public required string Password { get; set; }
 }

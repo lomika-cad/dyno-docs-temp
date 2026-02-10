@@ -3,6 +3,7 @@ using Application.Common.Interfaces;
 using Domain.Entities.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.UserStories.Identity.Commands;
 
@@ -41,6 +42,12 @@ public class RegisterAgencyCommandHandler : IRequestHandler<RegisterAgencyComman
         if (request.AgencyLogo.Length > maxFileSize)
         {
             return Result.Failure("Agency logo file size exceeds 5MB limit.");
+        }
+
+        // Check if email already exists
+        if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == request.Email, cancellationToken))
+        {
+            return Result.Failure("Email already exists.");
         }
 
         // Convert logo to byte array

@@ -18,6 +18,11 @@ public class TenantService : ITenantService
     {
         get
         {
+            if (_httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated != true)
+            {
+                return Guid.Empty;
+            }
+
             // First try to get from HttpContext.Items (set by TenantMiddleware)
             if (_httpContextAccessor.HttpContext?.Items.TryGetValue("TenantId", out var tenantIdObj) == true 
                 && tenantIdObj is Guid tenantIdFromItems)
@@ -36,4 +41,3 @@ public class TenantService : ITenantService
         }
     }
 }
-
