@@ -84,7 +84,6 @@ using (var scope = app.Services.CreateScope())
 
 // Configure middleware pipeline
 app.UseMiddleware<ErrorHandlerMiddleware>();
-app.UseMiddleware<TenantMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -96,6 +95,7 @@ app.UseCors("DynoDocs");
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();
+app.UseMiddleware<TenantMiddleware>();
 app.UseAuthorization();
 
 
