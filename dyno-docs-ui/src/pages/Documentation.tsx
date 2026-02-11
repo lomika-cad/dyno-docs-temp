@@ -563,8 +563,7 @@ export default function Documentation() {
                                 </main>
                             </div>
                         </div>
-
-                            <Footer />
+                        <Footer />
                     </div>
                 </div>
             </div>
