@@ -16,17 +16,17 @@
   overflow: hidden;
 }
 
-.sidebar__brand {
+.sidebar-brand {
   padding: var(--spacing-4);
 }
 
-.sidebar__logo {
+.sidebar-logo {
   width: 180px;
   height: auto;
   display: block;
 }
 
-.sidebar__nav {
+.sidebar-nav {
   padding: var(--spacing-3);
   display: flex;
   flex-direction: column;
@@ -36,7 +36,7 @@
   overflow-y: auto;
 }
 
-.sidebar__link {
+.sidebar-link {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -48,7 +48,7 @@
   border-radius: 10px;
 }
 
-.sidebar__icon {
+.sidebar-icon {
   width: 18px;
   height: 18px;
   display: inline-flex;
@@ -57,19 +57,19 @@
   flex: 0 0 18px;
 }
 
-.sidebar__label {
+.sidebar-label {
   white-space: nowrap;
 }
 
-.sidebar__link:hover {
+.sidebar-link:hover {
   color: var(--hover);
 }
 
-.sidebar__link--active {
+.sidebar-link--active {
   color: var(--color-primary);
 }
 
-.sidebar__logout {
+.sidebar-logout {
   margin: auto var(--spacing-3) var(--spacing-3);
   border: 1px solid var(--color-border);
   background: var(--color-background);
@@ -99,7 +99,7 @@
   flex: 0 0 auto;
 }
 
-.topbar__menu {
+.topbar-menu {
   border: 1px solid var(--color-border);
   background: var(--color-background);
   border-radius: 10px;
@@ -109,18 +109,18 @@
   display: none;
 }
 
-.topbar__spacer {
+.topbar-spacer {
   flex: 1;
 }
 
-.topbar__user {
+.topbar-user {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
   font-weight: 600;
 }
 
-.topbar__avatar {
+.topbar-avatar {
   width: 34px;
   height: 34px;
   border-radius: 999px;
@@ -130,14 +130,14 @@
   justify-content: center;
 }
 
-.main__content {
+.main-content {
   padding: var(--spacing-6);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
 
-.main__card {
+.main-card {
   background: var(--color-background);
   padding: var(--spacing-6);
   border-radius: 12px;
@@ -162,7 +162,7 @@
     left: 0;
   }
 
-  .sidebar__backdrop {
+  .sidebar-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.25);
@@ -171,13 +171,13 @@
     padding: 0;
   }
 
-  .topbar__menu {
+  .topbar-menu {
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
 
-  .main__content {
+  .main-content {
     padding: var(--spacing-4);
   }
 }

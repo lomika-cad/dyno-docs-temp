@@ -81,50 +81,50 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
     <form onSubmit={handleNext} aria-label="Business information">
       <div className="row row--three">
         <label className="field">
-          <div className="field__label">Agency Name</div>
-          <input id="agencyName" className="field__input" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder="Enter your agency name" />
+          <div className="field-label">Agency Name</div>
+          <input id="agencyName" className="field-input" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder="Enter your agency name" />
           {errors.agencyName && <div className="field-error">{errors.agencyName}</div>}
         </label>
 
         <label className="field">
-          <div className="field__label">Business Reg No</div>
-          <input id="businessRegNo" className="field__input" value={businessRegNo} onChange={(e) => setBusinessRegNo(e.target.value)} placeholder="Enter your business reg no" />
+          <div className="field-label">Business Reg No</div>
+          <input id="businessRegNo" className="field-input" value={businessRegNo} onChange={(e) => setBusinessRegNo(e.target.value)} placeholder="Enter your business reg no" />
         </label>
 
         <label className="field">
-          <div className="field__label">Contact No</div>
-          <input id="contactNo" className="field__input" value={contactNo} onChange={(e) => setContactNo(e.target.value)} placeholder="Enter your agency contact no" />
+          <div className="field-label">Contact No</div>
+          <input id="contactNo" className="field-input" value={contactNo} onChange={(e) => setContactNo(e.target.value)} placeholder="Enter your agency contact no" />
           {errors.contactNo && <div className="field-error">{errors.contactNo}</div>}
         </label>
       </div>
 
       <div className="row row--three">
         <label className="field">
-          <div className="field__label">Country</div>
-          <input id="country" className="field__input" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Enter your country" />
+          <div className="field-label">Country</div>
+          <input id="country" className="field-input" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Enter your country" />
         </label>
 
         <label className="field">
-          <div className="field__label">State</div>
-          <input id="state" className="field__input" value={state} onChange={(e) => setState(e.target.value)} placeholder="Enter your state" />
+          <div className="field-label">State</div>
+          <input id="state" className="field-input" value={state} onChange={(e) => setState(e.target.value)} placeholder="Enter your state" />
         </label>
 
         <label className="field">
-          <div className="field__label">City</div>
-          <input id="city" className="field__input" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Enter your city" />
+          <div className="field-label">City</div>
+          <input id="city" className="field-input" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Enter your city" />
         </label>
       </div>
 
       <div className="row">
         <label className="full field">
-          <div className="field__label">Agency Address</div>
-          <textarea id="agencyAddress" className="field__input" value={agencyAddress} onChange={(e) => setAgencyAddress(e.target.value)} placeholder="Enter your agency address" />
+          <div className="field-label">Agency Address</div>
+          <textarea id="agencyAddress" className="field-input" value={agencyAddress} onChange={(e) => setAgencyAddress(e.target.value)} placeholder="Enter your agency address" />
         </label>
       </div>
 
       <div className="row">
         <label className="full field">
-          <div className="field__label">Agency Logo</div>
+          <div className="field-label">Agency Logo</div>
 
           <div
             className={`dropzone ${isLogoDragActive ? "dropzone--active" : ""}`}
@@ -134,11 +134,11 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
             role="button"
             tabIndex={0}
           >
-            <span className="dropzone__icon" aria-hidden="true">
+            <span className="dropzone-icon" aria-hidden="true">
               <CloudUploadRoundedIcon />
             </span>
-            <div className="dropzone__title">Select your image or drag and drop</div>
-            <div className="dropzone__sub">png, jpg, jpeg accepted</div>
+            <div className="dropzone-title">Select your image or drag and drop</div>
+            <div className="dropzone-sub">png, jpg, jpeg accepted</div>
 
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
             <button type="button" className="btn btn--orange" onClick={() => fileRef.current?.click()}>Browse</button>
@@ -147,8 +147,8 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
           {logoPreview && (
             <div className="imagePreviews" style={{ marginTop: 12 }}>
               <div className="imagePreviewItem">
-                <img src={logoPreview} alt="Preview" className="imagePreviewItem__img" />
-                <button type="button" className="imagePreviewItem__remove" onClick={handleRemoveLogo}>×</button>
+                <img src={logoPreview} alt="Preview" className="imagePreviewItem-img" />
+                <button type="button" className="imagePreviewItem-remove" onClick={handleRemoveLogo}>×</button>
               </div>
             </div>
           )}

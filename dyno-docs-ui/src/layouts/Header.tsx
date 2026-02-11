@@ -15,7 +15,6 @@ export default function Header() {
     <>
       <header className="header">
         <div className="header-container">
-          {/* Logo */}
           <div className="logo">
             <img
               src={logo}

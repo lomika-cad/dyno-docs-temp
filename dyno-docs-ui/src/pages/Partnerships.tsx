@@ -364,10 +364,10 @@ export default function Partnerships() {
                 </div>
             )}
             <div className="agency" ref={formTopRef}>
-                <h2 className="agency__title">Partnerships</h2>
+                <h2 className="agency-title">Partnerships</h2>
 
                 <section className="panel">
-                    <div className="panel__body">
+                    <div className="panel-body">
                         <form
                             className="partnershipsForm formGroup"
                             onSubmit={handleSubmit}
@@ -375,12 +375,12 @@ export default function Partnerships() {
                             <Grid container spacing={2} alignItems="center" marginBottom={2}>
                                 <Grid size={4}>
                                     <div className="formField">
-                                        <label className="formField__label" htmlFor="title">
+                                        <label className="formField-label" htmlFor="title">
                                             Title
                                         </label>
                                         <input
                                             id="title"
-                                            className="formField__input"
+                                            className="formField-input"
                                             type="text"
                                             placeholder="Enter title"
                                             value={title}
@@ -391,12 +391,12 @@ export default function Partnerships() {
                                 </Grid>
                                 <Grid size={4}>
                                     <div className="formField">
-                                    <label className="formField__label" htmlFor="type">
+                                    <label className="formField-label" htmlFor="type">
                                         Partnership Type
                                     </label>
                                     <select
                                         id="type"
-                                        className="formField__input"
+                                        className="formField-input"
                                         value={type}
                                         onChange={(e) => setType(e.target.value)}
                                     >
@@ -414,12 +414,12 @@ export default function Partnerships() {
                                 </Grid>
                                 <Grid size={4}>
                                     <div className="formField">
-                                    <label className="formField__label" htmlFor="district">
+                                    <label className="formField-label" htmlFor="district">
                                         District
                                     </label>
                                     <select
                                         id="district"
-                                        className="formField__input"
+                                        className="formField-input"
                                         value={district}
                                         onChange={(e) => setDistrict(e.target.value)}
                                     >
@@ -435,12 +435,12 @@ export default function Partnerships() {
                             </Grid>
 
                             <div className="formField">
-                                <label className="formField__label" htmlFor="description">
+                                <label className="formField-label" htmlFor="description">
                                     Description
                                 </label>
                                 <textarea
                                     id="description"
-                                    className="formField__textarea"
+                                    className="formField-textarea"
                                     placeholder="Enter description"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
@@ -449,7 +449,7 @@ export default function Partnerships() {
 
                             {!editingId && (
                                 <div className="formField">
-                                    <span className="formField__label">Images</span>
+                                    <span className="formField-label">Images</span>
                                     <div
                                         className={`dropzone ${
                                             isImagesDragActive ? "dropzone--active" : ""
@@ -458,13 +458,13 @@ export default function Partnerships() {
                                         onDragLeave={handleImagesDragLeave}
                                         onDrop={handleImagesDrop}
                                     >
-                                        <span className="dropzone__icon" aria-hidden="true">
+                                        <span className="dropzone-icon" aria-hidden="true">
                                             <CloudUploadRoundedIcon />
                                         </span>
-                                        <div className="dropzone__title">
+                                        <div className="dropzone-title">
                                             Select your images or drag and drop
                                         </div>
-                                        <div className="dropzone__sub">
+                                        <div className="dropzone-sub">
                                             .png, .jpg, .jpeg accepted
                                         </div>
                                         <input
@@ -494,11 +494,11 @@ export default function Partnerships() {
                                                     <img
                                                         src={src}
                                                         alt={`Preview ${index + 1}`}
-                                                        className="imagePreviewItem__img"
+                                                        className="imagePreviewItem-img"
                                                     />
                                                     <button
                                                         type="button"
-                                                        className="imagePreviewItem__remove"
+                                                        className="imagePreviewItem-remove"
                                                         onClick={() => removeImage(index)}
                                                     >
                                                         ×
@@ -510,7 +510,7 @@ export default function Partnerships() {
                                 </div>
                             )}
 
-                            <div className="partnershipsForm__actions">
+                            <div className="partnershipsForm-actions">
                                 <button
                                     type="button"
                                     className="btn btn--secondary"
@@ -531,7 +531,7 @@ export default function Partnerships() {
                 </section>
 
                 <section className="panel">
-                    <div className="panel__header">
+                    <div className="panel-header">
                         <div />
                         <div className="search" aria-label="Search partnerships">
                             <SearchRoundedIcon fontSize="small" />
@@ -614,7 +614,7 @@ export default function Partnerships() {
                     </div>
 
                     <div className="footerRow">
-                        <div className="panel__hint">
+                        <div className="panel-hint">
                             <strong>Showing</strong>{" "}
                             <strong>{
                                 filteredPartnerships.length === 0
@@ -678,7 +678,7 @@ export default function Partnerships() {
                 >
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             setViewModalOpen(false);
@@ -686,12 +686,12 @@ export default function Partnerships() {
                         }}
                     />
 
-                    <div className="ddModal__card ddModal__card--large">
-                        <div className="ddModal__header">
-                            <div className="ddModal__title">{selectedPartnership.name}</div>
+                    <div className="ddModal-card ddModal-card--large">
+                        <div className="ddModal-header">
+                            <div className="ddModal-title">{selectedPartnership.name}</div>
                             <button
                                 type="button"
-                                className="ddModal__close"
+                                className="ddModal-close"
                                 aria-label="Close"
                                 onClick={() => {
                                     setViewModalOpen(false);
@@ -702,17 +702,17 @@ export default function Partnerships() {
                             </button>
                         </div>
 
-                        <div className="ddModal__content">
+                        <div className="ddModal-content">
                             <div className="detailSection">
-                                <h3 className="detailSection__title">Basic Information</h3>
+                                <h3 className="detailSection-title">Basic Information</h3>
                                 <div className="detailGrid">
                                     <div className="detailItem">
-                                        <span className="detailItem__label">District:</span>
-                                        <span className="detailItem__value">{selectedPartnership.district || "-"}</span>
+                                        <span className="detailItem-label">District:</span>
+                                        <span className="detailItem-value">{selectedPartnership.district || "-"}</span>
                                     </div>
                                     <div className="detailItem">
-                                        <span className="detailItem__label">Partnership Type:</span>
-                                        <span className="detailItem__value">
+                                        <span className="detailItem-label">Partnership Type:</span>
+                                        <span className="detailItem-value">
                                             {PARTNERSHIP_TYPE_LABELS[selectedPartnership.partnershipType] || "-"}
                                         </span>
                                     </div>
@@ -721,21 +721,21 @@ export default function Partnerships() {
 
                             {selectedPartnership.description && (
                                 <div className="detailSection">
-                                    <h3 className="detailSection__title">Description</h3>
-                                    <p className="detailSection__text">{selectedPartnership.description}</p>
+                                    <h3 className="detailSection-title">Description</h3>
+                                    <p className="detailSection-text">{selectedPartnership.description}</p>
                                 </div>
                             )}
 
                             {selectedPartnership.images && selectedPartnership.images.length > 0 && (
                                 <div className="detailSection">
-                                    <h3 className="detailSection__title">Images</h3>
+                                    <h3 className="detailSection-title">Images</h3>
                                     <div className="imageGrid">
                                         {selectedPartnership.images.filter(Boolean).map((img, idx) => (
-                                            <div key={idx} className="imageGrid__item">
+                                            <div key={idx} className="imageGrid-item">
                                                 <img
                                                     src={`data:image/jpeg;base64,${img}`}
                                                     alt={`${selectedPartnership.name || "Partnership"} - Image ${idx + 1}`}
-                                                    className="imageGrid__img"
+                                                    className="imageGrid-img"
                                                 />
                                             </div>
                                         ))}
@@ -756,7 +756,7 @@ export default function Partnerships() {
                 >
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             if (!isDeleting) {
@@ -766,20 +766,20 @@ export default function Partnerships() {
                         }}
                     />
 
-                    <div className="ddModal__card">
-                        <div className="ddModal__logo" aria-hidden="true">
-                            <img className="ddModal__img" src={trashImg} alt="Delete icon" />
+                    <div className="ddModal-card">
+                        <div className="ddModal-logo" aria-hidden="true">
+                            <img className="ddModal-img" src={trashImg} alt="Delete icon" />
                         </div>
 
-                        <div className="ddModal__title">Delete Partnership</div>
-                        <div className="ddModal__subtitle">
+                        <div className="ddModal-title">Delete Partnership</div>
+                        <div className="ddModal-subtitle">
                             Are you sure you want to delete <strong>{partnershipToDelete.name || "this partnership"}</strong>? This action cannot be undone.
                         </div>
 
-                        <div className="ddModal__actions">
+                        <div className="ddModal-actions">
                             <button
                                 type="button"
-                                className="ddModal__btn ddModal__btn--ghost"
+                                className="ddModal-btn ddModal-btn--ghost"
                                 onClick={() => {
                                     setDeleteConfirmModalOpen(false);
                                     setPartnershipToDelete(null);

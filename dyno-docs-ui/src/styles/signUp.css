@@ -27,7 +27,7 @@
   color: var(--color-primary, #ff7b2e);
 }
 
-.step__circle {
+.step-circle {
   width: 40px;
   height: 40px;
   border-radius: 20px;
@@ -38,7 +38,7 @@
   margin-bottom: 8px;
 }
 
-.step--active .step__circle {
+.step--active .step-circle {
   border-color: var(--color-primary, #ff7b2e);
   background: linear-gradient(180deg, rgba(255,123,46,0.08), transparent);
 }
@@ -69,13 +69,13 @@
   flex-direction: column;
 }
 
-.field__label {
+.field-label {
   margin-bottom: 8px;
   font-size: 14px;
   color: #444;
 }
 
-.field__input {
+.field-input {
   width: 100%;
   padding: 12px 14px;
   border-radius: 8px;
@@ -89,7 +89,7 @@
 .stepper-card { margin-top: 12px; }
 
 label { display: block; }
-input[type="text"], input[type="email"], input[type="password"], textarea, .field__input {
+input[type="text"], input[type="email"], input[type="password"], textarea, .field-input {
   width: 100%;
 }
 
@@ -130,9 +130,9 @@ input[type="text"], input[type="email"], input[type="password"], textarea, .fiel
 
 .plans { display: flex; gap: 12px; }
 .plan-card { flex: 1; border: 1px solid rgba(255,123,46,0.12); padding: 18px; border-radius: 12px; cursor: pointer; background: #fff6f0; position: relative; min-height: 120px; }
-.plan-card__icon { position: absolute; top: 12px; left: 12px; width: 44px; height: 44px; background: #fff; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 6px rgba(0,0,0,0.06); color: var(--color-primary); }
-.plan-card__title { font-weight: 700; margin-top: 18px; font-size: 16px; }
-.plan-card__desc { color: #666; margin-top: 8px; font-size: 14px; }
+.plan-card-icon { position: absolute; top: 12px; left: 12px; width: 44px; height: 44px; background: #fff; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 6px rgba(0,0,0,0.06); color: var(--color-primary); }
+.plan-card-title { font-weight: 700; margin-top: 18px; font-size: 16px; }
+.plan-card-desc { color: #666; margin-top: 8px; font-size: 14px; }
 .plan--active { border-color: var(--color-primary, #ff7b2e); background: #fffaf6; box-shadow: 0 4px 12px rgba(255,123,46,0.06); }
 
 .more-details { margin-top: 12px; text-align: right; }

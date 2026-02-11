@@ -100,18 +100,18 @@ export default function SignUpStepper() {
     <div className="signup-stepper">
       <div className="stepper-progress" role="tablist" aria-label="Registration Steps">
         <div className={`step ${step >= 1 ? "step--active" : ""}`} aria-current={step === 1 ? "step" : undefined}>
-          <div className="step__circle">{step > 1 ? "✓" : 1}</div>
-          <div className="step__label">Personal info</div>
+          <div className="step-circle">{step > 1 ? "✓" : 1}</div>
+          <div className="step-label">Personal info</div>
         </div>
 
         <div className={`step ${step >= 2 ? "step--active" : ""}`} aria-current={step === 2 ? "step" : undefined}>
-          <div className="step__circle">{step > 2 ? "✓" : 2}</div>
-          <div className="step__label">Business Info</div>
+          <div className="step-circle">{step > 2 ? "✓" : 2}</div>
+          <div className="step-label">Business Info</div>
         </div>
 
         <div className={`step ${step >= 3 ? "step--active" : ""}`} aria-current={step === 3 ? "step" : undefined}>
-          <div className="step__circle">3</div>
-          <div className="step__label">Subscription Plan</div>
+          <div className="step-circle">3</div>
+          <div className="step-label">Subscription Plan</div>
         </div>
       </div>
 

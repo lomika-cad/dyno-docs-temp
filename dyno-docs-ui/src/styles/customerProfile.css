@@ -4,13 +4,13 @@
   gap: 1.75rem;
 }
 
-.customer-profile__header {
+.customer-profile-header {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.customer-profile__header h1 {
+.customer-profile-header h1 {
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--color-text-black);
@@ -37,7 +37,7 @@
   box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
 }
 
-.profile-card__title {
+.profile-card-title {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -100,7 +100,7 @@
   padding: 0;
 }
 
-.table-card__header {
+.table-card-header {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;

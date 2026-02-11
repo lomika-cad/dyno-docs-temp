@@ -7,7 +7,7 @@
   overflow: hidden;
 }
 
-.template-customize__header {
+.template-customize-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -20,24 +20,24 @@
   z-index: 5;
 }
 
-.template-customize__title {
+.template-customize-title {
   display: flex;
   gap: 1rem;
   align-items: center;
 }
 
-.template-customize__title p {
+.template-customize-title p {
   font-size: 0.85rem;
   color: #6b7280;
   margin-bottom: 0.2rem;
 }
 
-.template-customize__title h1 {
+.template-customize-title h1 {
   font-size: 1.6rem;
   color: #111827;
 }
 
-.template-customize__back {
+.template-customize-back {
   width: 42px;
   height: 42px;
   border-radius: 12px;
@@ -50,13 +50,13 @@
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
 }
 
-.template-customize__actions {
+.template-customize-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.template-customize__badge {
+.template-customize-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -67,7 +67,7 @@
   color: #4b5563;
 }
 
-.template-customize__content {
+.template-customize-content {
   flex: 1;
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr) 360px;
@@ -76,7 +76,7 @@
   overflow: auto;
 }
 
-.template-customize__canvas {
+.template-customize-canvas {
   background: #eef1f7;
   border-radius: 20px;
   padding: 1.5rem;
@@ -85,7 +85,7 @@
   flex-direction: column;
 }
 
-.template-customize__canvas-scroll {
+.template-customize-canvas-scroll {
   flex: 1;
   overflow: auto;
   padding: 1rem;
@@ -93,12 +93,12 @@
   background: radial-gradient(circle at top, #f8fafc, #eef1f7 80%);
 }
 
-.template-customize__canvas-wrapper {
+.template-customize-canvas-wrapper {
   width: min(72vw, 860px);
   margin: 0 auto;
 }
 
-.template-customize__canvas-stage {
+.template-customize-canvas-stage {
   position: relative;
   margin: 0 auto;
   border-radius: 14px;
@@ -152,53 +152,53 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
-.design-pill__label {
+.design-pill-label {
   font-size: 0.65rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: inherit;
 }
 
-.design-pill__value {
+.design-pill-value {
   font-size: 1rem;
   font-weight: 600;
   color: inherit;
 }
 
-.template-customize__panel {
+.template-customize-panel {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.template-customize__panel--left {
+.template-customize-panel--left {
   align-self: flex-start;
 }
 
-.template-customize__panel--right {
+.template-customize-panel--right {
   align-self: flex-start;
 }
 
-.template-customize__panel-card {
+.template-customize-panel-card {
   background: #ffffff;
   padding: 1.25rem;
   border-radius: 16px;
   box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
 }
 
-.template-customize__panel-card h3 {
+.template-customize-panel-card h3 {
   font-size: 1rem;
   color: #111827;
   margin-bottom: 0.75rem;
 }
 
-.template-customize__layer-list {
+.template-customize-layer-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.template-customize__layer {
+.template-customize-layer {
   text-align: left;
   background: #f9fafb;
   border: 1px solid transparent;
@@ -209,39 +209,39 @@
   cursor: pointer;
 }
 
-.template-customize__layer.active {
+.template-customize-layer.active {
   border-color: #ff7b2e;
   background: rgba(255, 123, 46, 0.1);
   color: #b45309;
 }
 
-.template-customize__controls {
+.template-customize-controls {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.template-customize__control label {
+.template-customize-control label {
   font-size: 0.8rem;
   color: #6b7280;
   display: block;
   margin-bottom: 0.4rem;
 }
 
-.template-customize__position {
+.template-customize-position {
   display: flex;
   gap: 1rem;
   font-size: 0.9rem;
   color: #111827;
 }
 
-.template-customize__color-label {
+.template-customize-color-label {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
 }
 
-.template-customize__control input[type="color"] {
+.template-customize-control input[type="color"] {
   width: 100%;
   height: 40px;
   border: none;
@@ -250,7 +250,7 @@
   padding: 0.4rem;
 }
 
-.template-customize__textarea {
+.template-customize-textarea {
   width: 100%;
   min-height: 80px;
   padding: 0.5rem 0.6rem;
@@ -261,24 +261,24 @@
   background: #f9fafb;
 }
 
-.template-customize__size-row {
+.template-customize-size-row {
   display: flex;
   gap: 0.75rem;
 }
 
-.template-customize__size-field {
+.template-customize-size-field {
   display: flex;
   align-items: center;
   gap: 0.35rem;
   flex: 1;
 }
 
-.template-customize__size-field span {
+.template-customize-size-field span {
   font-size: 0.8rem;
   color: #6b7280;
 }
 
-.template-customize__size-field input[type="number"] {
+.template-customize-size-field input[type="number"] {
   width: 100%;
   padding: 0.35rem 0.5rem;
   border-radius: 10px;
@@ -286,19 +286,19 @@
   font-size: 0.85rem;
 }
 
-.template-customize__hint {
+.template-customize-hint {
   font-size: 0.85rem;
   color: #6b7280;
   margin-top: 0.2rem;
 }
 
-.template-customize__panel-footer {
+.template-customize-panel-footer {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.template-customize__close {
+.template-customize-close {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -310,7 +310,7 @@
   cursor: pointer;
 }
 
-.template-customize__empty {
+.template-customize-empty {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -322,32 +322,32 @@
 }
 
 @media (max-width: 1100px) {
-  .template-customize__content {
+  .template-customize-content {
     grid-template-columns: 1fr;
   }
 
-  .template-customize__panel {
+  .template-customize-panel {
     flex-direction: row;
     flex-wrap: wrap;
   }
 
-  .template-customize__panel-card {
+  .template-customize-panel-card {
     flex: 1 1 280px;
   }
 }
 
 @media (max-width: 720px) {
-  .template-customize__header {
+  .template-customize-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
 
-  .template-customize__content {
+  .template-customize-content {
     padding: 1.25rem 1.5rem 2rem;
   }
 
-  .template-customize__canvas-wrapper {
+  .template-customize-canvas-wrapper {
     width: 100%;
   }
 }

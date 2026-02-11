@@ -27,7 +27,7 @@ export type NavbarProps = {
 };
 
 function Icon({ children }: { children: ReactNode }) {
-    return <span className="sidebar__icon">{children}</span>;
+    return <span className="sidebar-icon">{children}</span>;
 }
 
 const DEFAULT_ITEMS: NavbarItem[] = [
@@ -138,29 +138,29 @@ export default function Navbar({
                 className={`sidebar ${mobileOpen ? "sidebar--open" : ""}`}
                 aria-label="Primary"
             >
-                <div className="sidebar__brand">
-                    <img className="sidebar__logo" src={logo} alt="DynoDocs" />
+                <div className="sidebar-brand">
+                    <img className="sidebar-logo" src={logo} alt="DynoDocs" />
                 </div>
 
-                <nav className="sidebar__nav" aria-label="Navigation">
+                <nav className="sidebar-nav" aria-label="Navigation">
                     {navItems.map((item) => (
                         <NavLink
                             key={item.to}
                             to={item.to}
                             className={({ isActive }) =>
-                                `sidebar__link ${isActive ? "sidebar__link--active" : ""}`
+                                `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
                             }
                             onClick={() => setMobileOpen(false)}
                         >
                             {item.icon}
-                            <span className="sidebar__label">{item.label}</span>
+                            <span className="sidebar-label">{item.label}</span>
                         </NavLink>
                     ))}
                 </nav>
 
                 <button
                     type="button"
-                    className="sidebar__logout"
+                    className="sidebar-logout"
                     onClick={() => setMobileOpen(false)}
                 >
                     Logout
@@ -170,7 +170,7 @@ export default function Navbar({
             {mobileOpen && (
                 <button
                     type="button"
-                    className="sidebar__backdrop"
+                    className="sidebar-backdrop"
                     aria-label="Close navigation"
                     onClick={() => setMobileOpen(false)}
                 />
@@ -180,7 +180,7 @@ export default function Navbar({
                 <header className="topbar">
                     <button
                         type="button"
-                        className="topbar__menu"
+                        className="topbar-menu"
                         aria-label={mobileOpen ? "Close menu" : "Open menu"}
                         aria-expanded={mobileOpen}
                         onClick={() => setMobileOpen((v) => !v)}
@@ -188,18 +188,18 @@ export default function Navbar({
                         ☰
                     </button>
 
-                    <div className="topbar__spacer" />
+                    <div className="topbar-spacer" />
 
-                    <div className="topbar__user" aria-label="User">
-                        <span className="topbar__greeting">Hi, {userName}</span>
-                        <span className="topbar__avatar" aria-hidden="true">
-                            👤
+                    <div className="topbar-user" aria-label="User">
+                        <span className="topbar-greeting">Hi, {userName}</span>
+                        <span className="topbar-avatar" aria-hidden="true">
+                            {userName.charAt(0).toUpperCase()}
                         </span>
                     </div>
                 </header>
 
-                <main className="main__content">
-                    <div className="main__card">
+                <main className="main-content">
+                    <div className="main-card">
                         {children}
                     </div>                    
                 </main>

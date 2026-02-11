@@ -546,7 +546,7 @@ export default function TemplateCustomize() {
   if (!template) {
     return (
       <div className="template-customize">
-        <div className="template-customize__empty">
+        <div className="template-customize-empty">
           <h2>Template not found</h2>
           <p>Open the template from My Templates to start customizing.</p>
           <button type="button" className="btn btn--orange" onClick={handleBack}>
@@ -559,9 +559,9 @@ export default function TemplateCustomize() {
 
   return (
     <div className="template-customize">
-      <header className="template-customize__header">
-        <div className="template-customize__title">
-          <button type="button" className="template-customize__back" onClick={handleBack}>
+      <header className="template-customize-header">
+        <div className="template-customize-title">
+          <button type="button" className="template-customize-back" onClick={handleBack}>
             <ArrowBackRoundedIcon fontSize="small" />
           </button>
           <div>
@@ -569,8 +569,8 @@ export default function TemplateCustomize() {
             <h1>{template.name}</h1>
           </div>
         </div>
-        <div className="template-customize__actions">
-          <div className="template-customize__badge">
+        <div className="template-customize-actions">
+          <div className="template-customize-badge">
             <HeightRoundedIcon fontSize="small" />
             A4 canvas (595×842)
           </div>
@@ -586,17 +586,17 @@ export default function TemplateCustomize() {
         </div>
       </header>
 
-      <main className="template-customize__content">
-        <aside className="template-customize__panel template-customize__panel--left">
-          <div className="template-customize__panel-card">
+      <main className="template-customize-content">
+        <aside className="template-customize-panel template-customize-panel--left">
+          <div className="template-customize-panel-card">
             <h3>Layers</h3>
-            <div className="template-customize__layer-list">
-              {elementSummary.length === 0 && <p className="template-customize__hint">No elements found.</p>}
+            <div className="template-customize-layer-list">
+              {elementSummary.length === 0 && <p className="template-customize-hint">No elements found.</p>}
               {elementSummary.map((summary, index) => (
                 <button
                   key={`layer-${index}`}
                   type="button"
-                  className={`template-customize__layer ${selectedElementIndex === index ? "active" : ""}`}
+                  className={`template-customize-layer ${selectedElementIndex === index ? "active" : ""}`}
                   onClick={() => setSelectedElementIndex(index)}
                 >
                   <span>{summary}</span>
@@ -606,15 +606,15 @@ export default function TemplateCustomize() {
           </div>
         </aside>
 
-        <section className="template-customize__canvas">
+        <section className="template-customize-canvas">
           <div
-            className="template-customize__canvas-scroll"
+            className="template-customize-canvas-scroll"
             onClick={handleCanvasClick}
             ref={canvasScrollRef}
           >
-            <div className="template-customize__canvas-wrapper" ref={canvasWrapperRef}>
+            <div className="template-customize-canvas-wrapper" ref={canvasWrapperRef}>
               <div
-                className="template-customize__canvas-stage"
+                className="template-customize-canvas-stage"
                 style={{ width: BASE_WIDTH * scale, height: canvasHeight, background: design?.background ?? "#fff" }}
               >
                 {elements.map((element, index) => {
@@ -686,8 +686,8 @@ export default function TemplateCustomize() {
                         }}
                         onMouseDown={(event) => handleElementMouseDown(event, index)}
                       >
-                        <span className="design-pill__label">{pillEl.label}</span>
-                        <span className="design-pill__value">
+                        <span className="design-pill-label">{pillEl.label}</span>
+                        <span className="design-pill-value">
                           {resolvePlaceholders(pillEl.value ?? "", placeholders)}
                         </span>
                       </div>
@@ -783,14 +783,14 @@ export default function TemplateCustomize() {
           </div>
         </section>
 
-        <aside className="template-customize__panel template-customize__panel--right">
-          <div className="template-customize__panel-card">
+        <aside className="template-customize-panel template-customize-panel--right">
+          <div className="template-customize-panel-card">
             <h3>Edit selected</h3>
             {selectedElement ? (
-              <div className="template-customize__controls">
-                <div className="template-customize__control">
+              <div className="template-customize-controls">
+                <div className="template-customize-control">
                   <label>Position</label>
-                  <div className="template-customize__position">
+                  <div className="template-customize-position">
                     <span>X: {Math.round(selectedElement.x ?? 0)}</span>
                     <span>Y: {Math.round(selectedElement.y ?? 0)}</span>
                   </div>
@@ -798,17 +798,17 @@ export default function TemplateCustomize() {
 
                 {selectedElement.type === "text" && (
                   <>
-                    <div className="template-customize__control">
+                    <div className="template-customize-control">
                       <label>Text</label>
                       <textarea
                         rows={4}
-                        className="template-customize__textarea"
+                        className="template-customize-textarea"
                         value={(selectedElement as TemplateTextElement).content ?? ""}
                         onChange={handleTextContentChange}
                       />
                     </div>
-                    <div className="template-customize__control">
-                      <label className="template-customize__color-label">
+                    <div className="template-customize-control">
+                      <label className="template-customize-color-label">
                         <PaletteRoundedIcon fontSize="small" />
                         Text color
                       </label>
@@ -822,10 +822,10 @@ export default function TemplateCustomize() {
                 )}
 
                 {selectedElement.type === "image" && (
-                  <div className="template-customize__control">
+                  <div className="template-customize-control">
                     <label>Image size (px)</label>
-                    <div className="template-customize__size-row">
-                      <div className="template-customize__size-field">
+                    <div className="template-customize-size-row">
+                      <div className="template-customize-size-field">
                         <span>W</span>
                         <input
                           type="number"
@@ -835,7 +835,7 @@ export default function TemplateCustomize() {
                           onChange={(event) => handleImageSizeChange("width", event)}
                         />
                       </div>
-                      <div className="template-customize__size-field">
+                      <div className="template-customize-size-field">
                         <span>H</span>
                         <input
                           type="number"
@@ -850,20 +850,20 @@ export default function TemplateCustomize() {
                 )}
 
                 {selectedElement.type !== "text" && selectedElement.type !== "image" && (
-                  <p className="template-customize__hint">
+                  <p className="template-customize-hint">
                     Drag elements on the canvas to reposition them.
                   </p>
                 )}
               </div>
             ) : (
-              <p className="template-customize__hint">
+              <p className="template-customize-hint">
                 Select an element from the canvas or the layer list to edit.
               </p>
             )}
           </div>
 
-          <div className="template-customize__panel-card template-customize__panel-footer">
-            <button type="button" className="template-customize__close" onClick={handleBack}>
+          <div className="template-customize-panel-card template-customize-panel-footer">
+            <button type="button" className="template-customize-close" onClick={handleBack}>
               <CloseRoundedIcon fontSize="small" />
               Exit customization
             </button>

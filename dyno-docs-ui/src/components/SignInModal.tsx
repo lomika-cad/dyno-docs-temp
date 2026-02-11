@@ -44,35 +44,35 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
 
   return (
     <div className="authModal" role="dialog" aria-modal="true" aria-label="Sign in" onClick={handleBackdropClick}>
-      <div className="authModal__card">
-        <h2 className="authModal__title">Sign in</h2>
+      <div className="authModal-card">
+        <h2 className="authModal-title">Sign in</h2>
 
         <form className="authForm" onSubmit={handleSubmit}>
-          <div className="authForm__field">
-            <label className="authForm__label" htmlFor="signin-email">Email</label>
+          <div className="authForm-field">
+            <label className="authForm-label" htmlFor="signin-email">Email</label>
             <input
               id="signin-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
-              className="authForm__input"
+              className="authForm-input"
               placeholder="Enter your email"
             />
           </div>
 
-          <div className="authForm__field">
-            <label className="authForm__label" htmlFor="signin-password">Password</label>
+          <div className="authForm-field">
+            <label className="authForm-label" htmlFor="signin-password">Password</label>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               id="signin-password"
               type="password"
-              className="authForm__input"
+              className="authForm-input"
               placeholder="***********"
             />
           </div>
 
-          <div className="authForm__row authForm__row--between">
+          <div className="authForm-row authForm-row--between">
             <label className="authCheckbox">
               <input type="checkbox" />
               <span>Remember me</span>
@@ -80,10 +80,10 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
             <button type="button" className="authLinkButton">Forgot password</button>
           </div>
 
-          <button type="submit" className="authForm__primaryBtn">Sign in</button>
+          <button type="submit" className="authForm-primaryBtn">Sign in</button>
         </form>
 
-        <p className="authForm__footer">
+        <p className="authForm-footer">
           Don&apos;t have an account? <button type="button" className="authLinkButton authLinkButton--accent">Sign up for free!</button>
         </p>
       </div>

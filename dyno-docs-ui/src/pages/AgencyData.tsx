@@ -411,8 +411,8 @@ export default function AgencyData() {
     return (
         <Navbar userName="User">
             <div className="agency">
-                <div className="agency__header">
-                    <h2 className="agency__title">Agency Data</h2>
+                <div className="agency-header">
+                    <h2 className="agency-title">Agency Data</h2>
                     <button
                         type="button"
                         className="infoBtn"
@@ -423,8 +423,8 @@ export default function AgencyData() {
                     </button>
                 </div>
                 <section className="panel">
-                    <div className="panel__header">
-                        <div className="panel__title">Download Excel Template</div>
+                    <div className="panel-header">
+                        <div className="panel-title">Download Excel Template</div>
                         <button
                             type="button"
                             className="btn btn--success"
@@ -434,8 +434,8 @@ export default function AgencyData() {
                             Download
                         </button>
                     </div>
-                    <div className="panel__body">
-                        <p className="panel__hint">
+                    <div className="panel-body">
+                        <p className="panel-hint">
                             Please download this Excel template and review the sample data. You can then enter your own data
                             (required for report generation) and submit the completed Excel file using the section below.
                         </p>
@@ -443,21 +443,21 @@ export default function AgencyData() {
                 </section>
 
                 <section className="panel">
-                    <div className="panel__header">
-                        <div className="panel__title">Upload Your Data Set</div>
+                    <div className="panel-header">
+                        <div className="panel-title">Upload Your Data Set</div>
                     </div>
-                    <div className="panel__body">
+                    <div className="panel-body">
                         <div
                             className={`dropzone ${isDragging ? 'dropzone--active' : ''}`}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
                         >
-                            <span className="dropzone__icon" aria-hidden="true">
+                            <span className="dropzone-icon" aria-hidden="true">
                                 <CloudUploadRoundedIcon />
                             </span>
-                            <div className="dropzone__title">Select your excel or drag and drop</div>
-                            <div className="dropzone__sub">.xls, .xlsx accepted (max 10MB)</div>
+                            <div className="dropzone-title">Select your excel or drag and drop</div>
+                            <div className="dropzone-sub">.xls, .xlsx accepted (max 10MB)</div>
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -569,7 +569,7 @@ export default function AgencyData() {
                     </div>
 
                     <div className="footerRow">
-                        <div className="panel__hint">
+                        <div className="panel-hint">
                             <strong>Showing</strong> <strong>{filteredPlaces.length === 0 ? 0 : startIndex + 1}</strong> - <strong>{Math.min(endIndex, filteredPlaces.length)}</strong> of <strong>{filteredPlaces.length}</strong> Entries
                         </div>
 
@@ -610,16 +610,16 @@ export default function AgencyData() {
                 <div className="ddModal" role="dialog" aria-modal="true" aria-label="Agency data hint">
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => setInfoOpen(false)}
                     />
 
-                    <div className="ddModal__card">
-                        <div className="ddModal__subtitle" style={{ textAlign: 'left', marginTop: 8 }}>
+                    <div className="ddModal-card">
+                        <div className="ddModal-subtitle" style={{ textAlign: 'left', marginTop: 8 }}>
                             Follow these steps to add and manage agency data:
                         </div>
-                        <div className="ddModal__content">
+                        <div className="ddModal-content">
                             <ol>
                                 <li>Download the <strong>Excel template</strong> to see required columns.</li>
                                 <li>Fill in your records in the template and save as .xls or .xlsx.</li>
@@ -642,25 +642,25 @@ export default function AgencyData() {
                 <div className="ddModal" role="dialog" aria-modal="true" aria-label="Verify download">
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => setDownloadModalOpen(false)}
                     />
 
-                    <div className="ddModal__card">
-                        <div className="ddModal__logo" aria-hidden="true">
-                            <img className="ddModal__img" src={excelImg} alt="Excel file icon" />
+                    <div className="ddModal-card">
+                        <div className="ddModal-logo" aria-hidden="true">
+                            <img className="ddModal-img" src={excelImg} alt="Excel file icon" />
                         </div>
 
-                        <div className="ddModal__title">Download Sample Excel</div>
-                        <div className="ddModal__subtitle">
+                        <div className="ddModal-title">Download Sample Excel</div>
+                        <div className="ddModal-subtitle">
                             Are you sure you want to download the sample Excel template?
                         </div>
 
-                        <div className="ddModal__actions">
+                        <div className="ddModal-actions">
                             <button
                                 type="button"
-                                className="ddModal__btn ddModal__btn--ghost"
+                                className="ddModal-btn ddModal-btn--ghost"
                                 onClick={() => setDownloadModalOpen(false)}
                             >
                                 Cancel
@@ -685,7 +685,7 @@ export default function AgencyData() {
                 <div className="ddModal" role="dialog" aria-modal="true" aria-label="Confirm upload">
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             if (!isUploading) {
@@ -698,23 +698,23 @@ export default function AgencyData() {
                         }}
                     />
 
-                    <div className="ddModal__card">
-                        <div className="ddModal__logo" aria-hidden="true">
-                            <img className="ddModal__img" src={excelImg} alt="Excel file icon" />
+                    <div className="ddModal-card">
+                        <div className="ddModal-logo" aria-hidden="true">
+                            <img className="ddModal-img" src={excelImg} alt="Excel file icon" />
                         </div>
 
-                        <div className="ddModal__title">Upload Excel File</div>
-                        <div className="ddModal__subtitle" style={{ marginBottom: '12px' }}>
+                        <div className="ddModal-title">Upload Excel File</div>
+                        <div className="ddModal-subtitle" style={{ marginBottom: '12px' }}>
                             <strong>File:</strong> {selectedFile?.name}
                         </div>
-                        <div className="ddModal__subtitle" style={{ color: '#f57c00', fontWeight: 'bold' }}>
+                        <div className="ddModal-subtitle" style={{ color: '#f57c00', fontWeight: 'bold' }}>
                             ⚠️ Warning: After every Excel upload, previous uploaded data will be lost and replaced with new data.
                         </div>
 
-                        <div className="ddModal__actions">
+                        <div className="ddModal-actions">
                             <button
                                 type="button"
-                                className="ddModal__btn ddModal__btn--ghost"
+                                className="ddModal-btn ddModal-btn--ghost"
                                 onClick={() => {
                                     setUploadModalOpen(false);
                                     setSelectedFile(null);
@@ -744,7 +744,7 @@ export default function AgencyData() {
                 <div className="ddModal ddModal--large" role="dialog" aria-modal="true" aria-label="View Place Details">
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             setViewModalOpen(false);
@@ -752,12 +752,12 @@ export default function AgencyData() {
                         }}
                     />
 
-                    <div className="ddModal__card ddModal__card--large">
-                        <div className="ddModal__header">
-                            <div className="ddModal__title">{selectedPlace.name}</div>
+                    <div className="ddModal-card ddModal-card--large">
+                        <div className="ddModal-header">
+                            <div className="ddModal-title">{selectedPlace.name}</div>
                             <button
                                 type="button"
-                                className="ddModal__close"
+                                className="ddModal-close"
                                 aria-label="Close"
                                 onClick={() => {
                                     setViewModalOpen(false);
@@ -768,41 +768,41 @@ export default function AgencyData() {
                             </button>
                         </div>
 
-                        <div className="ddModal__content">
+                        <div className="ddModal-content">
                             <div className="detailSection">
-                                <h3 className="detailSection__title">Basic Information</h3>
+                                <h3 className="detailSection-title">Basic Information</h3>
                                 <div className="detailGrid">
                                     <div className="detailItem">
-                                        <span className="detailItem__label">District:</span>
-                                        <span className="detailItem__value">{selectedPlace.district}</span>
+                                        <span className="detailItem-label">District:</span>
+                                        <span className="detailItem-value">{selectedPlace.district}</span>
                                     </div>
                                     <div className="detailItem">
-                                        <span className="detailItem__label">City:</span>
-                                        <span className="detailItem__value">{selectedPlace.city}</span>
+                                        <span className="detailItem-label">City:</span>
+                                        <span className="detailItem-value">{selectedPlace.city}</span>
                                     </div>
                                     <div className="detailItem">
-                                        <span className="detailItem__label">Average Visit Duration:</span>
-                                        <span className="detailItem__value">{selectedPlace.averageVisitDuration}</span>
+                                        <span className="detailItem-label">Average Visit Duration:</span>
+                                        <span className="detailItem-value">{selectedPlace.averageVisitDuration}</span>
                                     </div>
                                 </div>
                             </div>
 
                             {selectedPlace.description && (
                                 <div className="detailSection">
-                                    <h3 className="detailSection__title">Description</h3>
-                                    <p className="detailSection__text">{selectedPlace.description}</p>
+                                    <h3 className="detailSection-title">Description</h3>
+                                    <p className="detailSection-text">{selectedPlace.description}</p>
                                 </div>
                             )}
 
                             {selectedPlace.funFact && (
                                 <div className="detailSection">
-                                    <h3 className="detailSection__title">Fun Fact</h3>
-                                    <p className="detailSection__text">{selectedPlace.funFact}</p>
+                                    <h3 className="detailSection-title">Fun Fact</h3>
+                                    <p className="detailSection-text">{selectedPlace.funFact}</p>
                                 </div>
                             )}
 
                             <div className="detailSection">
-                                <h3 className="detailSection__title">Images</h3>
+                                <h3 className="detailSection-title">Images</h3>
                                 <div className="imageGrid">
                                     {[
                                         selectedPlace.image1Url,
@@ -813,11 +813,11 @@ export default function AgencyData() {
                                     ]
                                         .filter((url) => url)
                                         .map((url, idx) => (
-                                            <div key={idx} className="imageGrid__item">
+                                            <div key={idx} className="imageGrid-item">
                                                 <img
                                                     src={`data:image/jpeg;base64,${url}`}
                                                     alt={`${selectedPlace.name} - Image ${idx + 1}`}
-                                                    className="imageGrid__img"
+                                                    className="imageGrid-img"
                                                 />
                                             </div>
                                         ))}
@@ -828,7 +828,7 @@ export default function AgencyData() {
                                         selectedPlace.image4Url,
                                         selectedPlace.image5Url,
                                     ].some((url) => url) && (
-                                        <p className="detailSection__text">No images available</p>
+                                        <p className="detailSection-text">No images available</p>
                                     )}
                                 </div>
                             </div>
@@ -841,7 +841,7 @@ export default function AgencyData() {
                 <div className="ddModal" role="dialog" aria-modal="true" aria-label="Confirm delete">
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             if (!isDeleting) {
@@ -851,20 +851,20 @@ export default function AgencyData() {
                         }}
                     />
 
-                    <div className="ddModal__card">
-                        <div className="ddModal__logo" aria-hidden="true">
-                            <img className="ddModal__img" src={trashImg} alt="Delete icon" />
+                    <div className="ddModal-card">
+                        <div className="ddModal-logo" aria-hidden="true">
+                            <img className="ddModal-img" src={trashImg} alt="Delete icon" />
                         </div>
 
-                        <div className="ddModal__title">Delete Place</div>
-                        <div className="ddModal__subtitle">
+                        <div className="ddModal-title">Delete Place</div>
+                        <div className="ddModal-subtitle">
                             Are you sure you want to delete <strong>{placeToDelete.name}</strong>? This action cannot be undone.
                         </div>
 
-                        <div className="ddModal__actions">
+                        <div className="ddModal-actions">
                             <button
                                 type="button"
-                                className="ddModal__btn ddModal__btn--ghost"
+                                className="ddModal-btn ddModal-btn--ghost"
                                 onClick={() => {
                                     setDeleteConfirmModalOpen(false);
                                     setPlaceToDelete(null);
@@ -891,7 +891,7 @@ export default function AgencyData() {
                 <div className="sideModal" role="dialog" aria-modal="true" aria-label="Add New Place">
                     <button
                         type="button"
-                        className="sideModal__backdrop"
+                        className="sideModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             if (!isSubmitting) {
@@ -901,12 +901,12 @@ export default function AgencyData() {
                         }}
                     />
 
-                    <div className="sideModal__card">
-                        <div className="sideModal__header">
-                            <h2 className="sideModal__title">Add New Place</h2>
+                    <div className="sideModal-card">
+                        <div className="sideModal-header">
+                            <h2 className="sideModal-title">Add New Place</h2>
                             <button
                                 type="button"
-                                className="sideModal__close"
+                                className="sideModal-close"
                                 aria-label="Close"
                                 onClick={() => {
                                     if (!isSubmitting) {
@@ -919,15 +919,15 @@ export default function AgencyData() {
                             </button>
                         </div>
 
-                        <div className="sideModal__content">
+                        <div className="sideModal-content">
                             <form className="formGroup">
                                 <div className="formField">
-                                    <label htmlFor="name" className="formField__label">Name <span className="required">*</span></label>
+                                    <label htmlFor="name" className="formField-label">Name <span className="required">*</span></label>
                                     <input
                                         id="name"
                                         type="text"
                                         name="name"
-                                        className="formField__input"
+                                        className="formField-input"
                                         placeholder="Enter place name"
                                         value={formData.name}
                                         onChange={handleFormChange}
@@ -936,12 +936,12 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="averageVisitDuration" className="formField__label">Average Visit Duration <span className="required">*</span></label>
+                                    <label htmlFor="averageVisitDuration" className="formField-label">Average Visit Duration <span className="required">*</span></label>
                                     <input
                                         id="averageVisitDuration"
                                         type="text"
                                         name="averageVisitDuration"
-                                        className="formField__input"
+                                        className="formField-input"
                                         placeholder="e.g., 2-3 hours"
                                         value={formData.averageVisitDuration}
                                         onChange={handleFormChange}
@@ -950,12 +950,12 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="district" className="formField__label">District <span className="required">*</span></label>
+                                    <label htmlFor="district" className="formField-label">District <span className="required">*</span></label>
                                     <input
                                         id="district"
                                         type="text"
                                         name="district"
-                                        className="formField__input"
+                                        className="formField-input"
                                         placeholder="Enter district"
                                         value={formData.district}
                                         onChange={handleFormChange}
@@ -964,12 +964,12 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="city" className="formField__label">City <span className="required">*</span></label>
+                                    <label htmlFor="city" className="formField-label">City <span className="required">*</span></label>
                                     <input
                                         id="city"
                                         type="text"
                                         name="city"
-                                        className="formField__input"
+                                        className="formField-input"
                                         placeholder="Enter city"
                                         value={formData.city}
                                         onChange={handleFormChange}
@@ -978,11 +978,11 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="description" className="formField__label">Description</label>
+                                    <label htmlFor="description" className="formField-label">Description</label>
                                     <textarea
                                         id="description"
                                         name="description"
-                                        className="formField__textarea"
+                                        className="formField-textarea"
                                         placeholder="Enter description"
                                         value={formData.description}
                                         onChange={handleFormChange}
@@ -992,11 +992,11 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="funFact" className="formField__label">Fun Fact</label>
+                                    <label htmlFor="funFact" className="formField-label">Fun Fact</label>
                                     <textarea
                                         id="funFact"
                                         name="funFact"
-                                        className="formField__textarea"
+                                        className="formField-textarea"
                                         placeholder="Enter a fun fact"
                                         value={formData.funFact}
                                         onChange={handleFormChange}
@@ -1006,17 +1006,17 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label className="formField__label">Images (Max 5)</label>
+                                    <label className="formField-label">Images (Max 5)</label>
                                     <div
                                         className={`imageDropzone ${imagesDragActive ? 'imageDropzone--active' : ''}`}
                                         onDragOver={handleImagesDragOver}
                                         onDragLeave={handleImagesDragLeave}
                                         onDrop={handleImagesDrop}
                                     >
-                                        <div className="imageDropzone__content">
-                                            <div className="imageDropzone__icon">📸</div>
-                                            <p className="imageDropzone__title">Drag and drop images here or click to browse</p>
-                                            <p className="imageDropzone__subtitle">Maximum 5 images</p>
+                                        <div className="imageDropzone-content">
+                                            <div className="imageDropzone-icon">📸</div>
+                                            <p className="imageDropzone-title">Drag and drop images here or click to browse</p>
+                                            <p className="imageDropzone-subtitle">Maximum 5 images</p>
                                             <input
                                                 type="file"
                                                 multiple
@@ -1041,10 +1041,10 @@ export default function AgencyData() {
                                         <div className="imagePreviews">
                                             {imagePreviews.map((preview, idx) => (
                                                 <div key={idx} className="imagePreviewItem">
-                                                    <img src={preview} alt={`Preview ${idx + 1}`} className="imagePreviewItem__img" />
+                                                    <img src={preview} alt={`Preview ${idx + 1}`} className="imagePreviewItem-img" />
                                                     <button
                                                         type="button"
-                                                        className="imagePreviewItem__remove"
+                                                        className="imagePreviewItem-remove"
                                                         onClick={() => removeImage(idx)}
                                                         disabled={isSubmitting}
                                                     >
@@ -1058,7 +1058,7 @@ export default function AgencyData() {
                             </form>
                         </div>
 
-                        <div className="sideModal__footer">
+                        <div className="sideModal-footer">
                             <button
                                 type="button"
                                 className="btn btn--secondary"
@@ -1087,7 +1087,7 @@ export default function AgencyData() {
                 <div className="sideModal" role="dialog" aria-modal="true" aria-label="Edit Place">
                     <button
                         type="button"
-                        className="sideModal__backdrop"
+                        className="sideModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             if (!isSubmitting) {
@@ -1098,12 +1098,12 @@ export default function AgencyData() {
                         }}
                     />
 
-                    <div className="sideModal__card">
-                        <div className="sideModal__header">
-                            <h2 className="sideModal__title">Edit Place</h2>
+                    <div className="sideModal-card">
+                        <div className="sideModal-header">
+                            <h2 className="sideModal-title">Edit Place</h2>
                             <button
                                 type="button"
-                                className="sideModal__close"
+                                className="sideModal-close"
                                 aria-label="Close"
                                 onClick={() => {
                                     if (!isSubmitting) {
@@ -1117,15 +1117,15 @@ export default function AgencyData() {
                             </button>
                         </div>
 
-                        <div className="sideModal__content">
+                        <div className="sideModal-content">
                             <form className="formGroup">
                                 <div className="formField">
-                                    <label htmlFor="edit-name" className="formField__label">Name <span className="required">*</span></label>
+                                    <label htmlFor="edit-name" className="formField-label">Name <span className="required">*</span></label>
                                     <input
                                         id="edit-name"
                                         type="text"
                                         name="name"
-                                        className="formField__input"
+                                        className="formField-input"
                                         placeholder="Enter place name"
                                         value={formData.name}
                                         onChange={handleFormChange}
@@ -1134,12 +1134,12 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="edit-averageVisitDuration" className="formField__label">Average Visit Duration <span className="required">*</span></label>
+                                    <label htmlFor="edit-averageVisitDuration" className="formField-label">Average Visit Duration <span className="required">*</span></label>
                                     <input
                                         id="edit-averageVisitDuration"
                                         type="text"
                                         name="averageVisitDuration"
-                                        className="formField__input"
+                                        className="formField-input"
                                         placeholder="e.g., 2-3 hours"
                                         value={formData.averageVisitDuration}
                                         onChange={handleFormChange}
@@ -1148,12 +1148,12 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="edit-district" className="formField__label">District <span className="required">*</span></label>
+                                    <label htmlFor="edit-district" className="formField-label">District <span className="required">*</span></label>
                                     <input
                                         id="edit-district"
                                         type="text"
                                         name="district"
-                                        className="formField__input"
+                                        className="formField-input"
                                         placeholder="Enter district"
                                         value={formData.district}
                                         onChange={handleFormChange}
@@ -1162,12 +1162,12 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="edit-city" className="formField__label">City <span className="required">*</span></label>
+                                    <label htmlFor="edit-city" className="formField-label">City <span className="required">*</span></label>
                                     <input
                                         id="edit-city"
                                         type="text"
                                         name="city"
-                                        className="formField__input"
+                                        className="formField-input"
                                         placeholder="Enter city"
                                         value={formData.city}
                                         onChange={handleFormChange}
@@ -1176,11 +1176,11 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="edit-description" className="formField__label">Description</label>
+                                    <label htmlFor="edit-description" className="formField-label">Description</label>
                                     <textarea
                                         id="edit-description"
                                         name="description"
-                                        className="formField__textarea"
+                                        className="formField-textarea"
                                         placeholder="Enter description"
                                         value={formData.description}
                                         onChange={handleFormChange}
@@ -1190,11 +1190,11 @@ export default function AgencyData() {
                                 </div>
 
                                 <div className="formField">
-                                    <label htmlFor="edit-funFact" className="formField__label">Fun Fact</label>
+                                    <label htmlFor="edit-funFact" className="formField-label">Fun Fact</label>
                                     <textarea
                                         id="edit-funFact"
                                         name="funFact"
-                                        className="formField__textarea"
+                                        className="formField-textarea"
                                         placeholder="Enter a fun fact"
                                         value={formData.funFact}
                                         onChange={handleFormChange}
@@ -1204,17 +1204,17 @@ export default function AgencyData() {
                                 </div>
 
                                 {/* <div className="formField">
-                                    <label className="formField__label">Images (Max 5)</label>
+                                    <label className="formField-label">Images (Max 5)</label>
                                     <div
                                         className={`imageDropzone ${imagesDragActive ? 'imageDropzone--active' : ''}`}
                                         onDragOver={handleImagesDragOver}
                                         onDragLeave={handleImagesDragLeave}
                                         onDrop={handleImagesDrop}
                                     >
-                                        <div className="imageDropzone__content">
-                                            <div className="imageDropzone__icon">📸</div>
-                                            <p className="imageDropzone__title">Drag and drop images here or click to browse</p>
-                                            <p className="imageDropzone__subtitle">Maximum 5 images</p>
+                                        <div className="imageDropzone-content">
+                                            <div className="imageDropzone-icon">📸</div>
+                                            <p className="imageDropzone-title">Drag and drop images here or click to browse</p>
+                                            <p className="imageDropzone-subtitle">Maximum 5 images</p>
                                             <input
                                                 type="file"
                                                 multiple
@@ -1239,10 +1239,10 @@ export default function AgencyData() {
                                         <div className="imagePreviews">
                                             {imagePreviews.map((preview, idx) => (
                                                 <div key={idx} className="imagePreviewItem">
-                                                    <img src={preview} alt={`Preview ${idx + 1}`} className="imagePreviewItem__img" />
+                                                    <img src={preview} alt={`Preview ${idx + 1}`} className="imagePreviewItem-img" />
                                                     <button
                                                         type="button"
-                                                        className="imagePreviewItem__remove"
+                                                        className="imagePreviewItem-remove"
                                                         onClick={() => removeImage(idx)}
                                                         disabled={isSubmitting}
                                                     >
@@ -1256,7 +1256,7 @@ export default function AgencyData() {
                             </form>
                         </div>
 
-                        <div className="sideModal__footer">
+                        <div className="sideModal-footer">
                             <button
                                 type="button"
                                 className="btn btn--secondary"

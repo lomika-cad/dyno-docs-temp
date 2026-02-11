@@ -8,7 +8,7 @@
   background: rgba(0, 0, 0, 0.4);
 }
 
-.authModal__card {
+.authModal-card {
   width: min(420px, 92vw);
   background: #ffffff;
   border-radius: 18px;
@@ -17,7 +17,7 @@
   font-family: 'Poppins', sans-serif;
 }
 
-.authModal__title {
+.authModal-title {
   text-align: center;
   font-size: 24px;
   font-weight: 800;
@@ -30,18 +30,18 @@
   gap: 18px;
 }
 
-.authForm__field {
+.authForm-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.authForm__label {
+.authForm-label {
   font-size: 13px;
   font-weight: 600;
 }
 
-.authForm__input {
+.authForm-input {
   border-radius: 999px;
   border: 1px solid var(--color-border, #e5e7eb);
   padding: 12px 16px;
@@ -49,18 +49,18 @@
   outline: none;
 }
 
-.authForm__input:focus {
+.authForm-input:focus {
   border-color: var(--color-primary, #ff7b2e);
   box-shadow: 0 0 0 1px rgba(255, 123, 46, 0.2);
 }
 
-.authForm__row {
+.authForm-row {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.authForm__row--between {
+.authForm-row--between {
   justify-content: space-between;
 }
 
@@ -89,7 +89,7 @@
   color: var(--color-primary, #ff7b2e);
 }
 
-.authForm__primaryBtn {
+.authForm-primaryBtn {
   margin-top: 6px;
   border: none;
   border-radius: 999px;
@@ -100,7 +100,7 @@
   cursor: pointer;
 }
 
-.authForm__googleBtn {
+.authForm-googleBtn {
   margin-top: 6px;
   border-radius: 999px;
   border: 1px solid var(--color-border, #e5e7eb);
@@ -114,7 +114,7 @@
   font-size: 13px;
 }
 
-.authForm__googleIcon {
+.authForm-googleIcon {
   width: 20px;
   height: 20px;
   border-radius: 999px;
@@ -127,14 +127,14 @@
   border: 1px solid #e5e7eb;
 }
 
-.authForm__footer {
+.authForm-footer {
   margin-top: 18px;
   font-size: 12px;
   text-align: center;
 }
 
 @media (max-width: 480px) {
-  .authModal__card {
+  .authModal-card {
     padding-inline: 20px;
   }
 }

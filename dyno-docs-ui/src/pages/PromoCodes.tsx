@@ -215,26 +215,26 @@ export default function PromoCodes() {
             <div className="promo">
                 {/* Page Header */}
                 <header>
-                    <h2 className="promo__title">Promo Codes</h2>
-                    <p className="promo__subtitle">
+                    <h2 className="promo-title">Promo Codes</h2>
+                    <p className="promo-subtitle">
                         Create, manage, and track all discount promo codes in one place.
                     </p>
                 </header>
 
                 {/* Add Promo Code Form */}
                 <section className="panel">
-                    <div className="panel__body">
+                    <div className="panel-body">
                         <div className="promoForm">
-                            <div className="promoForm__fields">
-                                <div className="promoForm__field">
-                                    <label htmlFor="code" className="promoForm__label">
+                            <div className="promoForm-fields">
+                                <div className="promoForm-field">
+                                    <label htmlFor="code" className="promoForm-label">
                                         Promo Code
                                     </label>
                                     <input
                                         id="code"
                                         type="text"
                                         name="code"
-                                        className="promoForm__input"
+                                        className="promoForm-input"
                                         placeholder="Enter promo code"
                                         value={formData.code}
                                         onChange={handleInputChange}
@@ -242,10 +242,10 @@ export default function PromoCodes() {
                                     />
                                 </div>
 
-                                <div className="promoForm__field">
+                                <div className="promoForm-field">
                                     <label
                                         htmlFor="discountPercentage"
-                                        className="promoForm__label"
+                                        className="promoForm-label"
                                     >
                                         Discount %
                                     </label>
@@ -253,7 +253,7 @@ export default function PromoCodes() {
                                         id="discountPercentage"
                                         type="number"
                                         name="discountPercentage"
-                                        className="promoForm__input"
+                                        className="promoForm-input"
                                         placeholder="Enter percentage"
                                         min={1}
                                         max={100}
@@ -263,58 +263,58 @@ export default function PromoCodes() {
                                     />
                                 </div>
 
-                                <div className="promoForm__field">
-                                    <label htmlFor="validFrom" className="promoForm__label">
+                                <div className="promoForm-field">
+                                    <label htmlFor="validFrom" className="promoForm-label">
                                         Valid From
                                     </label>
                                     <input
                                         id="validFrom"
                                         type="date"
                                         name="validFrom"
-                                        className="promoForm__input"
+                                        className="promoForm-input"
                                         value={formData.validFrom}
                                         onChange={handleInputChange}
                                         disabled={isSubmitting}
                                     />
                                 </div>
 
-                                <div className="promoForm__field">
-                                    <label htmlFor="validTo" className="promoForm__label">
+                                <div className="promoForm-field">
+                                    <label htmlFor="validTo" className="promoForm-label">
                                         Valid To
                                     </label>
                                     <input
                                         id="validTo"
                                         type="date"
                                         name="validTo"
-                                        className="promoForm__input"
+                                        className="promoForm-input"
                                         value={formData.validTo}
                                         onChange={handleInputChange}
                                         disabled={isSubmitting}
                                     />
                                 </div>
 
-                                <div className="promoForm__field promoForm__field--status">
+                                <div className="promoForm-field promoForm-field--status">
                                     <div className="radioGroup">
-                                        <span className="promoForm__label">Status</span>
-                                        <div className="radioGroup__options">
-                                            <label className="radioGroup__option">
+                                        <span className="promoForm-label">Status</span>
+                                        <div className="radioGroup-options">
+                                            <label className="radioGroup-option">
                                                 <input
                                                     type="radio"
                                                     name="isActive"
                                                     value="true"
-                                                    className="radioGroup__input"
+                                                    className="radioGroup-input"
                                                     checked={formData.isActive === true}
                                                     onChange={() => handleStatusChange(true)}
                                                     disabled={isSubmitting}
                                                 />
                                                 Active
                                             </label>
-                                            <label className="radioGroup__option">
+                                            <label className="radioGroup-option">
                                                 <input
                                                     type="radio"
                                                     name="isActive"
                                                     value="false"
-                                                    className="radioGroup__input"
+                                                    className="radioGroup-input"
                                                     checked={formData.isActive === false}
                                                     onChange={() => handleStatusChange(false)}
                                                     disabled={isSubmitting}
@@ -326,7 +326,7 @@ export default function PromoCodes() {
                                 </div>
                             </div>
 
-                            <div className="promoForm__actions">
+                            <div className="promoForm-actions">
                                 <button
                                     type="button"
                                     className="btn btn--ghost"
@@ -425,7 +425,7 @@ export default function PromoCodes() {
                     </div>
 
                     <div className="footerRow">
-                        <div className="panel__hint">
+                        <div className="panel-hint">
                             <strong>Showing</strong>{" "}
                             <strong style={{ color: "var(--color-primary)" }}>
                                 {filteredCodes.length === 0 ? 0 : startIndex + 1}-
@@ -485,7 +485,7 @@ export default function PromoCodes() {
                 >
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             if (!isDeleting) {
@@ -495,24 +495,24 @@ export default function PromoCodes() {
                         }}
                     />
 
-                    <div className="ddModal__card">
-                        <div className="ddModal__logo" aria-hidden="true">
+                    <div className="ddModal-card">
+                        <div className="ddModal-logo" aria-hidden="true">
                             <DeleteRoundedIcon
                                 style={{ fontSize: 48, color: "var(--color-error)" }}
                             />
                         </div>
 
-                        <div className="ddModal__title">Delete Promo Code</div>
-                        <div className="ddModal__subtitle">
+                        <div className="ddModal-title">Delete Promo Code</div>
+                        <div className="ddModal-subtitle">
                             Are you sure you want to delete promo code{" "}
                             <strong>{promoToDelete.code}</strong>? This action cannot be
                             undone.
                         </div>
 
-                        <div className="ddModal__actions">
+                        <div className="ddModal-actions">
                             <button
                                 type="button"
-                                className="ddModal__btn ddModal__btn--ghost"
+                                className="ddModal-btn ddModal-btn--ghost"
                                 onClick={() => {
                                     setDeleteModalOpen(false);
                                     setPromoToDelete(null);

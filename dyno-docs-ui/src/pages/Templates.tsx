@@ -806,7 +806,7 @@ export default function Templates() {
       <section className="templates-page">
         <div className="templates-hero">
           <div>
-            <h2 className="agency__title">Template Marketplace</h2>
+            <h2 className="agency-title">Template Marketplace</h2>
           </div>
 
           <button
@@ -836,7 +836,7 @@ export default function Templates() {
           </div>
 
           <label className="template-search" aria-label="Search templates">
-            <span className="template-search__icon">
+            <span className="template-search-icon">
               <SearchRoundedIcon fontSize="small" />
             </span>
             <input
@@ -1027,7 +1027,7 @@ function TemplateCard({
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
     >
-      <div className="template-card__media">
+      <div className="template-card-media">
         {thumbnailSrc ? (
           <img className="template-thumb" src={thumbnailSrc} alt={`${name} preview`} loading="lazy" />
         ) : (
@@ -1037,7 +1037,7 @@ function TemplateCard({
         )}
 
         {isPaid && (
-          <span className="template-card__crown" aria-label="Premium template">
+          <span className="template-card-crown" aria-label="Premium template">
             <WorkspacePremiumRoundedIcon fontSize="small" />
           </span>
         )}
@@ -1045,7 +1045,7 @@ function TemplateCard({
         {isAssignedCard && (
           <button
             type="button"
-            className="template-card__overlay-action"
+            className="template-card-overlay-action"
             onClick={handleEditClick}
             aria-label={`Customize ${name}`}
             data-tooltip="Customize template"
@@ -1056,12 +1056,12 @@ function TemplateCard({
         )}
       </div>
 
-      <div className="template-card__content">
+      <div className="template-card-content">
         <h3 className="template-title">{name}</h3>
       </div>
 
-      <div className="template-card__actions">
-        <div className="template-card__action-buttons">
+      <div className="template-card-actions">
+        <div className="template-card-action-buttons">
           <button
             type="button"
             className="btn btn--orange"
@@ -1093,17 +1093,17 @@ function TemplateCard({
           )}
         </div>
 
-        <div className="template-card__badges">
+        <div className="template-card-badges">
           {!(isAssignedCard && !isPaid) && (
             <span
-              className={`template-card__price-pill ${
-                isPaid ? "template-card__price-pill--paid" : "template-card__price-pill--free"
+              className={`template-card-price-pill ${
+                isPaid ? "template-card-price-pill--paid" : "template-card-price-pill--free"
               }`}
             >
               {isPaid ? "Paid" : "Free"}
             </span>
           )}
-          {isPaid && <span className="template-card__price">{priceLabel}</span>}
+          {isPaid && <span className="template-card-price">{priceLabel}</span>}
         </div>
       </div>
     </article>
@@ -1129,22 +1129,22 @@ function TemplatePreviewModal({ template, placeholders, onClose }: TemplatePrevi
 
   return (
     <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
-      <div className="template-modal__panel" onClick={handlePanelClick}>
-        <header className="template-modal__header">
+      <div className="template-modal-panel" onClick={handlePanelClick}>
+        <header className="template-modal-header">
           <div>
-            <p className="template-modal__eyebrow">Template Preview</p>
+            <p className="template-modal-eyebrow">Template Preview</p>
             <h2>{template.name}</h2>
           </div>
-          <button type="button" className="template-modal__close" onClick={onClose} aria-label="Close preview">
+          <button type="button" className="template-modal-close" onClick={onClose} aria-label="Close preview">
             <CloseRoundedIcon />
           </button>
         </header>
 
-        <div className="template-modal__body">
+        <div className="template-modal-body">
           {parsedDesign ? (
             <TemplateDesignRenderer design={parsedDesign} placeholders={placeholders} />
           ) : (
-            <pre className="template-modal__raw">{template.designMarkup}</pre>
+            <pre className="template-modal-raw">{template.designMarkup}</pre>
           )}
         </div>
       </div>
@@ -1189,18 +1189,18 @@ function MyTemplatesModal({
 
   return (
     <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
-      <div className="template-modal__panel" style={{ maxWidth: "960px" }} onClick={handlePanelClick}>
-        <header className="template-modal__header">
+      <div className="template-modal-panel" style={{ maxWidth: "960px" }} onClick={handlePanelClick}>
+        <header className="template-modal-header">
           <div>
-            <p className="template-modal__eyebrow">Assigned Templates</p>
+            <p className="template-modal-eyebrow">Assigned Templates</p>
             <h2>My Templates</h2>
           </div>
-          <button type="button" className="template-modal__close" onClick={onClose} aria-label="Close my templates">
+          <button type="button" className="template-modal-close" onClick={onClose} aria-label="Close my templates">
             <CloseRoundedIcon />
           </button>
         </header>
 
-        <div className="template-modal__body template-modal__body--my-templates">
+        <div className="template-modal-body template-modal-body--my-templates">
           {isLoading && (
             <div className="templates-empty">
               <p>Loading your templates...</p>
@@ -1261,19 +1261,19 @@ function TemplatePaymentModal({ template, onClose, onPaymentSuccess }: TemplateP
 
   return (
     <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
-      <div className="template-modal__panel template-modal__panel--payment" onClick={handlePanelClick}>
-        <header className="template-modal__header">
+      <div className="template-modal-panel template-modal-panel--payment" onClick={handlePanelClick}>
+        <header className="template-modal-header">
           <div>
-            <p className="template-modal__eyebrow">Secure Checkout</p>
+            <p className="template-modal-eyebrow">Secure Checkout</p>
             <h2>{template.name}</h2>
           </div>
-          <button type="button" className="template-modal__close" onClick={onClose} aria-label="Close checkout">
+          <button type="button" className="template-modal-close" onClick={onClose} aria-label="Close checkout">
             <CloseRoundedIcon />
           </button>
         </header>
 
-        <div className="template-modal__body template-modal__body--payment">
-          <div className="template-payment__grid">
+        <div className="template-modal-body template-modal-body--payment">
+          <div className="template-payment-grid">
             <CardPayment totalAmount={template.priceValue ?? 0} onPaid={() => onPaymentSuccess(template)} />
           </div>
         </div>
@@ -1310,15 +1310,15 @@ function TemplateAssignConfirmModal({ template, isSubmitting, onConfirm, onCance
 
   return (
     <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
-      <div className="template-modal__panel template-modal__panel--confirm" onClick={handlePanelClick}>
-        <header className="template-modal__header">
+      <div className="template-modal-panel template-modal-panel--confirm" onClick={handlePanelClick}>
+        <header className="template-modal-header">
           <div>
-            <p className="template-modal__eyebrow">Confirm Assignment</p>
+            <p className="template-modal-eyebrow">Confirm Assignment</p>
             <h2>{template.name}</h2>
           </div>
           <button
             type="button"
-            className="template-modal__close"
+            className="template-modal-close"
             onClick={handleCloseClick}
             aria-label="Close confirmation"
           >
@@ -1326,22 +1326,22 @@ function TemplateAssignConfirmModal({ template, isSubmitting, onConfirm, onCance
           </button>
         </header>
 
-        <div className="template-modal__body template-modal__body--confirm">
-          <p className="template-confirm__text">
+        <div className="template-modal-body template-modal-body--confirm">
+          <p className="template-confirm-text">
             This template will be copied to your workspace with tenant-specific placeholders so you can
             update the actual branding details after assignment.
           </p>
-          <ul className="template-confirm__list">
+          <ul className="template-confirm-list">
             <li>Includes dynamic fields for agency name, logo, and contact details.</li>
             <li>Assignment is instant and does not consume credits.</li>
             <li>You can personalize the design later from My Templates.</li>
           </ul>
         </div>
 
-        <div className="ddModal__actions">
+        <div className="ddModal-actions">
           <button
             type="button"
-            className="ddModal__btn ddModal__btn--ghost"
+            className="ddModal-btn ddModal-btn--ghost"
             onClick={onCancel}
             disabled={isSubmitting}
           >
@@ -1349,7 +1349,7 @@ function TemplateAssignConfirmModal({ template, isSubmitting, onConfirm, onCance
           </button>
           <button
             type="button"
-            className="ddModal__btn ddModal__btn--primary"
+            className="ddModal-btn ddModal-btn--primary"
             onClick={onConfirm}
             disabled={isSubmitting}
           >
@@ -1389,15 +1389,15 @@ function TemplateUnassignConfirmModal({ template, isSubmitting, onConfirm, onCan
 
   return (
     <div className="template-modal" role="dialog" aria-modal="true" onClick={handleBackdropClick}>
-      <div className="template-modal__panel template-modal__panel--confirm" onClick={handlePanelClick}>
-        <header className="template-modal__header">
+      <div className="template-modal-panel template-modal-panel--confirm" onClick={handlePanelClick}>
+        <header className="template-modal-header">
           <div>
-            <p className="template-modal__eyebrow">Remove Template</p>
+            <p className="template-modal-eyebrow">Remove Template</p>
             <h2>{template.name}</h2>
           </div>
           <button
             type="button"
-            className="template-modal__close"
+            className="template-modal-close"
             onClick={handleCloseClick}
             aria-label="Close unassign confirmation"
           >
@@ -1405,22 +1405,22 @@ function TemplateUnassignConfirmModal({ template, isSubmitting, onConfirm, onCan
           </button>
         </header>
 
-        <div className="template-modal__body template-modal__body--confirm">
-          <p className="template-confirm__text">
+        <div className="template-modal-body template-modal-body--confirm">
+          <p className="template-confirm-text">
             This will remove the template from your workspace. You can reassign it later from the marketplace
             if needed.
           </p>
-          <ul className="template-confirm__list">
+          <ul className="template-confirm-list">
             <li>Any custom edits you made in My Templates will be lost.</li>
             <li>No charges apply for unassigning a template.</li>
             <li>You can repurchase paid templates again when required.</li>
           </ul>
         </div>
 
-        <div className="ddModal__actions">
+        <div className="ddModal-actions">
           <button
             type="button"
-            className="ddModal__btn ddModal__btn--ghost"
+            className="ddModal-btn ddModal-btn--ghost"
             onClick={onCancel}
             disabled={isSubmitting}
           >
@@ -1428,7 +1428,7 @@ function TemplateUnassignConfirmModal({ template, isSubmitting, onConfirm, onCan
           </button>
           <button
             type="button"
-            className="ddModal__btn ddModal__btn--primary"
+            className="ddModal-btn ddModal-btn--primary"
             onClick={onConfirm}
             disabled={isSubmitting}
           >
@@ -1673,7 +1673,7 @@ type TemplateDesignRendererProps = {
 function TemplateDesignRenderer({ design, placeholders }: TemplateDesignRendererProps) {
   const page = design.pages?.[0];
   if (!page) {
-    return <pre className="template-modal__raw">No page definition found.</pre>;
+    return <pre className="template-modal-raw">No page definition found.</pre>;
   }
 
   const BASE_WIDTH = 595;
@@ -1684,9 +1684,9 @@ function TemplateDesignRenderer({ design, placeholders }: TemplateDesignRenderer
   const height = BASE_HEIGHT * scale;
 
   return (
-    <div className="template-preview__canvas-wrapper">
+    <div className="template-preview-canvas-wrapper">
       <div
-        className="template-preview__canvas"
+        className="template-preview-canvas"
         style={{ width, height, background: design.background ?? "#ffffff" }}
       >
         {page.elements?.map((element, index) => (
@@ -1788,8 +1788,8 @@ function TemplateDesignElementView({
           borderColor: `${(pillEl.colors?.text ?? "#111827")}30`,
         }}
       >
-        <span className="design-pill__label">{pillEl.label}</span>
-        <span className="design-pill__value">{resolvePlaceholders(pillEl.value ?? "", placeholders)}</span>
+        <span className="design-pill-label">{pillEl.label}</span>
+        <span className="design-pill-value">{resolvePlaceholders(pillEl.value ?? "", placeholders)}</span>
       </div>
     );
   }

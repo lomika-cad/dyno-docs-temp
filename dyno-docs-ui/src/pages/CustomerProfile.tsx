@@ -260,9 +260,9 @@ export default function CustomerProfile() {
                 </div>
             )}
             <section className="customer-profile">
-                <header className="customer-profile__header">
+                <header className="customer-profile-header">
                     <div>
-                        <h2 className="agency__title">Customer Profiles</h2>
+                        <h2 className="agency-title">Customer Profiles</h2>
                         <p className="muted">
                             Keep traveler records up to date to unlock curated itineraries and proactive service options.
                         </p>
@@ -270,7 +270,7 @@ export default function CustomerProfile() {
                 </header>
 
                 <article className="profile-card" aria-label="Customer details form">
-                    <div className="profile-card__title">
+                    <div className="profile-card-title">
                         <div>
                             <p className="title">Customer Details Form</p>
                         </div>
@@ -280,12 +280,12 @@ export default function CustomerProfile() {
                         <Grid container spacing={2} alignItems="center" marginBottom={2}>
                             <Grid size={4}>
                                 <div className="form-field" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                    <label className="formField__label" htmlFor="title">
+                                    <label className="formField-label" htmlFor="title">
                                         Name
                                     </label>
                                     <input
                                         name="fullName"
-                                        className="formField__input"
+                                        className="formField-input"
                                         value={form.fullName}
                                         onChange={handleFormChange}
                                         placeholder="Enter your name"
@@ -296,13 +296,13 @@ export default function CustomerProfile() {
 
                             <Grid size={4}>
                                 <div className="form-field" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                    <label className="formField__label" htmlFor="email">
+                                    <label className="formField-label" htmlFor="email">
                                         Email
                                     </label>
                                     <input
                                         type="email"
                                         name="email"
-                                        className="formField__input"
+                                        className="formField-input"
                                         value={form.email}
                                         onChange={handleFormChange}
                                         placeholder="Enter your email"
@@ -312,13 +312,13 @@ export default function CustomerProfile() {
                             </Grid>
                             <Grid size={4}>
                                 <div className="form-field" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                    <label className="formField__label" htmlFor="phone">
+                                    <label className="formField-label" htmlFor="phone">
                                         Phone
                                     </label>
                                     <input
                                         type="tel"
                                         name="phone"
-                                        className="formField__input"
+                                        className="formField-input"
                                         value={form.phone}
                                         onChange={handleFormChange}
                                         placeholder="Enter phone number"
@@ -327,13 +327,13 @@ export default function CustomerProfile() {
                             </Grid>
                             <Grid size={4}>
                                 <div className="form-field" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                    <label className="formField__label" htmlFor="country">
+                                    <label className="formField-label" htmlFor="country">
                                         Country
                                     </label>
                                     <input
                                         type="text"
                                         name="country"
-                                        className="formField__input"
+                                        className="formField-input"
                                         value={form.country}
                                         onChange={handleFormChange}
                                         placeholder="Enter country"
@@ -342,12 +342,12 @@ export default function CustomerProfile() {
                             </Grid>
                             <Grid size={4}>
                                 <div className="form-field" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                    <label className="formField__label" htmlFor="dob">
+                                    <label className="formField-label" htmlFor="dob">
                                         Date of Birth
                                     </label>
                                     <input
                                         type="date"
-                                        className="formField__input"
+                                        className="formField-input"
                                         name="dob"
                                         value={form.dob}
                                         onChange={handleFormChange}
@@ -356,12 +356,12 @@ export default function CustomerProfile() {
                             </Grid>
                             <Grid size={4}>
                                 <div className="form-field" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                    <label className="formField__label" htmlFor="gender">
+                                    <label className="formField-label" htmlFor="gender">
                                         Gender
                                     </label>
                                     <select
                                         name="gender"
-                                        className="formField__input"
+                                        className="formField-input"
                                         value={form.gender}
                                         onChange={handleFormChange}
                                     >
@@ -387,7 +387,7 @@ export default function CustomerProfile() {
                 </article>
 
                 <section className="panel">
-                    <div className="panel__header">
+                    <div className="panel-header">
                         <div />
                         <div className="search" aria-label="Search partnerships">
                             <SearchRounded fontSize="small" />
@@ -516,7 +516,7 @@ export default function CustomerProfile() {
                 >
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             setViewModalOpen(false);
@@ -524,12 +524,12 @@ export default function CustomerProfile() {
                         }}
                     />
 
-                    <div className="ddModal__card ddModal__card--large">
-                        <div className="ddModal__header">
-                            <div className="ddModal__title">{selectedCustomer.name}</div>
+                    <div className="ddModal-card ddModal-card--large">
+                        <div className="ddModal-header">
+                            <div className="ddModal-title">{selectedCustomer.name}</div>
                             <button
                                 type="button"
-                                className="ddModal__close"
+                                className="ddModal-close"
                                 aria-label="Close"
                                 onClick={() => {
                                     setViewModalOpen(false);
@@ -540,35 +540,35 @@ export default function CustomerProfile() {
                             </button>
                         </div>
 
-                        <div className="ddModal__content">
+                        <div className="ddModal-content">
                             <div className="detailSection">
-                                <h3 className="detailSection__title">Contact</h3>
+                                <h3 className="detailSection-title">Contact</h3>
                                 <div className="detailGrid">
                                     <div className="detailItem">
-                                        <span className="detailItem__label">Email:</span>
-                                        <span className="detailItem__value">{selectedCustomer.email || "-"}</span>
+                                        <span className="detailItem-label">Email:</span>
+                                        <span className="detailItem-value">{selectedCustomer.email || "-"}</span>
                                     </div>
                                     <div className="detailItem">
-                                        <span className="detailItem__label">Phone:</span>
-                                        <span className="detailItem__value">{selectedCustomer.contactNo || "-"}</span>
+                                        <span className="detailItem-label">Phone:</span>
+                                        <span className="detailItem-value">{selectedCustomer.contactNo || "-"}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="detailSection">
-                                <h3 className="detailSection__title">Profile</h3>
+                                <h3 className="detailSection-title">Profile</h3>
                                 <div className="detailGrid">
                                     <div className="detailItem">
-                                        <span className="detailItem__label">Country:</span>
-                                        <span className="detailItem__value">{selectedCustomer.country || "-"}</span>
+                                        <span className="detailItem-label">Country:</span>
+                                        <span className="detailItem-value">{selectedCustomer.country || "-"}</span>
                                     </div>
                                     <div className="detailItem">
-                                        <span className="detailItem__label">Gender:</span>
-                                        <span className="detailItem__value">{GENDER_LABELS[selectedCustomer.gender] || "-"}</span>
+                                        <span className="detailItem-label">Gender:</span>
+                                        <span className="detailItem-value">{GENDER_LABELS[selectedCustomer.gender] || "-"}</span>
                                     </div>
                                     <div className="detailItem">
-                                        <span className="detailItem__label">Date of Birth:</span>
-                                        <span className="detailItem__value">{formatDate(selectedCustomer.dateOfBirth) || "-"}</span>
+                                        <span className="detailItem-label">Date of Birth:</span>
+                                        <span className="detailItem-value">{formatDate(selectedCustomer.dateOfBirth) || "-"}</span>
                                     </div>
                                 </div>
                             </div>
@@ -586,7 +586,7 @@ export default function CustomerProfile() {
                 >
                     <button
                         type="button"
-                        className="ddModal__backdrop"
+                        className="ddModal-backdrop"
                         aria-label="Close"
                         onClick={() => {
                             if (!isDeleting) {
@@ -596,20 +596,20 @@ export default function CustomerProfile() {
                         }}
                     />
 
-                    <div className="ddModal__card">
-                        <div className="ddModal__logo" aria-hidden="true">
-                            <img className="ddModal__img" src={trashImg} alt="Delete icon" />
+                    <div className="ddModal-card">
+                        <div className="ddModal-logo" aria-hidden="true">
+                            <img className="ddModal-img" src={trashImg} alt="Delete icon" />
                         </div>
 
-                        <div className="ddModal__title">Delete Customer</div>
-                        <div className="ddModal__subtitle">
+                        <div className="ddModal-title">Delete Customer</div>
+                        <div className="ddModal-subtitle">
                             Are you sure you want to delete <strong>{customerToDelete.name || "this customer"}</strong>? This action cannot be undone.
                         </div>
 
-                        <div className="ddModal__actions">
+                        <div className="ddModal-actions">
                             <button
                                 type="button"
-                                className="ddModal__btn ddModal__btn--ghost"
+                                className="ddModal-btn ddModal-btn--ghost"
                                 onClick={() => {
                                     setDeleteConfirmModalOpen(false);
                                     setCustomerToDelete(null);

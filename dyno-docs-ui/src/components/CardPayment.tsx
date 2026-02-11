@@ -104,38 +104,38 @@ export default function CardPayment({
 
 	return (
 		<div className="card-payment">
-			<div className="card-payment__preview">
-				<div className="card-payment__chip" />
-				<div className="card-payment__brand">VISA</div>
-				<div className="card-payment__number">{cardNumberPreview}</div>
-				<div className="card-payment__meta">
+			<div className="card-payment-preview">
+				<div className="card-payment-chip" />
+				<div className="card-payment-brand">VISA</div>
+				<div className="card-payment-number">{cardNumberPreview}</div>
+				<div className="card-payment-meta">
 					<div>
-						<div className="card-payment__label">CARD HOLDER</div>
-						<div className="card-payment__value">{cardHolder.trim() || "Your Name"}</div>
+						<div className="card-payment-label">CARD HOLDER</div>
+						<div className="card-payment-value">{cardHolder.trim() || "Your Name"}</div>
 					</div>
-					<div className="card-payment__meta-right">
-						<div className="card-payment__label">EXPIRES</div>
-						<div className="card-payment__value">
+					<div className="card-payment-meta-right">
+						<div className="card-payment-label">EXPIRES</div>
+						<div className="card-payment-value">
 							{expiryMonth}/{expiryYear.slice(-2)}
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<form className="card-payment__form" onSubmit={handleSubmit}>
-				<div className="card-payment__form-grid">
-					<div className="card-payment__field card-payment__field--full">
-						<label className="card-payment__field-label">TOTAL AMOUNT</label>
-						<input className="card-payment__input" value={amountLabel} readOnly />
+			<form className="card-payment-form" onSubmit={handleSubmit}>
+				<div className="card-payment-form-grid">
+					<div className="card-payment-field card-payment-field--full">
+						<label className="card-payment-field-label">TOTAL AMOUNT</label>
+						<input className="card-payment-input" value={amountLabel} readOnly />
 					</div>
 
-					<div className="card-payment__field card-payment__field--full">
-						<label className="card-payment__field-label">CARD NUMBER</label>
-						<div className="card-payment__number-inputs">
+					<div className="card-payment-field card-payment-field--full">
+						<label className="card-payment-field-label">CARD NUMBER</label>
+						<div className="card-payment-number-inputs">
 							{cardNumberSegments.map((segment, index) => (
 								<input
 									key={index}
-									className="card-payment__input card-payment__input--segment"
+									className="card-payment-input card-payment-input--segment"
 									inputMode="numeric"
 									autoComplete={index === 0 ? "cc-number" : "off"}
 									placeholder="0000"
@@ -146,10 +146,10 @@ export default function CardPayment({
 						</div>
 					</div>
 
-					<div className="card-payment__field card-payment__field--full">
-						<label className="card-payment__field-label">CARD HOLDER</label>
+					<div className="card-payment-field card-payment-field--full">
+						<label className="card-payment-field-label">CARD HOLDER</label>
 						<input
-							className="card-payment__input"
+							className="card-payment-input"
 							autoComplete="cc-name"
 							placeholder="Full name"
 							value={cardHolder}
@@ -157,11 +157,11 @@ export default function CardPayment({
 						/>
 					</div>
 
-					<div className="card-payment__field">
-						<label className="card-payment__field-label">EXPIRATION DATE</label>
-						<div className="card-payment__row">
+					<div className="card-payment-field">
+						<label className="card-payment-field-label">EXPIRATION DATE</label>
+						<div className="card-payment-row">
 							<select
-								className="card-payment__input card-payment__select"
+								className="card-payment-input card-payment-select"
 								value={expiryMonth}
 								onChange={(e) => setExpiryMonth(e.target.value)}
 							>
@@ -173,7 +173,7 @@ export default function CardPayment({
 							</select>
 
 							<select
-								className="card-payment__input card-payment__select"
+								className="card-payment-input card-payment-select"
 								value={expiryYear}
 								onChange={(e) => setExpiryYear(e.target.value)}
 							>
@@ -186,10 +186,10 @@ export default function CardPayment({
 						</div>
 					</div>
 
-					<div className="card-payment__field">
-						<label className="card-payment__field-label">CVV</label>
+					<div className="card-payment-field">
+						<label className="card-payment-field-label">CVV</label>
 						<input
-							className="card-payment__input"
+							className="card-payment-input"
 							inputMode="numeric"
 							autoComplete="cc-csc"
 							placeholder="123"
@@ -199,7 +199,7 @@ export default function CardPayment({
 					</div>
 				</div>
 
-				<button className="card-payment__submit" type="submit" disabled={!canSubmit}>
+				<button className="card-payment-submit" type="submit" disabled={!canSubmit}>
 					{isSubmitting ? "PROCESSING..." : "SUBMIT"}
 				</button>
 			</form>

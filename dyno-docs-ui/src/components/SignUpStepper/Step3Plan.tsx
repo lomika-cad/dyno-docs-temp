@@ -23,24 +23,24 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
     <form onSubmit={handleSubmit} aria-label="Subscription plan">
       <div className="plans">
         <label className={`plan-card ${planId === "free" ? "plan--active" : ""}`}>
-          <div className="plan-card__icon" aria-hidden="true">◔</div>
+          <div className="plan-card-icon" aria-hidden="true">◔</div>
           <input type="radio" name="plan" value="free" checked={planId === "free"} onChange={() => setPlanId("free")} />
-          <div className="plan-card__title">Free Plan</div>
-          <div className="plan-card__desc">Great for trying out DynoDocs component and templates.</div>
+          <div className="plan-card-title">Free Plan</div>
+          <div className="plan-card-desc">Great for trying out DynoDocs component and templates.</div>
         </label>
 
         <label className={`plan-card ${planId === "pro" ? "plan--active" : ""}`}>
-          <div className="plan-card__icon" aria-hidden="true">◔</div>
+          <div className="plan-card-icon" aria-hidden="true">◔</div>
           <input type="radio" name="plan" value="pro" checked={planId === "pro"} onChange={() => setPlanId("pro")} />
-          <div className="plan-card__title">Professional Plan</div>
-          <div className="plan-card__desc">Best for professional freelancers and small teams.</div>
+          <div className="plan-card-title">Professional Plan</div>
+          <div className="plan-card-desc">Best for professional freelancers and small teams.</div>
         </label>
 
         <label className={`plan-card ${planId === "enterprise" ? "plan--active" : ""}`}>
-          <div className="plan-card__icon" aria-hidden="true">◔</div>
+          <div className="plan-card-icon" aria-hidden="true">◔</div>
           <input type="radio" name="plan" value="enterprise" checked={planId === "enterprise"} onChange={() => setPlanId("enterprise")} />
-          <div className="plan-card__title">Enterprise Plan</div>
-          <div className="plan-card__desc">Best for growing large company or enterprise design team.</div>
+          <div className="plan-card-title">Enterprise Plan</div>
+          <div className="plan-card-desc">Best for growing large company or enterprise design team.</div>
         </label>
       </div>
 

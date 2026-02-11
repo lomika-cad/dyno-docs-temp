@@ -37,10 +37,10 @@ export default function Step1Personal({ initial, onNext }: Props) {
     <form onSubmit={handleNext} aria-label="Personal information">
       <div className="row">
         <label className="field">
-          <div className="field__label">Full Name</div>
+          <div className="field-label">Full Name</div>
           <input
             id="fullName"
-            className="field__input"
+            className="field-input"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             aria-required
@@ -51,10 +51,10 @@ export default function Step1Personal({ initial, onNext }: Props) {
         </label>
 
         <label className="field">
-          <div className="field__label">NIC No</div>
+          <div className="field-label">NIC No</div>
           <input
             id="nicNo"
-            className="field__input"
+            className="field-input"
             value={nicNo}
             onChange={(e) => setNicNo(e.target.value)}
             placeholder="Enter your nic no"
@@ -64,10 +64,10 @@ export default function Step1Personal({ initial, onNext }: Props) {
 
       <div className="row">
         <label className="field">
-          <div className="field__label">Mobile No</div>
+          <div className="field-label">Mobile No</div>
           <input
             id="mobileNo"
-            className="field__input"
+            className="field-input"
             value={mobileNo}
             onChange={(e) => setMobileNo(e.target.value)}
             aria-required
@@ -78,10 +78,10 @@ export default function Step1Personal({ initial, onNext }: Props) {
         </label>
 
         <label className="field">
-          <div className="field__label">Email</div>
+          <div className="field-label">Email</div>
           <input
             id="email"
-            className="field__input"
+            className="field-input"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             aria-required
@@ -94,10 +94,10 @@ export default function Step1Personal({ initial, onNext }: Props) {
 
       <div className="row">
         <label className="field">
-          <div className="field__label">Password</div>
+          <div className="field-label">Password</div>
           <input
             id="password"
-            className="field__input"
+            className="field-input"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -109,10 +109,10 @@ export default function Step1Personal({ initial, onNext }: Props) {
         </label>
 
         <label className="field">
-          <div className="field__label">Confirm Password</div>
+          <div className="field-label">Confirm Password</div>
           <input
             id="confirmPassword"
-            className="field__input"
+            className="field-input"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}

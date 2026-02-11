@@ -9,13 +9,13 @@
     gap: var(--spacing-4);
 }
 
-.promo__title {
+.promo-title {
     font-weight: 700;
     font-size: var(--font-size-xl);
     margin: 0;
 }
 
-.promo__subtitle {
+.promo-subtitle {
     font-size: var(--font-size-sm);
     color: var(--color-text-gray);
     margin: 0;
@@ -32,25 +32,25 @@
     gap: var(--spacing-4);
 }
 
-.promoForm__fields {
+.promoForm-fields {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-4);
 }
 
-.promoForm__field {
+.promoForm-field {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-2);
 }
 
-.promoForm__label {
+.promoForm-label {
     font-size: var(--font-size-sm);
     font-weight: 700;
     color: var(--color-text-black);
 }
 
-.promoForm__input {
+.promoForm-input {
     padding: 10px 12px;
     border: 1px solid var(--color-border);
     border-radius: 8px;
@@ -60,13 +60,13 @@
     transition: border-color 0.2s;
 }
 
-.promoForm__input:focus {
+.promoForm-input:focus {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(255, 123, 46, 0.1);
 }
 
-.promoForm__input::placeholder {
+.promoForm-input::placeholder {
     color: var(--color-text-gray);
 }
 
@@ -80,13 +80,13 @@
     gap: var(--spacing-3);
 }
 
-.radioGroup__options {
+.radioGroup-options {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-4);
 }
 
-.radioGroup__option {
+.radioGroup-option {
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
@@ -94,14 +94,14 @@
     font-size: var(--font-size-sm);
 }
 
-.radioGroup__input {
+.radioGroup-input {
     width: 18px;
     height: 18px;
     accent-color: var(--color-success);
     cursor: pointer;
 }
 
-.radioGroup__input[value="used"] {
+.radioGroup-input[value="used"] {
     accent-color: var(--color-text-gray);
 }
 
@@ -109,14 +109,14 @@
    Form Actions
    ================================ */
 
-.promoForm__actions {
+.promoForm-actions {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-3);
     margin-top: var(--spacing-2);
 }
 
-.promoForm__actions .btn {
+.promoForm-actions .btn {
     width: 100%;
     justify-content: center;
 }
@@ -178,28 +178,28 @@
    ================================ */
 
 @media (min-width: 600px) {
-    .promoForm__fields {
+    .promoForm-fields {
         flex-direction: row;
         flex-wrap: wrap;
         align-items: flex-end;
     }
 
-    .promoForm__field {
+    .promoForm-field {
         flex: 1;
         min-width: 180px;
     }
 
-    .promoForm__field--status {
+    .promoForm-field--status {
         flex: 1.2;
         min-width: 200px;
     }
 
-    .promoForm__actions {
+    .promoForm-actions {
         flex-direction: row;
         justify-content: flex-end;
     }
 
-    .promoForm__actions .btn {
+    .promoForm-actions .btn {
         width: auto;
         min-width: 100px;
     }
@@ -214,7 +214,7 @@
         gap: var(--spacing-6);
     }
     
-    .promoForm__field {
+    .promoForm-field {
         min-width: 200px;
     }
 }
