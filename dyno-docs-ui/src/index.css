@@ -69,6 +69,15 @@ body {
     margin: 0 auto;
 }
 
+.globalLoader {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.6);
+  z-index: 3000;
+}
+
 #root {
   overflow-x: hidden;
   width: 100%;

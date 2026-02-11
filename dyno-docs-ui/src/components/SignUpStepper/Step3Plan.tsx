@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { SignUpForm } from "./SignUpStepper";
+import { CircularProgress } from "@mui/material";
 
 type Props = {
   initial?: SignUpForm;
@@ -21,6 +22,11 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
 
   return (
     <form onSubmit={handleSubmit} aria-label="Subscription plan">
+      {(loading) && (
+        <div className="globalLoader" role="status" aria-live="polite">
+          <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
+        </div>
+      )}
       <div className="plans">
         <label className={`plan-card ${planId === "free" ? "plan--active" : ""}`}>
           <div className="plan-card-icon" aria-hidden="true">◔</div>
