@@ -2,11 +2,11 @@ import { useState } from "react";
 import Step1Personal from "./Step1Personal";
 import Step2Business from "./Step2Business";
 import Step3Plan from "./Step3Plan";
-import { showError, showSuccess } from "../Toast";
+import { showError, showInfo, showSuccess } from "../Toast";
 import { registerAgency } from "../../services/auth-api";
 
 export type SignUpForm = {
-  // Personal
+  // Personal Details
   fullName?: string;
   nicNo?: string;
   mobileNo?: string;
@@ -14,7 +14,7 @@ export type SignUpForm = {
   password?: string;
   confirmPassword?: string;
 
-  // Business
+  // Business Details
   agencyName?: string;
   businessRegNo?: string;
   contactNo?: string;
@@ -25,7 +25,7 @@ export type SignUpForm = {
   agencyLogoFile?: File | null;
   agencyLogoUrl?: string;
 
-  // Plan
+  // Plan Selection
   planId?: string;
   promoCode?: string;
   termsAccepted?: boolean;
@@ -47,43 +47,40 @@ export default function SignUpStepper() {
     setForm((s) => ({ ...s, ...values }));
     const payload = { ...form, ...values } as SignUpForm;
 
-    // Basic client validation
     if (!payload.email || !payload.password || !payload.fullName) {
       showError("Please complete required fields.");
       return;
     }
 
     if (!payload.termsAccepted) {
-      showError("You must accept the terms and conditions.");
+      showInfo("You must accept the terms and conditions.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Build FormData for single register-agency endpoint
-      const fd = new FormData();
-      fd.append("AgencyName", payload.agencyName ?? "");
-      fd.append("BusinessRegNo", payload.businessRegNo ?? "");
-      fd.append("ContactNo", payload.contactNo ?? "");
-      fd.append("Country", payload.country ?? "");
-      fd.append("State", payload.state ?? "");
-      fd.append("City", payload.city ?? "");
-      fd.append("AgencyAddress", payload.agencyAddress ?? "");
-      if (payload.agencyLogoFile) fd.append("AgencyLogo", payload.agencyLogoFile);
+      const formdata = new FormData();
+      formdata.append("AgencyName", payload.agencyName ?? "");
+      formdata.append("BusinessRegNo", payload.businessRegNo ?? "");
+      formdata.append("ContactNo", payload.contactNo ?? "");
+      formdata.append("Country", payload.country ?? "");
+      formdata.append("State", payload.state ?? "");
+      formdata.append("City", payload.city ?? "");
+      formdata.append("AgencyAddress", payload.agencyAddress ?? "");
+      if (payload.agencyLogoFile) formdata.append("AgencyLogo", payload.agencyLogoFile);
 
-      fd.append("FullName", payload.fullName ?? "");
-      fd.append("NICNo", payload.nicNo ?? "");
-      fd.append("MobileNo", payload.mobileNo ?? "");
-      fd.append("Email", payload.email ?? "");
-      fd.append("Password", payload.password ?? "");
-      fd.append("ConfirmPassword", (payload as any).confirmPassword ?? "");
+      formdata.append("FullName", payload.fullName ?? "");
+      formdata.append("NICNo", payload.nicNo ?? "");
+      formdata.append("MobileNo", payload.mobileNo ?? "");
+      formdata.append("Email", payload.email ?? "");
+      formdata.append("Password", payload.password ?? "");
+      formdata.append("ConfirmPassword", (payload as any).confirmPassword ?? "");
 
-      // Optional fields
-      if (payload.planId) fd.append("PlanId", payload.planId);
-      if (payload.promoCode) fd.append("PromoCode", payload.promoCode);
+      if (payload.planId) formdata.append("PlanId", payload.planId);
+      if (payload.promoCode) formdata.append("PromoCode", payload.promoCode);
 
-      await registerAgency(fd);
+      await registerAgency(formdata);
 
       // API returns a Guid on success; show message and redirect to sign in
       showSuccess("Registration successful. Please sign in.");

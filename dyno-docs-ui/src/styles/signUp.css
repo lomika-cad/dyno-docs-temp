@@ -11,6 +11,12 @@
   padding: 0 16px;
 }
 
+.field-error{
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
 .signup-stepper .stepper-progress {
   display: flex;
   justify-content: space-around;
