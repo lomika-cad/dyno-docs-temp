@@ -1,10 +1,19 @@
 import { Container, Grid, Box, Typography, Button } from "@mui/material";
 import { ArrowRight } from "lucide-react";
 import previewSite from "../assets/site-preview.png";
+import { useState } from "react";
+import SignInModal from "./SignInModal";
 
 const CTASection = () => {
+  const [openSignIn, setOpenSignIn] = useState(false);
+
+  const handleCloseSignIn = () => {
+    setOpenSignIn(false);
+  }
+
   return (
     <Box sx={{ py: { xs: 6, md: 10 }, px: { xs: 2, md: 5 }, bgcolor: "#fff" }}>
+      <SignInModal open={openSignIn} onClose={handleCloseSignIn} />
       <Container maxWidth="lg">
         <Grid
           container
@@ -59,6 +68,7 @@ const CTASection = () => {
                   },
                 }}
                 data-aos="fade-right"
+                onClick={() => setOpenSignIn(true)}
               >
                 Get started for free
               </Button>
