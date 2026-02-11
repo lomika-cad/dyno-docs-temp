@@ -123,11 +123,8 @@ const DEFAULT_ITEMS: NavbarItem[] = [
     },
 ];
 
-export default function Navbar({
-    children,
-    items,
-    userName = "User",
-}: NavbarProps) {
+export default function Navbar({children, items, userName = "Unknown User"}: NavbarProps) {
+    
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const navItems = items ?? DEFAULT_ITEMS;
