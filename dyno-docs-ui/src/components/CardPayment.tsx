@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import "../styles/cardPayment.css";
-import { showError, showSuccess } from "./Toast";
-import { submitCardPayment } from "../services/card-payment-api.ts";
+import { showSuccess } from "./Toast";
 
 type CardPaymentProps = {
 	totalAmount: number;
@@ -27,7 +26,6 @@ export default function CardPayment({
 	totalAmount,
 	currency = "LKR",
 	locale = "en-LK",
-	paymentPath,
 	onPaid,
 }: CardPaymentProps) {
 	const [cardNumberSegments, setCardNumberSegments] = useState<string[]>(["", "", "", ""]);
@@ -35,7 +33,6 @@ export default function CardPayment({
 	const [expiryMonth, setExpiryMonth] = useState("07");
 	const [expiryYear, setExpiryYear] = useState(String(new Date().getFullYear()));
 	const [cvv, setCvv] = useState("");
-	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const amountLabel = useMemo(() => {
 		try {
@@ -60,8 +57,8 @@ export default function CardPayment({
 		const holderOk = cardHolder.trim().length >= 2;
 		const cvvOk = cvv.length >= 3;
 		const amountOk = Number.isFinite(totalAmount) && totalAmount > 0;
-		return allSegmentsComplete && holderOk && cvvOk && amountOk && !isSubmitting;
-	}, [cardHolder, cardNumberSegments, cvv, isSubmitting, totalAmount]);
+		return allSegmentsComplete && holderOk && cvvOk && amountOk;
+	}, [cardHolder, cardNumberSegments, cvv, totalAmount]);
 
 	const updateSegment = (index: number, raw: string) => {
 		const next = [...cardNumberSegments];
@@ -73,33 +70,8 @@ export default function CardPayment({
 		event.preventDefault();
 		if (!canSubmit) return;
 
-		const cardNumber = cardNumberSegments.join("");
-		const payload = {
-			totalAmount,
-			currency,
-			cardHolder: cardHolder.trim(),
-			cardNumber,
-			expiryMonth,
-			expiryYear,
-			cvv,
-		};
-
-		setIsSubmitting(true);
-		try {
-			await submitCardPayment(payload, paymentPath);
-			showSuccess(`${amountLabel} payment completed.`);
-			onPaid?.();
-		} catch (error) {
-			const apiMessage =
-				(error as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
-					?.message ??
-				(error as { response?: { data?: { message?: string; Message?: string } } })?.response?.data
-					?.Message;
-			showError(apiMessage ?? "Unable to process the payment. Please try again.");
-			console.error("submitCardPayment failed", error);
-		} finally {
-			setIsSubmitting(false);
-		}
+		showSuccess(`${amountLabel} payment completed.`);
+		onPaid?.();
 	};
 
 	return (
@@ -200,7 +172,7 @@ export default function CardPayment({
 				</div>
 
 				<button className="card-payment-submit" type="submit" disabled={!canSubmit}>
-					{isSubmitting ? "PROCESSING..." : "SUBMIT"}
+					Pay
 				</button>
 			</form>
 		</div>
