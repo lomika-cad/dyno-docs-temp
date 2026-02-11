@@ -523,7 +523,7 @@ export default function Templates() {
     const fetchTemplates = async () => {
       setIsLoading(true);
       try {
-        const response = await getTemplates();
+        const response = await getTemplates(sessionStorage.getItem("dd_token") ?? "");
         if (ignore) {
           return;
         }
