@@ -40,16 +40,6 @@ const GENDER_LABELS: Record<number, string> = {
     3: "Prefer not to say",
 };
 
-const COUNTRIES = [
-    "Australia",
-    "United Kingdom",
-    "Spain",
-    "Canada",
-    "United States",
-    "Germany",
-    "France",
-];
-
 const createEmptyForm = (): FormState => ({
     fullName: "",
     email: "",

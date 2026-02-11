@@ -3,10 +3,14 @@ import { getEnv } from "../env";
 
 const API_URL = getEnv().API_URL + "/operations/templates";
 
-export const getTemplates = async () => {
+export const getTemplates = async (token:any) => {
     try {
-        const response = await axios.get(API_URL);
-        return response;
+        const response = await axios.get(API_URL, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return response.data;
     } catch (error) {
         throw error;
     }

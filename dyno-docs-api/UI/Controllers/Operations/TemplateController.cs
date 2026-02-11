@@ -5,6 +5,7 @@ using Application.UserStories.Operations.UserTemplates.Commands;
 using Application.UserStories.Operations.UserTemplates.Queries;
 using Domain.Entities.Operations;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace UI.Controllers.Operations;
@@ -35,6 +36,7 @@ public class TemplateController (IMediator mediator) : ControllerBase
     }
     
     [HttpPost("assign-to-user")]
+    [Authorize]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     public async Task<ActionResult<Result>> AssignTemplateToUser([FromBody] AssignTemplateCommand command)
     {
@@ -47,6 +49,7 @@ public class TemplateController (IMediator mediator) : ControllerBase
     }
     
     [HttpGet("user-templates/{userId}")]
+    [Authorize]
     [ProducesResponseType(typeof(List<UserTemplate>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<UserTemplate>>> GetUserTemplates([FromRoute] Guid userId)
     {
@@ -56,6 +59,7 @@ public class TemplateController (IMediator mediator) : ControllerBase
     }
     
     [HttpPost("unassign-from-user")]
+    [Authorize]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     public async Task<ActionResult<Result>> UnassignTemplateFromUser([FromBody] UnassignTemplateCommand command)
     {
@@ -68,6 +72,7 @@ public class TemplateController (IMediator mediator) : ControllerBase
     }
 
     [HttpPut("update-design")]
+    [Authorize]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     public async Task<ActionResult<Result>> UpdateTemplateDesign([FromBody] UpdateDesignCommand command)
     {

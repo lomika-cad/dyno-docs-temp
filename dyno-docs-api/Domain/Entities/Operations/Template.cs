@@ -3,8 +3,10 @@ using Domain.Common;
 
 namespace Domain.Entities.Operations;
 
-public class Template : BaseEntity
+public class Template
 {
+    [Key]
+    public Guid Id { get; set; }
     [Required]
     public string TemplateName { get; set; }
     
@@ -13,4 +15,12 @@ public class Template : BaseEntity
     public string TemplateDesign { get; set; } = string.Empty;
     public bool isPaid { get; set; }
     public decimal? Price { get; set; }
+    
+    public DateTime CreatedAt { get; set; }
+   
+    public string CreatedBy { get; set; }
+    
+    public DateTime? LastModifiedAt { get; set; }
+    
+    public string? LastModifiedBy { get; set; }
 }
