@@ -16,6 +16,10 @@ export default function AboutUs() {
     const rootRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    useEffect(() => {
         const rootEl = rootRef.current;
         if (!rootEl) return;
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
 import "../styles/contactUs.css";
@@ -7,6 +7,10 @@ import { ChevronDown, ChevronUp, Clock, Mail, MapPin, Phone } from "lucide-react
 
 export default function ContactUs() {
     const [openFaq, setOpenFaq] = useState<number>(0);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const faqs = useMemo(
         () => [

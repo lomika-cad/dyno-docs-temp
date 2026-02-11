@@ -7,8 +7,12 @@ import {
   Phone,
 } from "lucide-react";
 import { InstagramOutlined, LinkedinOutlined, TikTokOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 export default function Footer() {
+
+  const navigate = useNavigate();
+
   return (
     <footer className="footer-container">
 
@@ -40,10 +44,10 @@ export default function Footer() {
         <div className="footer-col">
           <h3>Pages</h3>
           <ul>
-            <li>Documentation</li>
-            <li>Pricing</li>
-            <li>About Us</li>
-            <li>Contact Us</li>
+            <li onClick={() => navigate("/documentation")}>Documentation</li>
+            <li onClick={() => navigate("/pricing")}>Pricing</li>
+            <li onClick={() => navigate("/about")}>About Us</li>
+            <li onClick={() => navigate("/contact")}>Contact Us</li>
           </ul>
         </div>
 
