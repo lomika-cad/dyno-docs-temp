@@ -5,11 +5,8 @@ import {
   MapPin,
   Mail,
   Phone,
-  Facebook,
-  Instagram,
-  Linkedin,
-  MessageCircle,
 } from "lucide-react";
+import { InstagramOutlined, LinkedinOutlined, TikTokOutlined, WhatsAppOutlined } from "@ant-design/icons";
 
 export default function Footer() {
   return (
@@ -63,10 +60,10 @@ export default function Footer() {
         <div className="footer-col">
           <h3>Social Media</h3>
           <ul>
-            <li><Facebook size={18} className="icon" /> Facebook</li>
-            <li><MessageCircle size={18} className="icon" /> WhatsApp</li>
-            <li><Instagram size={18} className="icon" /> Instagram</li>
-            <li><Linkedin size={18} className="icon" /> LinkedIn</li>
+            <li><TikTokOutlined size={18} className="icon" /> TikTok</li>
+            <li><WhatsAppOutlined size={18} className="icon" /> WhatsApp</li>
+            <li><InstagramOutlined size={18} className="icon" /> Instagram</li>
+            <li><LinkedinOutlined size={18} className="icon" /> LinkedIn</li>
           </ul>
         </div>
 
