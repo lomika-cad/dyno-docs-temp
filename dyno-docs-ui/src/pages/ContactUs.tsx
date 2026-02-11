@@ -60,8 +60,9 @@ export default function ContactUs() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // UI-only for now (no API wired)
         setForm({ fullName: "", email: "", agencyName: "", inquiryType: "", message: "" });
+
+        alert("Form submitted! (This is a placeholder action.)");
     };
 
     return (

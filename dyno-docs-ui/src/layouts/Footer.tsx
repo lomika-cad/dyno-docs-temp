@@ -64,10 +64,10 @@ export default function Footer() {
         <div className="footer-col">
           <h3>Social Media</h3>
           <ul>
-            <li><TikTokOutlined size={18} className="icon" /> TikTok</li>
-            <li><WhatsAppOutlined size={18} className="icon" /> WhatsApp</li>
-            <li><InstagramOutlined size={18} className="icon" /> Instagram</li>
-            <li><LinkedinOutlined size={18} className="icon" /> LinkedIn</li>
+            <li onClick={() => window.open("https://www.tiktok.com", "_blank")}><TikTokOutlined size={18} className="icon" /> TikTok</li>
+            <li onClick={() => window.open("https://wa.me/+94775353762?text=Hello%20DynoDocs", "_blank")}><WhatsAppOutlined size={18} className="icon" /> WhatsApp</li>
+            <li onClick={() => window.open("https://www.instagram.com/dynodocs06?igsh=eWplcDV0Y2JtcjAz", "_blank")}><InstagramOutlined size={18} className="icon" /> Instagram</li>
+            <li onClick={() => window.open("https://www.linkedin.com", "_blank")}><LinkedinOutlined size={18} className="icon" /> LinkedIn</li>
           </ul>
         </div>
 
