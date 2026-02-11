@@ -3,10 +3,12 @@ using Application.UserStories.Operations.Partnerships.Commands;
 using Application.UserStories.Operations.Partnerships.Queries;
 using Domain.Entities.Operations;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace UI.Controllers.Operations;
 
+[Authorize]
 [ApiController]
 [Route("api/operations/partnerships")]
 public class PartnershipController(IMediator mediator) : ControllerBase
