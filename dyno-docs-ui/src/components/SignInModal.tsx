@@ -3,6 +3,7 @@ import "../styles/signInModal.css";
 import { login } from "../services/auth-api";
 import { useState } from "react";
 import { showError } from "./Toast";
+import { CircularProgress } from "@mui/material";
 
 interface SignInModalProps {
   open: boolean;
@@ -14,6 +15,7 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -25,13 +27,14 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       const res = await login(email, password);
-      console.log(res);  
-      sessionStorage.setItem("dd_token", res.token);  
-      sessionStorage.setItem("dd_agency_name", res.agencyName); 
-      sessionStorage.setItem("dd_email", res.email); 
+      console.log(res);
+      sessionStorage.setItem("dd_token", res.token);
+      sessionStorage.setItem("dd_agency_name", res.agencyName);
+      sessionStorage.setItem("dd_email", res.email);
       sessionStorage.setItem("dd_user_id", res.userId);
       sessionStorage.setItem("dd_tenant_id", res.tenantId);
       sessionStorage.setItem("dd_full_name", res.fullName);
@@ -39,11 +42,18 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
       navigate("/dashboard");
     } catch (error) {
       showError("Login failed. Please check your credentials and try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <div className="authModal" role="dialog" aria-modal="true" aria-label="Sign in" onClick={handleBackdropClick}>
+      {loading && (
+        <div className="globalLoader" role="status" aria-live="polite">
+          <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
+        </div>
+      )}
       <div className="authModal-card">
         <h2 className="authModal-title">Sign in</h2>
 
