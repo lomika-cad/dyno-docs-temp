@@ -94,7 +94,13 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
         </form>
 
         <p className="authForm-footer">
-          Don&apos;t have an account? <button type="button" className="authLinkButton authLinkButton--accent">Sign up for free!</button>
+          Don&apos;t have an account? <button type="button" className="authLinkButton authLinkButton--accent"
+            onClick={() => {
+              {
+                onClose();
+                navigate("/signup");
+              }
+            }}>Sign up for free!</button>
         </p>
       </div>
     </div>
