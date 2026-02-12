@@ -1,15 +1,18 @@
-import { useEffect } from "react";
 import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
+import ScrollToTop from "../components/ScrollToTop";
 import "../styles/privacy-policy.css";
+import { useEffect } from "react";
 
 export default function PrivacyPolicy() {
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
   return (
     <div>
+      <ScrollToTop />
       <Header />
       <main className="privacy-policy-container">
         <div className="privacy-hero">
@@ -173,7 +176,7 @@ export default function PrivacyPolicy() {
           </ul>
           <p>To exercise these rights, contact us at:</p>
           <p>
-            Email: <a href="mailto:support@dynodocs.com">support@dynodocs.com</a>
+            Email: <a href="mailto:dynodocs06@gmail.com">dynodocs06@gmail.com</a>
           </p>
         </section>
 
@@ -196,7 +199,7 @@ export default function PrivacyPolicy() {
           <p>
             DynoDocs<br />
             Sri Lanka<br />
-            Email: <a href="mailto:info@dynodocs.com">info@dynodocs.com</a>
+            Email: <a href="mailto:dynodocs06@gmail.com">dynodocs06@gmail.com</a>
           </p>
         </section>
       </main>

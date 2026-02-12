@@ -1,15 +1,18 @@
-import { useEffect } from "react";
 import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
+import ScrollToTop from "../components/ScrollToTop";
 import "../styles/privacy-policy.css";
+import { useEffect } from "react";
 
 export default function Terms() {
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   return (
     <div>
+      <ScrollToTop />
       <Header />
       <main className="privacy-policy-container">
         <div className="privacy-hero">
@@ -207,7 +210,7 @@ export default function Terms() {
           <h2>16. Contact Information</h2>
           <p>DynoDocs</p>
           <p>Sri Lanka</p>
-          <p>📧 Email: [Insert Support Email]</p>
+          <p>Email: <a href="mailto:dynodocs06@gmail.com">dynodocs06@gmail.com</a></p>
         </section>
       </main>
       <Footer />
