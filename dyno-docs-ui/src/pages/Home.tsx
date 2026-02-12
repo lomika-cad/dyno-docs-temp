@@ -6,23 +6,32 @@ import CTASection from "../components/CTASection";
 import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
 import "../styles/home.css";
+import { useEffect } from "react";
+import ScrollToTop from "../components/ScrollToTop";
 
 export default function Home() {
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div>
-        <Header />
+      <ScrollToTop />
+      
+      <Header />
 
-        <HeroSection />
+      <HeroSection />
 
-        <HeroImageSlider />
+      <HeroImageSlider />
 
-        <FeaturesSection />
+      <FeaturesSection />
 
-        <CTASection />
+      <CTASection />
 
-        <StatsSection />
+      <StatsSection />
 
-        <Footer />
+      <Footer />
     </div>
   );
 }

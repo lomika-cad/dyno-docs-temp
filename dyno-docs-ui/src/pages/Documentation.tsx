@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
 import "../styles/documentation.css";
+import ScrollToTop from "../components/ScrollToTop";
 
 type NavItem = { id: string; label: string };
 type NavGroup = { title: string; items: NavItem[] };
@@ -9,6 +10,10 @@ type NavGroup = { title: string; items: NavItem[] };
 export default function Documentation() {
     const contentRef = useRef<HTMLDivElement | null>(null);
     const [activeId, setActiveId] = useState<string>("overview");
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const navGroups: NavGroup[] = useMemo(
         () => [

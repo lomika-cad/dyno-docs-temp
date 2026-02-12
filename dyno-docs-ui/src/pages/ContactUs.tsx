@@ -5,6 +5,7 @@ import "../styles/contactUs.css";
 
 import { ChevronDown, ChevronUp, Clock, Mail, MapPin, Phone } from "lucide-react";
 import { showInfo, showSuccess } from "../components/Toast";
+import ScrollToTop from "../components/ScrollToTop";
 
 export default function ContactUs() {
     const [openFaq, setOpenFaq] = useState<number>(0);
@@ -74,6 +75,8 @@ export default function ContactUs() {
     return (
         <div className="contact-page">
             <Header />
+
+            <ScrollToTop />
 
             <main className="contact-container">
                 <section className="contact-hero" aria-label="Contact hero">

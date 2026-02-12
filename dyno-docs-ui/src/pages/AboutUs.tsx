@@ -11,6 +11,7 @@ import service2 from "../assets/serivce2.jpg";
 import service3 from "../assets/service3.jpg";
 import service4 from "../assets/service4.jpg";
 import service5 from "../assets/service5.jpg";
+import ScrollToTop from "../components/ScrollToTop";
 
 export default function AboutUs() {
     const rootRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +56,8 @@ export default function AboutUs() {
     return (
         <div ref={rootRef} className="about-page">
             <Header />
+
+            <ScrollToTop />
 
             <main className="about-container">
                 {/* Hero */}
