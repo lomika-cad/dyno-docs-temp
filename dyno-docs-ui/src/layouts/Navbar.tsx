@@ -79,7 +79,7 @@ const DEFAULT_ITEMS: NavbarItem[] = [
     },
     {
         label: "Chatbot Integration",
-        to: "/chatbot-integration",
+        to: "/chatbot",
         icon: (
             <Icon>
                 <SmartToyRoundedIcon fontSize="small" />

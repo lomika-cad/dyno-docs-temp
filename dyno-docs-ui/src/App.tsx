@@ -18,6 +18,7 @@ import CustomerProfile from "./pages/CustomerProfile"
 import SignUpPage from "./pages/SignUp"
 import PrivacyPolicy from "./pages/PrivacyPolicy"
 import Terms from "./pages/Terms"
+import ChatBot from "./pages/ChatBot"
 
 function App() {
   useEffect(() => {
@@ -39,6 +40,7 @@ function App() {
         <Route path="/partnerships" element={<Partnerships />} />
         <Route path="/templates" element={<Templates />} />
         <Route path="/templates/customize" element={<TemplateCustomize />} />
+        <Route path="/chatbot" element={<ChatBot />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/promo-codes" element={<PromoCodes />} />
         <Route path="/customer-profiles" element={<CustomerProfile />} />
