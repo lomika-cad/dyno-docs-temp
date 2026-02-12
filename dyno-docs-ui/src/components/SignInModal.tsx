@@ -84,8 +84,6 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
 
           <div className="authForm-row authForm-row--between">
             <label className="authCheckbox">
-              <input type="checkbox" />
-              <span>Remember me</span>
             </label>
             <button type="button" className="authLinkButton">Forgot password</button>
           </div>
