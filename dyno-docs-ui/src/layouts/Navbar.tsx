@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
@@ -23,7 +23,6 @@ export type NavbarItem = {
 export type NavbarProps = {
     children: ReactNode;
     items?: NavbarItem[];
-    userName?: string;
 };
 
 function Icon({ children }: { children: ReactNode }) {
@@ -123,11 +122,25 @@ const DEFAULT_ITEMS: NavbarItem[] = [
     },
 ];
 
-export default function Navbar({children, items, userName = "Unknown User"}: NavbarProps) {
+export default function Navbar({children, items}: NavbarProps) {
     
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const navItems = items ?? DEFAULT_ITEMS;
+
+    const token = sessionStorage.getItem("dd_token") || "";
+    const userName = sessionStorage.getItem("dd_full_name") || "User";
+
+    useEffect(() => {
+        if (!token) {
+            handleLogout();
+        }
+    }, [token]);
+
+    const handleLogout = () => {
+        sessionStorage.clear();
+        window.location.href = "/";
+    }
 
     return (
         <div className="app-shell">
@@ -158,7 +171,7 @@ export default function Navbar({children, items, userName = "Unknown User"}: Nav
                 <button
                     type="button"
                     className="sidebar-logout"
-                    onClick={() => setMobileOpen(false)}
+                    onClick={handleLogout}
                 >
                     Logout
                 </button>

@@ -409,7 +409,7 @@ export default function AgencyData() {
     };
 
     return (
-        <Navbar userName="User">
+        <Navbar>
             <div className="agency">
                 <div className="agency-header">
                     <h2 className="agency-title">Agency Data</h2>

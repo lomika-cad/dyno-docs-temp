@@ -802,7 +802,7 @@ export default function Templates() {
   const showEmptyState = !isLoading && filteredTemplates.length === 0;
 
   return (
-    <Navbar userName="User">
+    <Navbar>
       <section className="templates-page">
         <div className="templates-hero">
           <div>

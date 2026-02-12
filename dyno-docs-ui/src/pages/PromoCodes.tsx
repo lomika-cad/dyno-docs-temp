@@ -211,7 +211,7 @@ export default function PromoCodes() {
     };
 
     return (
-        <Navbar userName="User">
+        <Navbar>
             <div className="promo">
                 {/* Page Header */}
                 <header>

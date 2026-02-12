@@ -356,7 +356,7 @@ export default function Partnerships() {
     };
 
     return (
-        <Navbar userName="User">
+        <Navbar>
 
             {(isLoading || isDeleting || isSubmitting) && (
                 <div className="globalLoader" role="status" aria-live="polite">

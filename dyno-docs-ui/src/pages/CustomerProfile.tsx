@@ -253,7 +253,7 @@ export default function CustomerProfile() {
     }, [safePage, totalPages]);
 
     return (
-        <Navbar userName="User">
+        <Navbar>
             {(isLoading || isSaving || isDeleting) && (
                 <div className="globalLoader" role="status" aria-live="polite">
                     <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
