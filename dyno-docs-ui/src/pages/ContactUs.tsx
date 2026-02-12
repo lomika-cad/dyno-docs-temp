@@ -4,6 +4,7 @@ import Header from "../layouts/Header";
 import "../styles/contactUs.css";
 
 import { ChevronDown, ChevronUp, Clock, Mail, MapPin, Phone } from "lucide-react";
+import { showInfo, showSuccess } from "../components/Toast";
 
 export default function ContactUs() {
     const [openFaq, setOpenFaq] = useState<number>(0);
@@ -60,9 +61,14 @@ export default function ContactUs() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setForm({ fullName: "", email: "", agencyName: "", inquiryType: "", message: "" });
 
-        alert("Form submitted! (This is a placeholder action.)");
+        if (!form.fullName || !form.email || !form.message) {
+            showInfo("Please fill in all required fields.");
+            return;
+        }
+
+        setForm({ fullName: "", email: "", agencyName: "", inquiryType: "", message: "" });
+        showSuccess("Thank you for reaching out!");
     };
 
     return (
