@@ -55,8 +55,8 @@ export default function Footer() {
         <div className="footer-col">
           <h3>Support</h3>
           <ul>
-            <li>Privacy Policy</li>
-            <li>Terms & Conditions</li>
+            <li onClick={() => navigate("/privacy-policy")}>Privacy Policy</li>
+            <li onClick={() => navigate("/terms-and-conditions")}>Terms & Conditions</li>
           </ul>
         </div>
 

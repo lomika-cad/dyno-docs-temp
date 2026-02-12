@@ -16,6 +16,7 @@ import PromoCodes from "./pages/PromoCodes"
 import TemplateCustomize from "./pages/TemplateCustomize"
 import CustomerProfile from "./pages/CustomerProfile"
 import SignUpPage from "./pages/SignUp"
+import PrivacyPolicy from "./pages/PrivacyPolicy"
 
 function App() {
   useEffect(() => {
@@ -30,6 +31,7 @@ function App() {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/documentation" element={<Documentation />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/agency-data" element={<AgencyData />} />
         <Route path="/partnerships" element={<Partnerships />} />
