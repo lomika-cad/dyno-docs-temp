@@ -1,14 +1,16 @@
 import Navbar from "../layouts/Navbar";
+import "../styles/agencyData.css";
 
 export default function ChatBot() {
-  return (
-    <>
-    <Navbar>
-        <div className="chatbot-page">
-            <h1>ChatBot Integration</h1>
-            <p>This is the ChatBot Integration page. Here you can connect your chatbot to DynoDocs and manage your chatbot settings.</p>
-        </div>
-    </Navbar>
-    </>
-  );
+    return (
+        <>
+            <Navbar>
+                <div className="agency">
+                    <div className="agency-header">
+                        <h2 className="agency-title">Chatbot Integration</h2>
+                    </div>
+                </div>
+            </Navbar>
+        </>
+    );
 }
