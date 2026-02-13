@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Footer from "../layouts/Footer";
 import Header from "../layouts/Header";
 import "../styles/documentation.css";
-import ScrollToTop from "../components/ScrollToTop";
 
 type NavItem = { id: string; label: string };
 type NavGroup = { title: string; items: NavItem[] };
