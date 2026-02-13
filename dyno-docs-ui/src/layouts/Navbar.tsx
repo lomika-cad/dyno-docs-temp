@@ -291,7 +291,7 @@ export default function Navbar({ children, items }: NavbarProps) {
                             <span>{subscriptionIsActive ? "Active" : "Inactive"}</span>
                         </div>
 
-                        {formattedExpiry && (
+                        {formattedExpiry && subscriptionPlan.toLowerCase() !== "free" && (
                             <div className="subscription-pill subscription-pill--muted">
                                 <EventAvailableRoundedIcon fontSize="small" />
                                 <span>Renews {formattedExpiry}</span>
