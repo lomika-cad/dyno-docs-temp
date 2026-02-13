@@ -4,6 +4,7 @@ import { login } from "../services/auth-api";
 import { useState } from "react";
 import { showError } from "./Toast";
 import { CircularProgress } from "@mui/material";
+import { getMe } from "../services/me-api";
 
 interface SignInModalProps {
   open: boolean;
@@ -38,12 +39,28 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
       sessionStorage.setItem("dd_user_id", res.userId);
       sessionStorage.setItem("dd_tenant_id", res.tenantId);
       sessionStorage.setItem("dd_full_name", res.fullName);
+      handleMe(res.token, res.tenantId);
       onClose();
       navigate("/dashboard");
     } catch (error) {
       showError("Login failed. Please check your credentials and try again.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  const handleMe = async (token: string, tenantId: string) => {
+    try {
+      const res = await getMe(token, tenantId);
+      console.log(res);
+      sessionStorage.setItem("dd_subscription_plan", res.planName);
+      sessionStorage.setItem("dd_subscription_expiry", res.endDate);
+      sessionStorage.setItem("dd_report_limit", res.reportsLimit);
+      sessionStorage.setItem("dd_template_limit", res.templatesLimit);
+      sessionStorage.setItem("dd_discount_percentage", res.discountPercentage);
+      sessionStorage.setItem("dd_subscription_isActive", res.isActive);
+    } catch (error) {
+      console.error(error);      
     }
   }
 
