@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace UI.Controllers.Operations;
 
 [ApiController]
-[Route("api/operations/me")]
+[Route("api/me")]
 [Authorize]
 public class MeController (IMediator mediator) : ControllerBase
 {
