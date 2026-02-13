@@ -137,6 +137,8 @@ input[type="text"], input[type="email"], input[type="password"], textarea, .fiel
 .billing-toggle { display: inline-flex; gap: 6px; padding: 4px; border-radius: 999px; background: #fff6f0; border: 1px solid rgba(255,123,46,0.25); margin-bottom: 16px; }
 .toggle-option { border: none; background: transparent; color: #7a4a30; font-weight: 600; padding: 8px 20px; border-radius: 999px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease; }
 .toggle-option.is-active { background: var(--color-primary, #ff7b2e); color: #fff; box-shadow: 0 4px 10px rgba(255,123,46,0.25); }
+.plan-pricing-status { font-size: 13px; color: #6b3f27; margin: 6px 0 2px; }
+.plan-pricing-status--error { color: #c62828; }
 .plans { display: flex; gap: 12px; }
 .plan-card { flex: 1; border: 1px solid rgba(255,123,46,0.12); padding: 18px; border-radius: 12px; cursor: pointer; background: #fff6f0; position: relative; min-height: 120px; }
 .plan-card-icon { position: absolute; top: 12px; left: 12px; width: 44px; height: 44px; background: #fff; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 6px rgba(0,0,0,0.06); color: var(--color-primary); }

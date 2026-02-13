@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { SignUpForm } from "./SignUpStepper";
 import { CircularProgress } from "@mui/material";
 import CardPayment from "../CardPayment";
+import { getPricingPlans } from "../../services/pricing-plan-api";
 
 type Props = {
   initial?: SignUpForm;
@@ -17,13 +18,27 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
   const [planType, setPlanType] = useState(initial?.planType ?? "0");
   const [terms, setTerms] = useState(initial?.termsAccepted ?? false);
   const cadenceLabel = planType === "0" ? "/month" : "/year";
-  const proPrice = planType === "0" ? "14.99" : "125.910";
-  const enterprisePrice = planType === "0" ? "99.99" : "840.240";
   const [showPayment, setShowPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [pendingSubmit, setPendingSubmit] = useState<Partial<SignUpForm> | null>(null);
+    const formatPrice = (plan: string) => getPlanAmount(plan, planType).toFixed(2);
+    const proPrice = formatPrice("2");
+    const enterprisePrice = formatPrice("3");
+  const [planPricing, setPlanPricing] = useState<Record<string, { monthly: number; yearly: number }>>({});
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+
+  const planKey = (selectedPlan: string) => {
+    if (selectedPlan === "1") return "free";
+    if (selectedPlan === "2") return "professional";
+    if (selectedPlan === "3") return "enterprise";
+    return selectedPlan.toLowerCase();
+  };
 
   const getPlanAmount = (selectedPlan: string, selectedType: string) => {
+    const key = planKey(selectedPlan);
+    const pricing = planPricing[key];
+    if (pricing) return selectedType === "0" ? pricing.monthly : pricing.yearly;
     if (selectedPlan === "2") return selectedType === "0" ? 14.99 : 125.91;
     if (selectedPlan === "3") return selectedType === "0" ? 99.99 : 840.24;
     return 0;
@@ -56,6 +71,42 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
     if (planId !== "2" && planId !== "3") return;
     setPaymentAmount(getPlanAmount(planId, planType));
   }, [planId, planType, showPayment]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchPricing = async () => {
+      setPricingLoading(true);
+      setPricingError(null);
+      try {
+        const response = await getPricingPlans();
+        const apiPlans = response?.data ?? [];
+        const mapping: Record<string, { monthly: number; yearly: number }> = {};
+        apiPlans.forEach((plan: any) => {
+          const title = (plan?.planName ?? plan?.title ?? "").toString().toLowerCase().trim();
+          if (!title) return;
+          const monthly = Number(plan?.monthlyPrice ?? plan?.monthly ?? 0);
+          const yearly = Number(plan?.yearlyPrice ?? plan?.yearly ?? 0);
+          const assign = (key: string) => {
+            if (!key) return;
+            mapping[key] = { monthly, yearly };
+          };
+          assign(title);
+          const alias = title.replace(/ plan$/i, "").trim();
+          if (alias && !mapping[alias]) assign(alias);
+        });
+        if (isMounted) setPlanPricing(mapping);
+      } catch (error: any) {
+        if (isMounted) setPricingError(error?.response?.data?.message ?? "Failed to load pricing.");
+      } finally {
+        if (isMounted) setPricingLoading(false);
+      }
+    };
+
+    fetchPricing();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handlePaymentClose = () => setShowPayment(false);
 
@@ -99,6 +150,10 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
           Yearly
         </button>
       </div>
+      {pricingLoading && <p className="plan-pricing-status">Fetching fresh pricing...</p>}
+      {pricingError && !pricingLoading && (
+        <p className="plan-pricing-status plan-pricing-status--error" role="alert">{pricingError}</p>
+      )}
       <div className="plans">
         <label className={`plan-card ${planId === "1" ? "plan--active" : ""}`} onClick={() => handlePlanSelection("1")}>
           <div className="plan-card-icon" aria-hidden="true">◔</div>
