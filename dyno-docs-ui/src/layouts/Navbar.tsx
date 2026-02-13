@@ -11,6 +11,8 @@ import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
+import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
+import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
 import "../styles/navbar.css";
 import "../styles/agencyData.css";
 import logo from "../assets/dyno-docs.png";
@@ -133,6 +135,22 @@ export default function Navbar({ children, items }: NavbarProps) {
 
     const token = sessionStorage.getItem("dd_token") || "";
     const userName = sessionStorage.getItem("dd_full_name") || "User";
+    const subscriptionPlan = sessionStorage.getItem("dd_subscription_plan") || "Free";
+    const subscriptionExpiry = sessionStorage.getItem("dd_subscription_expiry");
+    const subscriptionIsActive = sessionStorage.getItem("dd_subscription_isActive") === "true";
+    const reportLimit = sessionStorage.getItem("dd_report_limit");
+    const templateLimit = sessionStorage.getItem("dd_template_limit");
+
+    const formattedExpiry = (() => {
+        if (!subscriptionExpiry) return "";
+        const date = new Date(subscriptionExpiry);
+        if (Number.isNaN(date.getTime())) return "";
+        return date.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+        });
+    })();
 
     useEffect(() => {
         if (!token) {
@@ -259,8 +277,39 @@ export default function Navbar({ children, items }: NavbarProps) {
 
                     <div className="topbar-spacer" />
 
+                    <div className="topbar-subscription" aria-label="Subscription summary">
+                        <div className="subscription-pill subscription-pill--plan">
+                            <WorkspacePremiumRoundedIcon fontSize="small" />
+                            <span>{subscriptionPlan} plan</span>
+                        </div>
+
+                        <div className="subscription-pill subscription-pill--status">
+                            <span
+                                className={`subscription-status-dot ${subscriptionIsActive ? "subscription-status-dot--active" : "subscription-status-dot--inactive"}`}
+                                aria-hidden="true"
+                            />
+                            <span>{subscriptionIsActive ? "Active" : "Inactive"}</span>
+                        </div>
+
+                        {formattedExpiry && (
+                            <div className="subscription-pill subscription-pill--muted">
+                                <EventAvailableRoundedIcon fontSize="small" />
+                                <span>Renews {formattedExpiry}</span>
+                            </div>
+                        )}
+
+                        {(reportLimit || templateLimit) && (
+                            <div className="subscription-pill subscription-pill--muted">
+                                <span>
+                                    {reportLimit && `${reportLimit} reports`}
+                                    {reportLimit && templateLimit && " / "}
+                                    {templateLimit && `${templateLimit} templates`}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
                     <div className="topbar-user" aria-label="User">
-                        <span className="topbar-greeting">Hi, {userName}</span>
                         <span className="topbar-avatar" aria-hidden="true">
                             {userName.charAt(0).toUpperCase()}
                         </span>
