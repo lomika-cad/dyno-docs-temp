@@ -141,8 +141,15 @@ input[type="text"], input[type="email"], input[type="password"], textarea, .fiel
 .plan-card { flex: 1; border: 1px solid rgba(255,123,46,0.12); padding: 18px; border-radius: 12px; cursor: pointer; background: #fff6f0; position: relative; min-height: 120px; }
 .plan-card-icon { position: absolute; top: 12px; left: 12px; width: 44px; height: 44px; background: #fff; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 6px rgba(0,0,0,0.06); color: var(--color-primary); }
 .plan-card-title { font-weight: 700; margin-top: 18px; font-size: 16px; }
+.plan-card-price { display: flex; align-items: baseline; gap: 6px; margin-top: 10px; font-weight: 700; color: #1d1d1f; }
+.plan-card-amount { font-size: 24px; }
+.plan-card-cycle { font-size: 14px; color: #6b6b6b; font-weight: 500; }
 .plan-card-desc { color: #666; margin-top: 8px; font-size: 14px; }
 .plan--active { border-color: var(--color-primary, #ff7b2e); background: #fffaf6; box-shadow: 0 4px 12px rgba(255,123,46,0.06); }
+.payment-overlay { position: fixed; inset: 0; background: rgba(6, 8, 20, 0.65); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 1000; }
+.payment-overlay-panel { position: relative; width: min(640px, 100%); max-height: 90vh; overflow-y: auto; background: #fff; border-radius: 20px; padding: 32px; box-shadow: 0 18px 45px rgba(15, 11, 5, 0.35); animation: payment-pop 180ms ease-out; }
+.payment-overlay-close { position: absolute; right: 16px; top: 12px; border: 1px solid #d9d9d9; background: #f7f7f7; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 14px; border-radius: 999px; cursor: pointer; color: #333; }
+@keyframes payment-pop { from { transform: translateY(12px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
 .more-details { margin-top: 12px; text-align: right; }
 .more-details .link { background: none; border: none; color: var(--color-primary); cursor: pointer; text-decoration: underline; font-weight: 600; }

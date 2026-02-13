@@ -87,6 +87,7 @@ export default function SignUpStepper() {
       console.log(payload.planId === "1" ? "Free" : payload.planId === "2" ? "Professional" : "Enterprise");
       
 
+
       await registerAgency(formdata);
 
       // // API returns a Guid on success; show message and redirect to sign in
