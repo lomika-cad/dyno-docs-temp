@@ -34,7 +34,7 @@ export type SignUpForm = {
 };
 
 export default function SignUpStepper() {
-  const [step, setStep] = useState(3);
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<SignUpForm>({});
 
@@ -83,9 +83,13 @@ export default function SignUpStepper() {
       formdata.append("PlanName", payload.planId === "1" ? "Free" : payload.planId === "2" ? "Professional" : "Enterprise");
       formdata.append("PlanType", payload.planType ?? "");
 
+      console.log(payload);
+      console.log(payload.planId === "1" ? "Free" : payload.planId === "2" ? "Professional" : "Enterprise");
+      
+
       await registerAgency(formdata);
 
-      // API returns a Guid on success; show message and redirect to sign in
+      // // API returns a Guid on success; show message and redirect to sign in
       showSuccess("Registration successful. Please sign in.");
       window.location.href = "/";
     } catch (error: any) {

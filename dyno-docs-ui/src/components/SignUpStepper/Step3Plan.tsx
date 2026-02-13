@@ -13,11 +13,12 @@ type Props = {
 export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props) {
   const navigate = useNavigate();
   const [planId, setPlanId] = useState(initial?.planId ?? "1");
+  const [planType, setPlanType] = useState(initial?.planType ?? "0");
   const [terms, setTerms] = useState(initial?.termsAccepted ?? false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ planId, termsAccepted: terms });
+    onSubmit({ planId, planType, termsAccepted: terms });
   };
 
   return (
@@ -27,6 +28,24 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
           <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
         </div>
       )}
+      <div className="billing-toggle" role="group" aria-label="Billing frequency">
+        <button
+          type="button"
+          className={`toggle-option ${planType === "0" ? "is-active" : ""}`}
+          onClick={() => setPlanType("0")}
+          aria-pressed={planType === "0"}
+        >
+          Monthly
+        </button>
+        <button
+          type="button"
+          className={`toggle-option ${planType === "1" ? "is-active" : ""}`}
+          onClick={() => setPlanType("1")}
+          aria-pressed={planType === "1"}
+        >
+          Yearly
+        </button>
+      </div>
       <div className="plans">
         <label className={`plan-card ${planId === "1" ? "plan--active" : ""}`}>
           <div className="plan-card-icon" aria-hidden="true">◔</div>
