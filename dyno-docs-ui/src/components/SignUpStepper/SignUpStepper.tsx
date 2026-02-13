@@ -26,13 +26,15 @@ export type SignUpForm = {
   agencyLogoUrl?: string;
 
   // Plan Selection
-  planId?: string;
+  planId?: any;
+  planName?: string;
+  planType?: any;
   promoCode?: string;
   termsAccepted?: boolean;
 };
 
 export default function SignUpStepper() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(3);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<SignUpForm>({});
 
@@ -78,7 +80,8 @@ export default function SignUpStepper() {
       formdata.append("ConfirmPassword", (payload as any).confirmPassword ?? "");
 
       if (payload.planId) formdata.append("PlanId", payload.planId);
-      if (payload.promoCode) formdata.append("PromoCode", payload.promoCode);
+      formdata.append("PlanName", payload.planId === "1" ? "Free" : payload.planId === "2" ? "Professional" : "Enterprise");
+      formdata.append("PlanType", payload.planType ?? "");
 
       await registerAgency(formdata);
 

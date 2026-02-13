@@ -12,7 +12,7 @@ type Props = {
 
 export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props) {
   const navigate = useNavigate();
-  const [planId, setPlanId] = useState(initial?.planId ?? "free");
+  const [planId, setPlanId] = useState(initial?.planId ?? "1");
   const [terms, setTerms] = useState(initial?.termsAccepted ?? false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -28,23 +28,23 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
         </div>
       )}
       <div className="plans">
-        <label className={`plan-card ${planId === "free" ? "plan--active" : ""}`}>
+        <label className={`plan-card ${planId === "1" ? "plan--active" : ""}`}>
           <div className="plan-card-icon" aria-hidden="true">◔</div>
-          <input type="radio" name="plan" value="free" checked={planId === "free"} onChange={() => setPlanId("free")} />
+          <input type="radio" name="plan" value="1" checked={planId === "1"} onChange={() => setPlanId("1")} />
           <div className="plan-card-title">Free Plan</div>
           <div className="plan-card-desc">Great for trying out DynoDocs component and templates.</div>
         </label>
 
-        <label className={`plan-card ${planId === "pro" ? "plan--active" : ""}`}>
+        <label className={`plan-card ${planId === "2" ? "plan--active" : ""}`}>
           <div className="plan-card-icon" aria-hidden="true">◔</div>
-          <input type="radio" name="plan" value="pro" checked={planId === "pro"} onChange={() => setPlanId("pro")} />
+          <input type="radio" name="plan" value="2" checked={planId === "2"} onChange={() => setPlanId("2")} />
           <div className="plan-card-title">Professional Plan</div>
           <div className="plan-card-desc">Best for professional freelancers and small teams.</div>
         </label>
 
-        <label className={`plan-card ${planId === "enterprise" ? "plan--active" : ""}`}>
+        <label className={`plan-card ${planId === "3" ? "plan--active" : ""}`}>
           <div className="plan-card-icon" aria-hidden="true">◔</div>
-          <input type="radio" name="plan" value="enterprise" checked={planId === "enterprise"} onChange={() => setPlanId("enterprise")} />
+          <input type="radio" name="plan" value="3" checked={planId === "3"} onChange={() => setPlanId("3")} />
           <div className="plan-card-title">Enterprise Plan</div>
           <div className="plan-card-desc">Best for growing large company or enterprise design team.</div>
         </label>

@@ -19,6 +19,7 @@ public interface IApplicationDbContext
     DbSet<User> Users { get; }
     DbSet<Tenant> Tenants { get; }
     DbSet<Subscription> Subscriptions { get; }
+    DbSet<UserSubscription> UserSubscription { get; }
     DbSet<Customer> Customer { get; }
 
     #endregion

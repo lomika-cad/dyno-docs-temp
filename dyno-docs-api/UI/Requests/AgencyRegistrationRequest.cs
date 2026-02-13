@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
+using Domain.Common;
 
 namespace UI.Requests;
 
@@ -61,4 +62,11 @@ public class AgencyRegistrationRequest
     [Required]
     [Compare("Password")]
     public required string ConfirmPassword { get; set; }
+    
+    [Required]
+    public required int PlanId { get; set; }
+    [Required]
+    public required string PlanName { get; set; }
+    [Required]
+    public required PlanType PlanType { get; set; }
 }

@@ -33,7 +33,10 @@ public class IdentityController(IMediator mediator) : ControllerBase
             MobileNo = request.MobileNo,
             Email = request.Email,
             Password = request.Password,
-            ConfirmPassword = request.ConfirmPassword
+            ConfirmPassword = request.ConfirmPassword,
+            PlanId = request.PlanId,
+            PlanName = request.PlanName,
+            PlanType = request.PlanType
         };
 
         var result = await mediator.Send(command, cancellationToken);

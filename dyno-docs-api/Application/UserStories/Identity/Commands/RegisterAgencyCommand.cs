@@ -1,6 +1,9 @@
 using Application.Common;
 using Application.Common.Interfaces;
+using Application.UserStories.Operations.UserSubscriptions.Commands;
+using Domain.Common;
 using Domain.Entities.Identity;
+using Domain.Entities.Operations;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -24,15 +27,20 @@ public record RegisterAgencyCommand : IRequest<Result>
     public required string Email { get; init; }
     public required string Password { get; init; }
     public required string ConfirmPassword { get; init; }
+    public required int PlanId { get; init; }
+    public required string PlanName { get; init; }
+    public required PlanType PlanType { get; init; }
 }
 
 public class RegisterAgencyCommandHandler : IRequestHandler<RegisterAgencyCommand, Result>
 {
     private readonly IApplicationDbContext _context;
+    public  readonly IMediator _mediator;
 
-    public RegisterAgencyCommandHandler(IApplicationDbContext context)
+    public RegisterAgencyCommandHandler(IApplicationDbContext context, IMediator mediator)
     {
         _context = context;
+        _mediator = mediator;
     }
 
     public async Task<Result> Handle(RegisterAgencyCommand request, CancellationToken cancellationToken)
@@ -106,6 +114,16 @@ public class RegisterAgencyCommandHandler : IRequestHandler<RegisterAgencyComman
         // Add user and subscription
         await _context.Users.AddAsync(user, cancellationToken);
         await _context.Subscriptions.AddAsync(subscription, cancellationToken);
+        
+        var userSubscription = new CreateUserSubscriptionCommand()
+        {
+            TenantId = tenant.Id,
+            PlanId = request.PlanId,
+            PlanName = request.PlanName,
+            PlanType = request.PlanType
+        };
+        
+        await _mediator.Send(userSubscription, cancellationToken);
 
         // Save changes
         await _context.SaveChangesAsync(cancellationToken);
