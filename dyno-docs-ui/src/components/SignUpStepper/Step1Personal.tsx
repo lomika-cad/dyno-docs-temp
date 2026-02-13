@@ -15,9 +15,21 @@ export default function Step1Personal({ initial, onNext }: Props) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const isValidSriLankanNic = (value: string) => {
+    const normalized = value.trim().toUpperCase();
+    const oldPattern = /^(\d{9})([VvXx])$/;
+    const newPattern = /^\d{12}$/;
+    return oldPattern.test(normalized) || newPattern.test(normalized);
+  };
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!fullName.trim()) e.fullName = "Full name is required";
+    if (!nicNo.trim()) {
+      e.nicNo = "NIC number is required";
+    } else if (!isValidSriLankanNic(nicNo)) {
+      e.nicNo = "Enter a valid Sri Lankan NIC";
+    }
     if (!mobileNo.trim()) e.mobileNo = "Mobile number is required";
     if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = "Valid email is required";
     if (!password || password.length < 8) e.password = "Password must be at least 8 characters";
@@ -56,9 +68,12 @@ export default function Step1Personal({ initial, onNext }: Props) {
             id="nicNo"
             className="field-input"
             value={nicNo}
+            aria-required
+            aria-invalid={!!errors.nicNo}
             onChange={(e) => setNicNo(e.target.value)}
             placeholder="Enter your nic no"
           />
+          {errors.nicNo && <div className="field-error">{errors.nicNo}</div>}
         </label>
       </div>
 

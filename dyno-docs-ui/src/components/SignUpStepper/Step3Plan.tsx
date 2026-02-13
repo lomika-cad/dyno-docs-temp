@@ -21,9 +21,6 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
   const [showPayment, setShowPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [pendingSubmit, setPendingSubmit] = useState<Partial<SignUpForm> | null>(null);
-    const formatPrice = (plan: string) => getPlanAmount(plan, planType).toFixed(2);
-    const proPrice = formatPrice("2");
-    const enterprisePrice = formatPrice("3");
   const [planPricing, setPlanPricing] = useState<Record<string, { monthly: number; yearly: number }>>({});
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
@@ -43,6 +40,10 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
     if (selectedPlan === "3") return selectedType === "0" ? 99.99 : 840.24;
     return 0;
   };
+
+  const formatPrice = (plan: string) => getPlanAmount(plan, planType).toFixed(2);
+  const proPrice = formatPrice("2");
+  const enterprisePrice = formatPrice("3");
 
   const isPaidPlan = (selectedPlan: string) => selectedPlan === "2" || selectedPlan === "3";
 

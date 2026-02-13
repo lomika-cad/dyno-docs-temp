@@ -65,8 +65,25 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!agencyName.trim()) e.agencyName = "Agency name is required";
-    if (!contactNo.trim()) e.contactNo = "Contact number is required";
+    const require = (value: string, key: string, label: string) => {
+      if (!value.trim()) e[key] = `${label} is required`;
+    };
+
+    require(agencyName, "agencyName", "Agency name");
+    require(businessRegNo, "businessRegNo", "Business registration number");
+    if (!contactNo.trim()) {
+      e.contactNo = "Contact number is required";
+    } else {
+      const sanitized = contactNo.replace(/\s|-/g, "");
+      const phoneOk = /^\+?\d{9,15}$/.test(sanitized);
+      if (!phoneOk) e.contactNo = "Enter a valid contact number";
+    }
+    require(country, "country", "Country");
+    require(state, "state", "State");
+    require(city, "city", "City");
+    require(agencyAddress, "agencyAddress", "Agency address");
+    if (!logoFile) e.logo = "Agency logo is required";
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -89,6 +106,7 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
         <label className="field">
           <div className="field-label">Business Reg No</div>
           <input id="businessRegNo" className="field-input" value={businessRegNo} onChange={(e) => setBusinessRegNo(e.target.value)} placeholder="Enter your business reg no" />
+          {errors.businessRegNo && <div className="field-error">{errors.businessRegNo}</div>}
         </label>
 
         <label className="field">
@@ -102,16 +120,19 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
         <label className="field">
           <div className="field-label">Country</div>
           <input id="country" className="field-input" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Enter your country" />
+          {errors.country && <div className="field-error">{errors.country}</div>}
         </label>
 
         <label className="field">
           <div className="field-label">State</div>
           <input id="state" className="field-input" value={state} onChange={(e) => setState(e.target.value)} placeholder="Enter your state" />
+          {errors.state && <div className="field-error">{errors.state}</div>}
         </label>
 
         <label className="field">
           <div className="field-label">City</div>
           <input id="city" className="field-input" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Enter your city" />
+          {errors.city && <div className="field-error">{errors.city}</div>}
         </label>
       </div>
 
@@ -119,6 +140,7 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
         <label className="full field">
           <div className="field-label">Agency Address</div>
           <textarea id="agencyAddress" className="field-input" value={agencyAddress} onChange={(e) => setAgencyAddress(e.target.value)} placeholder="Enter your agency address" />
+          {errors.agencyAddress && <div className="field-error">{errors.agencyAddress}</div>}
         </label>
       </div>
 
