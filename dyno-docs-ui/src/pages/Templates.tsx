@@ -17,6 +17,7 @@ import { EyeIcon } from "lucide-react";
 import { MonetizationOn } from "@mui/icons-material";
 import { Divider } from "@mui/material";
 import { getTenantInfo } from "../services/auth-api";
+import { getMe } from "../services/me-api";
 
 type TemplateFilter = "all" | "free" | "paid";
 
@@ -365,8 +366,8 @@ const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[]
       isPaid && normalizedPrice !== null
         ? LKR_FORMATTER.format(normalizedPrice)
         : isPaid
-        ? "Premium"
-        : "Free";
+          ? "Premium"
+          : "Free";
 
     return {
       id: assignmentId,
@@ -624,7 +625,10 @@ export default function Templates() {
       showSuccess(successMessage);
       appendTemplateToLibrary(normalizedAssignment);
       setPendingAssignment(null);
-      window.location.reload();
+      handleMe();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err) {
       const apiMessage = resolveApiErrorMessage(err);
       showError(apiMessage ?? "Unable to assign template. Please try again.");
@@ -633,6 +637,16 @@ export default function Templates() {
       setAssigningTemplateId(null);
     }
   };
+
+  const handleMe = async () => {
+    try {
+      const res = await getMe(sessionStorage.getItem("dd_token") ?? "", sessionStorage.getItem("dd_tenant_id") ?? "");
+      console.log(res);
+      sessionStorage.setItem("dd_template_limit", res.templatesLimit);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const handleMyTemplatesClick = async () => {
     const session = resolveUserSession();
@@ -680,7 +694,7 @@ export default function Templates() {
     setPreviewPlaceholders(DEFAULT_PLACEHOLDERS);
   };
 
-  const handleCustomizeTemplate = (template: TemplateCardModel) => {  
+  const handleCustomizeTemplate = (template: TemplateCardModel) => {
     navigate("/templates/customize", { state: { template } });
   };
 
@@ -690,7 +704,7 @@ export default function Templates() {
 
   const handleUnassignTemplateRequest = (template: any) => {
     console.log(template);
-    
+
     setTemplateToUnassign(template);
   };
 
@@ -731,7 +745,10 @@ export default function Templates() {
         setPreviewTemplate(null);
       }
       setTemplateToUnassign(null);
-      window.location.reload();
+      handleMe();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err) {
       const apiMessage = resolveApiErrorMessage(err);
       showError(apiMessage ?? "Unable to unassign template. Please try again.");
@@ -1100,9 +1117,8 @@ function TemplateCard({
         <div className="template-card-badges">
           {!(isAssignedCard && !isPaid) && (
             <span
-              className={`template-card-price-pill ${
-                isPaid ? "template-card-price-pill--paid" : "template-card-price-pill--free"
-              }`}
+              className={`template-card-price-pill ${isPaid ? "template-card-price-pill--paid" : "template-card-price-pill--free"
+                }`}
             >
               {isPaid ? "Paid" : "Free"}
             </span>
