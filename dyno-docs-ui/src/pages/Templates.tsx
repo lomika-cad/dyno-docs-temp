@@ -602,6 +602,7 @@ export default function Templates() {
         getAssignmentDesign(pendingAssignment),
         assignmentPlaceholders,
       ),
+      tenantId: sessionStorage.getItem("dd_tenant_id") ?? undefined,
     };
 
     try {
@@ -623,6 +624,7 @@ export default function Templates() {
       showSuccess(successMessage);
       appendTemplateToLibrary(normalizedAssignment);
       setPendingAssignment(null);
+      window.location.reload();
     } catch (err) {
       const apiMessage = resolveApiErrorMessage(err);
       showError(apiMessage ?? "Unable to assign template. Please try again.");
@@ -714,6 +716,7 @@ export default function Templates() {
     const payload = {
       userId: session.userId,
       templateId: templateToUnassign.templateId,
+      tenantId: sessionStorage.getItem("dd_tenant_id") ?? undefined,
     };
 
     try {
@@ -728,6 +731,7 @@ export default function Templates() {
         setPreviewTemplate(null);
       }
       setTemplateToUnassign(null);
+      window.location.reload();
     } catch (err) {
       const apiMessage = resolveApiErrorMessage(err);
       showError(apiMessage ?? "Unable to unassign template. Please try again.");
