@@ -53,6 +53,7 @@ public class CreateUserSubscriptionCommandHandler : IRequestHandler<CreateUserSu
             reportsLimit = 10;
             templatesLimit = 5;
             discountPercentage = 0;
+            type = 0;
         } 
         else if (paymentPlan.PlanName == "Professional")
         {
