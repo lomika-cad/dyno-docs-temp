@@ -12,7 +12,6 @@ import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
-import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import "../styles/navbar.css";
@@ -22,6 +21,9 @@ import logo from "../assets/dyno-docs.png";
 import logoutIcon from "../assets/switch.png";
 import { getMe } from "../services/me-api";
 import { getPricingPlans } from "../services/pricing-plan-api";
+import { updateSubscription } from "../services/user-subscription-api";
+import { showError, showSuccess } from "../components/Toast";
+import CardPayment from "../components/CardPayment";
 
 export type NavbarItem = {
     label: string;
@@ -134,13 +136,37 @@ const DEFAULT_ITEMS: NavbarItem[] = [
 type PricingModalProps = {
     open: boolean;
     onClose: () => void;
+    onUpdated?: () => void;
 };
 
-function PricingModal({ open, onClose }: PricingModalProps) {
+function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
     const [yearly, setYearly] = useState(false);
     const [plans, setPlans] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [checkoutPlan, setCheckoutPlan] = useState<{ id: string; amount: number } | null>(
+        null,
+    );
+
+    const token = sessionStorage.getItem("dd_token") || "";
+
+    const handleUpdatePlan = async (planId: string) => {
+        const body = {
+            tenantId: sessionStorage.getItem("dd_tenant_id") || "",
+            planId,
+            planType: yearly ? 1 : 0,
+            planName: plans.find((p) => p.id === planId)?.title || "",
+        }
+
+        try {
+            await updateSubscription(body, token);
+            showSuccess("Subscription updated successfully.");
+            onUpdated?.();
+            onClose();
+        } catch (error:any) {
+            showError(error.response?.data?.message || "Failed to update subscription. Please try again.");
+        }
+    }
 
     useEffect(() => {
         if (!open) return;
@@ -218,108 +244,127 @@ function PricingModal({ open, onClose }: PricingModalProps) {
                 </div>
 
                 <div className="ddModal-content">
-                    <section className="pricing-hero" style={{ paddingTop: 0 }}>
-                        <div className="billing-row">
-                            <span className={!yearly ? "active" : ""}>Monthly</span>
-                            <label className="toggle">
-                                <input
-                                    type="checkbox"
-                                    aria-label="Toggle yearly billing"
-                                    checked={yearly}
-                                    onChange={() => setYearly((s) => !s)}
-                                />
-                                <span className="slider" />
-                            </label>
-                            <span className={yearly ? "active" : ""}>
-                                Yearly <small className="badge">30% discount</small>
-                            </span>
-                        </div>
-                    </section>
+                    {!checkoutPlan && (
+                        <>
+                            <section className="pricing-hero" style={{ paddingTop: 0 }}>
+                                <div className="billing-row">
+                                    <span className={!yearly ? "active" : ""}>Monthly</span>
+                                    <label className="toggle">
+                                        <input
+                                            type="checkbox"
+                                            aria-label="Toggle yearly billing"
+                                            checked={yearly}
+                                            onChange={() => setYearly((s) => !s)}
+                                        />
+                                        <span className="slider" />
+                                    </label>
+                                    <span className={yearly ? "active" : ""}>
+                                        Yearly <small className="badge">30% discount</small>
+                                    </span>
+                                </div>
+                            </section>
 
-                    <section className="pricing-cards pricing-cards1">
-                        {loading && (
-                            <div className="globalLoader" role="status" aria-live="polite">
-                                <CircularProgress
-                                    size={56}
-                                    sx={{ color: "var(--accent-600, #ff6b00)" }}
-                                />
-                            </div>
-                        )}
+                            <section className="pricing-cards pricing-cards1">
+                                {loading && (
+                                    <div
+                                        className="globalLoader"
+                                        role="status"
+                                        aria-live="polite"
+                                    >
+                                        <CircularProgress
+                                            size={56}
+                                            sx={{ color: "var(--accent-600, #ff6b00)" }}
+                                        />
+                                    </div>
+                                )}
 
-                        {error && !loading && (
-                            <div style={{ color: "#dc2626" }}>Error: {error}</div>
-                        )}
+                                {error && !loading && (
+                                    <div style={{ color: "#dc2626" }}>Error: {error}</div>
+                                )}
 
-                        {!loading && !error &&
-                            plans.map((p) => {
-                                const lowerTitle = p.title.toLowerCase();
-                                const isHighlight = lowerTitle.includes("professional");
-                                const isFree = (p.monthly === 0 && p.yearly === 0) || lowerTitle.includes("free");
-                                return (
-                                    <>
-                                    {!isFree && (
-                                        <article
-                                            key={p.id}
-                                            className={"card " + (isHighlight ? "highlight" : "")}
-                                        >
-                                            <div className="card-head">
-                                                <span
-                                                    style={{ fontSize: "16px", fontWeight: 600 }}
-                                                >
-                                                    {p.title}
-                                                </span>
-                                            </div>
+                                {!loading && !error &&
+                                    plans.map((p) => {
+                                        const lowerTitle = p.title.toLowerCase();
+                                        const isHighlight = lowerTitle.includes("professional");
+                                        const isFree =
+                                            (p.monthly === 0 && p.yearly === 0) ||
+                                            lowerTitle.includes("free");
+                                        if (isFree) return null;
 
-                                            <div className="card-body">
-                                                <div className="price">
-                                                    <span className="currency">$</span>
-                                                    <span className="amount">
-                                                        {yearly
-                                                            ? p.yearly === 0
-                                                                ? "0.00"
-                                                                : p.yearly.toFixed(2)
-                                                            : p.monthly.toFixed(2)}
-                                                    </span>
-                                                    <span className="period">
-                                                        {yearly ? "/per year" : "/per month"}
+                                        const amount = yearly ? p.yearly : p.monthly;
+
+                                        return (
+                                            <article
+                                                key={p.id}
+                                                className={
+                                                    "card " + (isHighlight ? "highlight" : "")
+                                                }
+                                            >
+                                                <div className="card-head">
+                                                    <span
+                                                        style={{ fontSize: "16px", fontWeight: 600 }}
+                                                    >
+                                                        {p.title}
                                                     </span>
                                                 </div>
 
-                                                <p className="desc">{p.description}</p>
+                                                <div className="card-body">
+                                                    <div className="price">
+                                                        <span className="currency">$</span>
+                                                        <span className="amount">
+                                                            {yearly
+                                                                ? amount === 0
+                                                                    ? "0.00"
+                                                                    : amount.toFixed(2)
+                                                                : amount.toFixed(2)}
+                                                        </span>
+                                                        <span className="period">
+                                                            {yearly ? "/per year" : "/per month"}
+                                                        </span>
+                                                    </div>
 
-                                                <button
-                                                    className={
-                                                        isHighlight
-                                                            ? "btn btn-primary1"
-                                                            : "btn btn-ghost"
-                                                    }
-                                                    disabled={isFree}
-                                                    style={
-                                                        isFree
-                                                            ? { opacity: 0.6, cursor: "not-allowed" }
-                                                            : undefined
-                                                    }
-                                                >
-                                                    Get Started
-                                                </button>
+                                                    <p className="desc">{p.description}</p>
 
-                                                <hr />
+                                                    <button
+                                                        className={
+                                                            isHighlight
+                                                                ? "btn btn-primary1"
+                                                                : "btn btn-ghost"
+                                                        }
+                                                        onClick={() =>
+                                                            setCheckoutPlan({
+                                                                id: p.id,
+                                                                amount,
+                                                            })
+                                                        }
+                                                    >
+                                                        Get Started
+                                                    </button>
 
-                                                <ul className="features">
-                                                    {p.features.map((f: string) => (
-                                                        <li key={f}>
-                                                            <span className="check">✓</span>
-                                                            <span className="feat-text">{f}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </article>
-                                    )}                                        
-                                    </>
-                                );
-                            })}
-                    </section>
+                                                    <hr />
+
+                                                    <ul className="features">
+                                                        {p.features.map((f: string) => (
+                                                            <li key={f}>
+                                                                <span className="check">✓</span>
+                                                                <span className="feat-text">{f}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </article>
+                                        );
+                                    })}
+                            </section>
+                        </>
+                    )}
+
+                    {checkoutPlan && (
+                        <CardPayment
+                            totalAmount={checkoutPlan.amount}
+                            onPaid={() => handleUpdatePlan(checkoutPlan.id)}
+                        />
+                    )}
                 </div>
             </div>
         </div>
@@ -398,7 +443,11 @@ export default function Navbar({ children, items }: NavbarProps) {
 
     return (
         <div className="app-shell">
-            <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
+            <PricingModal
+                open={pricingOpen}
+                onClose={() => setPricingOpen(false)}
+                onUpdated={handleMe}
+            />
             {logoutConfirmOpen && (
                 <div
                     className="ddModal"

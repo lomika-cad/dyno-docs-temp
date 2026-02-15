@@ -35,10 +35,13 @@ export default function CardPayment({
 	const [cvv, setCvv] = useState("");
 
 	const amountLabel = useMemo(() => {
+		// If amount is in LKR but we want to *display* as USD
+		// without conversion, just change the currency code.
+		const displayCurrency = currency === "LKR" ? "USD" : currency;
 		try {
 			return new Intl.NumberFormat(locale, {
 				style: "currency",
-				currency,
+				currency: displayCurrency,
 				minimumFractionDigits: 0,
 				maximumFractionDigits: 2,
 			}).format(totalAmount);
