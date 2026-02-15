@@ -29,6 +29,16 @@ public class AssignTemplateCommandHandler : IRequestHandler<AssignTemplateComman
 
     public async Task<Result> Handle(AssignTemplateCommand request, CancellationToken cancellationToken)
     {
+        var templateLimit = await _context.UserSubscription
+            .Where(us => us.TenantId == request.TenantId)
+            .Select(us => us.TemplatesLimit)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (templateLimit == 0)
+        {
+            return Result.Failure("User has reached the maximum number of assigned templates.");
+        }
+        
         var existingAssignment = await _context.UserTemplate.Where(u => u.UserId == request.UserId && u.TemplateId == request.TemplateId)
             .FirstOrDefaultAsync(cancellationToken);
         
