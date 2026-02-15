@@ -17,6 +17,7 @@ import "../styles/navbar.css";
 import "../styles/agencyData.css";
 import logo from "../assets/dyno-docs.png";
 import logoutIcon from "../assets/switch.png";
+import { getMe } from "../services/me-api";
 
 export type NavbarItem = {
     label: string;
@@ -152,6 +153,21 @@ export default function Navbar({ children, items }: NavbarProps) {
         });
     })();
 
+    const handleMe = async () => {
+        try {
+            const res = await getMe(token, sessionStorage.getItem("dd_tenant_id") || "");
+            console.log(res);
+            sessionStorage.setItem("dd_subscription_plan", res.planName);
+            sessionStorage.setItem("dd_subscription_expiry", res.endDate);
+            sessionStorage.setItem("dd_report_limit", res.reportsLimit);
+            sessionStorage.setItem("dd_template_limit", res.templatesLimit);
+            sessionStorage.setItem("dd_discount_percentage", res.discountPercentage);
+            sessionStorage.setItem("dd_subscription_isActive", res.isActive);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     useEffect(() => {
         if (!token) {
             handleLogout();
@@ -237,7 +253,10 @@ export default function Navbar({ children, items }: NavbarProps) {
                             className={({ isActive }) =>
                                 `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
                             }
-                            onClick={() => setMobileOpen(false)}
+                            onClick={async () => {
+                                await handleMe();
+                                setMobileOpen(false);
+                            }}
                         >
                             {item.icon}
                             <span className="sidebar-label">{item.label}</span>
