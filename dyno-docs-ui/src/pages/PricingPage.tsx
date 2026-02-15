@@ -74,7 +74,9 @@ export default function PricingPage() {
                     </div>}
                     {error && <div style={{ color: "#dc2626" }}>Error: {error}</div>}
                     {!loading && !error && plans.map((p) => {
-                        const isHighlight = p.title.toLowerCase().includes("professional");
+                        const lowerTitle = p.title.toLowerCase();
+                        const isHighlight = lowerTitle.includes("professional");
+                        const isFree = (p.monthly === 0 && p.yearly === 0) || lowerTitle.includes("free");
                         return (
                             <article
                                 key={p.id}
@@ -97,7 +99,13 @@ export default function PricingPage() {
 
                                     <p className="desc">{p.description}</p>
 
-                                    <button className={isHighlight ? "btn btn-primary1" : "btn btn-ghost"}>Get Started</button>
+                                    <button
+                                        className={isHighlight ? "btn btn-primary1" : "btn btn-ghost"}
+                                        disabled={isFree}
+                                        style={isFree ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
+                                    >
+                                        Get Started
+                                    </button>
 
                                     <hr />
 

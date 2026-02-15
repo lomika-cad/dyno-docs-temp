@@ -21,6 +21,18 @@ public class GetUserSubscriptionByTenantIdHandler : IRequestHandler<GetUserSubsc
 
     public async Task<UserSubscription> Handle(GetUserSubscriptionByTenantId request, CancellationToken cancellationToken)
     {
+        var subscriptions = await _dbContext.UserSubscription
+            .Where(s => s.EndDate < DateTime.UtcNow && s.IsActive) 
+            .ToListAsync(cancellationToken);
+
+        foreach (var s in subscriptions)
+        {
+            s.IsActive = false;
+            _dbContext.UserSubscription.Update(s);
+        }
+        
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        
         var subscription = await _dbContext.UserSubscription
             .FirstOrDefaultAsync(s => s.TenantId == request.TenantId, cancellationToken);
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import { CircularProgress } from "@mui/material";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import SourceRoundedIcon from "@mui/icons-material/SourceRounded";
 import HandshakeRoundedIcon from "@mui/icons-material/HandshakeRounded";
@@ -11,12 +12,18 @@ import ChatRoundedIcon from "@mui/icons-material/ChatRounded";
 import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
-import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import "../styles/navbar.css";
 import "../styles/agencyData.css";
+import "../styles/home.css";
 import logo from "../assets/dyno-docs.png";
 import logoutIcon from "../assets/switch.png";
+import { getMe } from "../services/me-api";
+import { getPricingPlans } from "../services/pricing-plan-api";
+import { updateSubscription } from "../services/user-subscription-api";
+import { showError, showSuccess } from "../components/Toast";
+import CardPayment from "../components/CardPayment";
 
 export type NavbarItem = {
     label: string;
@@ -126,10 +133,249 @@ const DEFAULT_ITEMS: NavbarItem[] = [
     },
 ];
 
+type PricingModalProps = {
+    open: boolean;
+    onClose: () => void;
+    onUpdated?: () => void;
+};
+
+function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
+    const [yearly, setYearly] = useState(false);
+    const [plans, setPlans] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [checkoutPlan, setCheckoutPlan] = useState<{ id: string; amount: number } | null>(
+        null,
+    );
+
+    const token = sessionStorage.getItem("dd_token") || "";
+
+    const handleUpdatePlan = async (planId: string) => {
+        const body = {
+            tenantId: sessionStorage.getItem("dd_tenant_id") || "",
+            planId,
+            planType: yearly ? 1 : 0,
+            planName: plans.find((p) => p.id === planId)?.title || "",
+        }
+
+        try {
+            await updateSubscription(body, token);
+            showSuccess("Subscription updated successfully.");
+            onUpdated?.();
+            onClose();
+        } catch (error:any) {
+            showError(error.response?.data?.message || "Failed to update subscription. Please try again.");
+        }
+    }
+
+    useEffect(() => {
+        if (!open) return;
+
+        let cancelled = false;
+
+        const loadPlans = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await getPricingPlans();
+                if (cancelled) return;
+
+                const data = response.data.map((p: any) => ({
+                    id: p.id ?? p.planName?.toLowerCase() ?? Math.random().toString(36).slice(2),
+                    title: p.planName ?? p.title ?? "",
+                    monthly: Number(p.monthlyPrice ?? p.monthly ?? 0),
+                    yearly: Number(p.yearlyPrice ?? p.yearly ?? 0),
+                    description: p.description ?? "",
+                    features: p.features ?? [],
+                }));
+
+                setPlans(data);
+            } catch (err) {
+                if (!cancelled) {
+                    setError("Failed to load pricing plans.");
+                    setPlans([]);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadPlans();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [open]);
+
+    if (!open) return null;
+
+    return (
+        <div
+            className="ddModal ddModal--large"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Pricing plans"
+        >
+            <button
+                type="button"
+                className="ddModal-backdrop"
+                aria-label="Close pricing"
+                onClick={onClose}
+            />
+
+            <div className="ddModal-card ddModal-card--large">
+                <div className="ddModal-header">
+                    <div>
+                        <h2 className="detailSection-title">Choose your plan</h2>
+                        <p className="detailSection-text" style={{ fontSize: 13 }}>
+                            Upgrade DynoDocs to unlock higher limits and features.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        className="ddModal-close"
+                        aria-label="Close pricing"
+                        onClick={onClose}
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <div className="ddModal-content">
+                    {!checkoutPlan && (
+                        <>
+                            <section className="pricing-hero" style={{ paddingTop: 0 }}>
+                                <div className="billing-row">
+                                    <span className={!yearly ? "active" : ""}>Monthly</span>
+                                    <label className="toggle">
+                                        <input
+                                            type="checkbox"
+                                            aria-label="Toggle yearly billing"
+                                            checked={yearly}
+                                            onChange={() => setYearly((s) => !s)}
+                                        />
+                                        <span className="slider" />
+                                    </label>
+                                    <span className={yearly ? "active" : ""}>
+                                        Yearly <small className="badge">30% discount</small>
+                                    </span>
+                                </div>
+                            </section>
+
+                            <section className="pricing-cards pricing-cards1">
+                                {loading && (
+                                    <div
+                                        className="globalLoader"
+                                        role="status"
+                                        aria-live="polite"
+                                    >
+                                        <CircularProgress
+                                            size={56}
+                                            sx={{ color: "var(--accent-600, #ff6b00)" }}
+                                        />
+                                    </div>
+                                )}
+
+                                {error && !loading && (
+                                    <div style={{ color: "#dc2626" }}>Error: {error}</div>
+                                )}
+
+                                {!loading && !error &&
+                                    plans.map((p) => {
+                                        const lowerTitle = p.title.toLowerCase();
+                                        const isHighlight = lowerTitle.includes("professional");
+                                        const isFree =
+                                            (p.monthly === 0 && p.yearly === 0) ||
+                                            lowerTitle.includes("free");
+                                        if (isFree) return null;
+
+                                        const amount = yearly ? p.yearly : p.monthly;
+
+                                        return (
+                                            <article
+                                                key={p.id}
+                                                className={
+                                                    "card " + (isHighlight ? "highlight" : "")
+                                                }
+                                            >
+                                                <div className="card-head">
+                                                    <span
+                                                        style={{ fontSize: "16px", fontWeight: 600 }}
+                                                    >
+                                                        {p.title}
+                                                    </span>
+                                                </div>
+
+                                                <div className="card-body">
+                                                    <div className="price">
+                                                        <span className="currency">$</span>
+                                                        <span className="amount">
+                                                            {yearly
+                                                                ? amount === 0
+                                                                    ? "0.00"
+                                                                    : amount.toFixed(2)
+                                                                : amount.toFixed(2)}
+                                                        </span>
+                                                        <span className="period">
+                                                            {yearly ? "/per year" : "/per month"}
+                                                        </span>
+                                                    </div>
+
+                                                    <p className="desc">{p.description}</p>
+
+                                                    <button
+                                                        className={
+                                                            isHighlight
+                                                                ? "btn btn-primary1"
+                                                                : "btn btn-ghost"
+                                                        }
+                                                        onClick={() =>
+                                                            setCheckoutPlan({
+                                                                id: p.id,
+                                                                amount,
+                                                            })
+                                                        }
+                                                    >
+                                                        Get Started
+                                                    </button>
+
+                                                    <hr />
+
+                                                    <ul className="features">
+                                                        {p.features.map((f: string) => (
+                                                            <li key={f}>
+                                                                <span className="check">✓</span>
+                                                                <span className="feat-text">{f}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </article>
+                                        );
+                                    })}
+                            </section>
+                        </>
+                    )}
+
+                    {checkoutPlan && (
+                        <CardPayment
+                            totalAmount={checkoutPlan.amount}
+                            onPaid={() => handleUpdatePlan(checkoutPlan.id)}
+                        />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function Navbar({ children, items }: NavbarProps) {
 
     const [mobileOpen, setMobileOpen] = useState(false);
     const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+    const [pricingOpen, setPricingOpen] = useState(false);
 
     const navItems = items ?? DEFAULT_ITEMS;
 
@@ -151,6 +397,25 @@ export default function Navbar({ children, items }: NavbarProps) {
             day: "2-digit",
         });
     })();
+
+    const handleMe = async () => {
+        try {
+            const res = await getMe(token, sessionStorage.getItem("dd_tenant_id") || "");
+            console.log(res);
+            sessionStorage.setItem("dd_subscription_plan", res.planName);
+            sessionStorage.setItem("dd_subscription_expiry", res.endDate);
+            sessionStorage.setItem("dd_report_limit", res.reportsLimit);
+            sessionStorage.setItem("dd_template_limit", res.templatesLimit);
+            sessionStorage.setItem("dd_discount_percentage", res.discountPercentage);
+            sessionStorage.setItem("dd_subscription_isActive", res.isActive);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    useEffect(() => {
+        handleMe();
+    }, []);
 
     useEffect(() => {
         if (!token) {
@@ -178,6 +443,11 @@ export default function Navbar({ children, items }: NavbarProps) {
 
     return (
         <div className="app-shell">
+            <PricingModal
+                open={pricingOpen}
+                onClose={() => setPricingOpen(false)}
+                onUpdated={handleMe}
+            />
             {logoutConfirmOpen && (
                 <div
                     className="ddModal"
@@ -237,7 +507,10 @@ export default function Navbar({ children, items }: NavbarProps) {
                             className={({ isActive }) =>
                                 `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
                             }
-                            onClick={() => setMobileOpen(false)}
+                            onClick={async () => {
+                                await handleMe();
+                                setMobileOpen(false);
+                            }}
                         >
                             {item.icon}
                             <span className="sidebar-label">{item.label}</span>
@@ -279,8 +552,18 @@ export default function Navbar({ children, items }: NavbarProps) {
 
                     <div className="topbar-subscription" aria-label="Subscription summary">
                         <div className="subscription-pill subscription-pill--plan">
-                            <WorkspacePremiumRoundedIcon fontSize="small" />
+                            {/* <WorkspacePremiumRoundedIcon fontSize="small" /> */}
                             <span>{subscriptionPlan} plan</span>
+                            {(!subscriptionIsActive || subscriptionPlan.toLowerCase() === "free") && (
+                                <button
+                                    type="button"
+                                    className="subscription-plan-cta"
+                                    aria-label="View pricing plans"
+                                    onClick={() => setPricingOpen(true)}
+                                >
+                                    <AddRoundedIcon fontSize="inherit" />
+                                </button>
+                            )}
                         </div>
 
                         <div className="subscription-pill subscription-pill--status">
@@ -294,17 +577,29 @@ export default function Navbar({ children, items }: NavbarProps) {
                         {formattedExpiry && subscriptionPlan.toLowerCase() !== "free" && (
                             <div className="subscription-pill subscription-pill--muted">
                                 <EventAvailableRoundedIcon fontSize="small" />
-                                <span>Renews {formattedExpiry}</span>
+                                <span>Expire - {formattedExpiry}</span>
                             </div>
                         )}
 
                         {(reportLimit || templateLimit) && (
                             <div className="subscription-pill subscription-pill--muted">
-                                <span>
-                                    {reportLimit && `${reportLimit} reports`}
-                                    {reportLimit && templateLimit && " / "}
-                                    {templateLimit && `${templateLimit} templates`}
-                                </span>
+                                {reportLimit && (
+                                    <span className="subscription-metric">
+                                        <DescriptionRoundedIcon className="subscription-metric-icon" fontSize="inherit" />
+                                        <span>{reportLimit} reports</span>
+                                    </span>
+                                )}
+
+                                {reportLimit && templateLimit && (
+                                    <span className="subscription-metric-divider" aria-hidden="true" />
+                                )}
+
+                                {templateLimit && (
+                                    <span className="subscription-metric">
+                                        <ViewModuleRoundedIcon className="subscription-metric-icon" fontSize="inherit" />
+                                        <span>{templateLimit} templates</span>
+                                    </span>
+                                )}
                             </div>
                         )}
                     </div>
