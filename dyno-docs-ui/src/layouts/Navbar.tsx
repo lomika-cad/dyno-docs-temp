@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import { CircularProgress } from "@mui/material";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import SourceRoundedIcon from "@mui/icons-material/SourceRounded";
 import HandshakeRoundedIcon from "@mui/icons-material/HandshakeRounded";
@@ -13,11 +14,14 @@ import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import "../styles/navbar.css";
 import "../styles/agencyData.css";
+import "../styles/home.css";
 import logo from "../assets/dyno-docs.png";
 import logoutIcon from "../assets/switch.png";
 import { getMe } from "../services/me-api";
+import { getPricingPlans } from "../services/pricing-plan-api";
 
 export type NavbarItem = {
     label: string;
@@ -127,10 +131,196 @@ const DEFAULT_ITEMS: NavbarItem[] = [
     },
 ];
 
+type PricingModalProps = {
+    open: boolean;
+    onClose: () => void;
+};
+
+function PricingModal({ open, onClose }: PricingModalProps) {
+    const [yearly, setYearly] = useState(false);
+    const [plans, setPlans] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!open) return;
+
+        let cancelled = false;
+
+        const loadPlans = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await getPricingPlans();
+                if (cancelled) return;
+
+                const data = response.data.map((p: any) => ({
+                    id: p.id ?? p.planName?.toLowerCase() ?? Math.random().toString(36).slice(2),
+                    title: p.planName ?? p.title ?? "",
+                    monthly: Number(p.monthlyPrice ?? p.monthly ?? 0),
+                    yearly: Number(p.yearlyPrice ?? p.yearly ?? 0),
+                    description: p.description ?? "",
+                    features: p.features ?? [],
+                }));
+
+                setPlans(data);
+            } catch (err) {
+                if (!cancelled) {
+                    setError("Failed to load pricing plans.");
+                    setPlans([]);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadPlans();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [open]);
+
+    if (!open) return null;
+
+    return (
+        <div
+            className="ddModal ddModal--large"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Pricing plans"
+        >
+            <button
+                type="button"
+                className="ddModal-backdrop"
+                aria-label="Close pricing"
+                onClick={onClose}
+            />
+
+            <div className="ddModal-card ddModal-card--large">
+                <div className="ddModal-header">
+                    <div>
+                        <h2 className="detailSection-title">Choose your plan</h2>
+                        <p className="detailSection-text" style={{ fontSize: 13 }}>
+                            Upgrade DynoDocs to unlock higher limits and features.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        className="ddModal-close"
+                        aria-label="Close pricing"
+                        onClick={onClose}
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <div className="ddModal-content">
+                    <section className="pricing-hero" style={{ paddingTop: 0 }}>
+                        <div className="billing-row">
+                            <span className={!yearly ? "active" : ""}>Monthly</span>
+                            <label className="toggle">
+                                <input
+                                    type="checkbox"
+                                    aria-label="Toggle yearly billing"
+                                    checked={yearly}
+                                    onChange={() => setYearly((s) => !s)}
+                                />
+                                <span className="slider" />
+                            </label>
+                            <span className={yearly ? "active" : ""}>
+                                Yearly <small className="badge">30% discount</small>
+                            </span>
+                        </div>
+                    </section>
+
+                    <section className="pricing-cards">
+                        {loading && (
+                            <div className="globalLoader" role="status" aria-live="polite">
+                                <CircularProgress
+                                    size={56}
+                                    sx={{ color: "var(--accent-600, #ff6b00)" }}
+                                />
+                            </div>
+                        )}
+
+                        {error && !loading && (
+                            <div style={{ color: "#dc2626" }}>Error: {error}</div>
+                        )}
+
+                        {!loading && !error &&
+                            plans.map((p) => {
+                                const isHighlight = p.title
+                                    .toLowerCase()
+                                    .includes("professional");
+                                return (
+                                    <article
+                                        key={p.id}
+                                        className={"card " + (isHighlight ? "highlight" : "")}
+                                    >
+                                        <div className="card-head">
+                                            <span
+                                                style={{ fontSize: "16px", fontWeight: 600 }}
+                                            >
+                                                {p.title}
+                                            </span>
+                                        </div>
+
+                                        <div className="card-body">
+                                            <div className="price">
+                                                <span className="currency">$</span>
+                                                <span className="amount">
+                                                    {yearly
+                                                        ? p.yearly === 0
+                                                            ? "0.00"
+                                                            : p.yearly.toFixed(2)
+                                                        : p.monthly.toFixed(2)}
+                                                </span>
+                                                <span className="period">
+                                                    {yearly ? "/per year" : "/per month"}
+                                                </span>
+                                            </div>
+
+                                            <p className="desc">{p.description}</p>
+
+                                            <button
+                                                className={
+                                                    isHighlight
+                                                        ? "btn btn-primary1"
+                                                        : "btn btn-ghost"
+                                                }
+                                            >
+                                                Get Started
+                                            </button>
+
+                                            <hr />
+
+                                            <ul className="features">
+                                                {p.features.map((f: string) => (
+                                                    <li key={f}>
+                                                        <span className="check">✓</span>
+                                                        <span className="feat-text">{f}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                    </section>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function Navbar({ children, items }: NavbarProps) {
 
     const [mobileOpen, setMobileOpen] = useState(false);
     const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+    const [pricingOpen, setPricingOpen] = useState(false);
 
     const navItems = items ?? DEFAULT_ITEMS;
 
@@ -169,6 +359,10 @@ export default function Navbar({ children, items }: NavbarProps) {
     }
 
     useEffect(() => {
+        handleMe();
+    }, []);
+
+    useEffect(() => {
         if (!token) {
             handleLogout();
         }
@@ -194,6 +388,7 @@ export default function Navbar({ children, items }: NavbarProps) {
 
     return (
         <div className="app-shell">
+            <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
             {logoutConfirmOpen && (
                 <div
                     className="ddModal"
@@ -300,6 +495,16 @@ export default function Navbar({ children, items }: NavbarProps) {
                         <div className="subscription-pill subscription-pill--plan">
                             <WorkspacePremiumRoundedIcon fontSize="small" />
                             <span>{subscriptionPlan} plan</span>
+                            {(!subscriptionIsActive || subscriptionPlan.toLowerCase() === "free") && (
+                                <button
+                                    type="button"
+                                    className="subscription-plan-cta"
+                                    aria-label="View pricing plans"
+                                    onClick={() => setPricingOpen(true)}
+                                >
+                                    <AddRoundedIcon fontSize="inherit" />
+                                </button>
+                            )}
                         </div>
 
                         <div className="subscription-pill subscription-pill--status">
