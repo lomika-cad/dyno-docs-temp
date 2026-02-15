@@ -236,7 +236,7 @@ function PricingModal({ open, onClose }: PricingModalProps) {
                         </div>
                     </section>
 
-                    <section className="pricing-cards">
+                    <section className="pricing-cards pricing-cards1">
                         {loading && (
                             <div className="globalLoader" role="status" aria-live="polite">
                                 <CircularProgress
@@ -252,61 +252,71 @@ function PricingModal({ open, onClose }: PricingModalProps) {
 
                         {!loading && !error &&
                             plans.map((p) => {
-                                const isHighlight = p.title
-                                    .toLowerCase()
-                                    .includes("professional");
+                                const lowerTitle = p.title.toLowerCase();
+                                const isHighlight = lowerTitle.includes("professional");
+                                const isFree = (p.monthly === 0 && p.yearly === 0) || lowerTitle.includes("free");
                                 return (
-                                    <article
-                                        key={p.id}
-                                        className={"card " + (isHighlight ? "highlight" : "")}
-                                    >
-                                        <div className="card-head">
-                                            <span
-                                                style={{ fontSize: "16px", fontWeight: 600 }}
-                                            >
-                                                {p.title}
-                                            </span>
-                                        </div>
-
-                                        <div className="card-body">
-                                            <div className="price">
-                                                <span className="currency">$</span>
-                                                <span className="amount">
-                                                    {yearly
-                                                        ? p.yearly === 0
-                                                            ? "0.00"
-                                                            : p.yearly.toFixed(2)
-                                                        : p.monthly.toFixed(2)}
-                                                </span>
-                                                <span className="period">
-                                                    {yearly ? "/per year" : "/per month"}
+                                    <>
+                                    {!isFree && (
+                                        <article
+                                            key={p.id}
+                                            className={"card " + (isHighlight ? "highlight" : "")}
+                                        >
+                                            <div className="card-head">
+                                                <span
+                                                    style={{ fontSize: "16px", fontWeight: 600 }}
+                                                >
+                                                    {p.title}
                                                 </span>
                                             </div>
 
-                                            <p className="desc">{p.description}</p>
+                                            <div className="card-body">
+                                                <div className="price">
+                                                    <span className="currency">$</span>
+                                                    <span className="amount">
+                                                        {yearly
+                                                            ? p.yearly === 0
+                                                                ? "0.00"
+                                                                : p.yearly.toFixed(2)
+                                                            : p.monthly.toFixed(2)}
+                                                    </span>
+                                                    <span className="period">
+                                                        {yearly ? "/per year" : "/per month"}
+                                                    </span>
+                                                </div>
 
-                                            <button
-                                                className={
-                                                    isHighlight
-                                                        ? "btn btn-primary1"
-                                                        : "btn btn-ghost"
-                                                }
-                                            >
-                                                Get Started
-                                            </button>
+                                                <p className="desc">{p.description}</p>
 
-                                            <hr />
+                                                <button
+                                                    className={
+                                                        isHighlight
+                                                            ? "btn btn-primary1"
+                                                            : "btn btn-ghost"
+                                                    }
+                                                    disabled={isFree}
+                                                    style={
+                                                        isFree
+                                                            ? { opacity: 0.6, cursor: "not-allowed" }
+                                                            : undefined
+                                                    }
+                                                >
+                                                    Get Started
+                                                </button>
 
-                                            <ul className="features">
-                                                {p.features.map((f: string) => (
-                                                    <li key={f}>
-                                                        <span className="check">✓</span>
-                                                        <span className="feat-text">{f}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </article>
+                                                <hr />
+
+                                                <ul className="features">
+                                                    {p.features.map((f: string) => (
+                                                        <li key={f}>
+                                                            <span className="check">✓</span>
+                                                            <span className="feat-text">{f}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </article>
+                                    )}                                        
+                                    </>
                                 );
                             })}
                     </section>
@@ -493,7 +503,7 @@ export default function Navbar({ children, items }: NavbarProps) {
 
                     <div className="topbar-subscription" aria-label="Subscription summary">
                         <div className="subscription-pill subscription-pill--plan">
-                            <WorkspacePremiumRoundedIcon fontSize="small" />
+                            {/* <WorkspacePremiumRoundedIcon fontSize="small" /> */}
                             <span>{subscriptionPlan} plan</span>
                             {(!subscriptionIsActive || subscriptionPlan.toLowerCase() === "free") && (
                                 <button
