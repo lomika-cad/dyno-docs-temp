@@ -159,6 +159,24 @@
   background-color: var(--color-error);
 }
 
+.subscription-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+}
+
+.subscription-metric-icon {
+  color: var(--color-primary);
+}
+
+.subscription-metric-divider {
+  width: 1px;
+  height: 14px;
+  background: #e5e7eb;
+  margin: 0 6px;
+}
+
 .topbar-spacer {
   flex: 1;
 }

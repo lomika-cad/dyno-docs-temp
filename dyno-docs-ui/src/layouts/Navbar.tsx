@@ -313,17 +313,29 @@ export default function Navbar({ children, items }: NavbarProps) {
                         {formattedExpiry && subscriptionPlan.toLowerCase() !== "free" && (
                             <div className="subscription-pill subscription-pill--muted">
                                 <EventAvailableRoundedIcon fontSize="small" />
-                                <span>Renews {formattedExpiry}</span>
+                                <span>Expire - {formattedExpiry}</span>
                             </div>
                         )}
 
                         {(reportLimit || templateLimit) && (
                             <div className="subscription-pill subscription-pill--muted">
-                                <span>
-                                    {reportLimit && `${reportLimit} reports`}
-                                    {reportLimit && templateLimit && " / "}
-                                    {templateLimit && `${templateLimit} templates`}
-                                </span>
+                                {reportLimit && (
+                                    <span className="subscription-metric">
+                                        <DescriptionRoundedIcon className="subscription-metric-icon" fontSize="inherit" />
+                                        <span>{reportLimit} reports</span>
+                                    </span>
+                                )}
+
+                                {reportLimit && templateLimit && (
+                                    <span className="subscription-metric-divider" aria-hidden="true" />
+                                )}
+
+                                {templateLimit && (
+                                    <span className="subscription-metric">
+                                        <ViewModuleRoundedIcon className="subscription-metric-icon" fontSize="inherit" />
+                                        <span>{templateLimit} templates</span>
+                                    </span>
+                                )}
                             </div>
                         )}
                     </div>
