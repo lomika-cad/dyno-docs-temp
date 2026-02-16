@@ -56,8 +56,8 @@ public class UpdateUserSubscriptionCommandHandler : IRequestHandler<UpdateUserSu
         } 
         else if (paymentPlan.PlanName == "Professional")
         {
-            reportsLimit = 50;
-            templatesLimit = 15;
+            reportsLimit = type == 1 ? 50*12 : 50;
+            templatesLimit = type == 1 ? 50*12 : 50;
             discountPercentage = 5;
         } 
         else if (paymentPlan.PlanName == "Enterprise")
