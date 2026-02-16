@@ -586,7 +586,7 @@ export default function Navbar({ children, items }: NavbarProps) {
                                 {reportLimit && (
                                     <span className="subscription-metric">
                                         <DescriptionRoundedIcon className="subscription-metric-icon" fontSize="inherit" />
-                                        <span>{reportLimit} reports</span>
+                                        <span>{reportLimit === "-1" ? "Unlimited" : reportLimit} reports</span>
                                     </span>
                                 )}
 
@@ -597,7 +597,7 @@ export default function Navbar({ children, items }: NavbarProps) {
                                 {templateLimit && (
                                     <span className="subscription-metric">
                                         <ViewModuleRoundedIcon className="subscription-metric-icon" fontSize="inherit" />
-                                        <span>{templateLimit} templates</span>
+                                        <span>{templateLimit === "-1" ? "Unlimited" : templateLimit} templates</span>
                                     </span>
                                 )}
                             </div>
