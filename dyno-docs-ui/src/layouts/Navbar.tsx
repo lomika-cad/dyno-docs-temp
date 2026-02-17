@@ -612,6 +612,21 @@ export default function Navbar({ children, items }: NavbarProps) {
                 </header>
 
                 <main className="main-content">
+                    {!subscriptionIsActive && (
+                        <div className="subscription-warning" role="alert">
+                            <div className="subscription-warning-text">
+                                <span className="subscription-warning-title">Subscription inactive</span>
+                                <span>Please activate your subscription plan.</span>                            </div>
+                            <button
+                                type="button"
+                                className="subscription-warning-action"
+                                onClick={() => setPricingOpen(true)}
+                            >
+                                View plans
+                            </button>
+                        </div>
+                    )}
+
                     <div className="main-card">
                         {children}
                     </div>
