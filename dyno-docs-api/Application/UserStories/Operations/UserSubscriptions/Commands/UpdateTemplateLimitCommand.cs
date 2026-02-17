@@ -29,11 +29,17 @@ public class UpdateTemplateLimitCommandHandler (IApplicationDbContext dbContext)
             {
                 return Result.Failure("No templates available to assign");
             }
-            existingSubscription.TemplatesLimit -= 1;
+            if (existingSubscription.PlanName != "Enterprise")
+            {
+                existingSubscription.TemplatesLimit -= 1;
+            }
         }
         else if (request.ActionType == "Unassign")
         {
-            existingSubscription.TemplatesLimit += 1;
+            if (existingSubscription.PlanName != "Enterprise")
+            {
+                existingSubscription.TemplatesLimit += 1;
+            }
         }
         else
         {
