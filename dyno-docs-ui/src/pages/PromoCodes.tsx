@@ -4,6 +4,7 @@ import "../styles/promoCodes.css";
 import "../styles/agencyData.css";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CircularProgress from "@mui/material/CircularProgress";
 import { showError, showSuccess } from "../components/Toast";
 import {
@@ -59,6 +60,7 @@ export default function PromoCodes() {
     // Modal state
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [promoToDelete, setPromoToDelete] = useState<PromoCode | null>(null);
+    const [infoOpen, setInfoOpen] = useState(false);
 
     // Fetch promo codes on mount
     useEffect(() => {
@@ -215,10 +217,19 @@ export default function PromoCodes() {
             <div className="promo">
                 {/* Page Header */}
                 <header>
-                    <h2 className="promo-title">Promo Codes</h2>
-                    <p className="promo-subtitle">
-                        Create, manage, and track all discount promo codes in one place.
-                    </p>
+                    <div className="agency-header">
+                        <div>
+                            <h2 className="promo-title">Promo Codes</h2>
+                        </div>
+                        <button
+                            type="button"
+                            className="infoBtn"
+                            aria-label="Promo code steps"
+                            onClick={() => setInfoOpen(true)}
+                        >
+                            <InfoOutlinedIcon fontSize="small" />
+                        </button>
+                    </div>
                 </header>
 
                 {/* Add Promo Code Form */}
@@ -474,6 +485,31 @@ export default function PromoCodes() {
                     </div>
                 </section>
             </div>
+
+            {infoOpen && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Promo code guide">
+                    <button
+                        type="button"
+                        className="ddModal-backdrop"
+                        aria-label="Close"
+                        onClick={() => setInfoOpen(false)}
+                    />
+
+                    <div className="ddModal-card">
+                        <div className="ddModal-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
+                            Quick tips for creating and managing promo codes:
+                        </div>
+                        <div className="ddModal-content">
+                            <ol>
+                                <li>Enter the code, discount percentage, valid dates, and status before submitting.</li>
+                                <li>Use the Clear action anytime you want to reset the form inputs.</li>
+                                <li>Filter the table with the search bar to locate specific codes or statuses.</li>
+                                <li>Use the delete action when a promotion should be retired.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation Modal */}
             {deleteModalOpen && promoToDelete && (

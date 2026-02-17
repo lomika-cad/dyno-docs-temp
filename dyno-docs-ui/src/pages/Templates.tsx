@@ -5,6 +5,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import JSON5 from "json5";
 import Navbar from "../layouts/Navbar";
@@ -432,6 +433,7 @@ export default function Templates() {
   const [previewPlaceholders, setPreviewPlaceholders] = useState<PlaceholderMap>(DEFAULT_PLACEHOLDERS);
   const [templateToUnassign, setTemplateToUnassign] = useState<TemplateCardModel | null>(null);
   const [isUnassigning, setIsUnassigning] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const tenantPlaceholderPromiseRef = useRef<Promise<PlaceholderMap> | null>(null);
 
   const resolveUserSession = (): UserSession | null => {
@@ -826,8 +828,16 @@ export default function Templates() {
     <Navbar>
       <section className="templates-page">
         <div className="templates-hero">
-          <div>
+          <div className="agency-header">
             <h2 className="agency-title">Template Marketplace</h2>
+            <button
+              type="button"
+              className="infoBtn"
+              aria-label="Template marketplace steps"
+              onClick={() => setInfoOpen(true)}
+            >
+              <InfoOutlinedIcon fontSize="small" />
+            </button>
           </div>
 
           <button
@@ -902,6 +912,31 @@ export default function Templates() {
             <button type="button" onClick={handleResetFilters}>
               Reset filters
             </button>
+          </div>
+        )}
+
+        {infoOpen && (
+          <div className="ddModal" role="dialog" aria-modal="true" aria-label="Template marketplace guide">
+            <button
+              type="button"
+              className="ddModal-backdrop"
+              aria-label="Close"
+              onClick={() => setInfoOpen(false)}
+            />
+
+            <div className="ddModal-card">
+              <div className="ddModal-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
+                How to explore and assign templates:
+              </div>
+              <div className="ddModal-content">
+                <ol>
+                  <li>Use the tabs and search to narrow down All, Free, or Paid templates.</li>
+                  <li>Select a card to preview the full design before committing.</li>
+                  <li>Assign free templates instantly or purchase premium ones to unlock them.</li>
+                  <li>Visit "My Templates" to review, customize, or unassign previously added designs.</li>
+                </ol>
+              </div>
+            </div>
           </div>
         )}
 

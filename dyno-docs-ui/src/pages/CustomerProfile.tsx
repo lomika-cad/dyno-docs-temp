@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Eye, PenSquare, Trash2 } from "lucide-react";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import Navbar from "../layouts/Navbar";
 import "../styles/customerProfile.css";
 import "../styles/agencyData.css";
@@ -62,6 +63,7 @@ export default function CustomerProfile() {
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
     const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+    const [infoOpen, setInfoOpen] = useState(false);
     const pageSize = 5;
 
     const filteredCustomers = useMemo(() => {
@@ -261,11 +263,18 @@ export default function CustomerProfile() {
             )}
             <section className="customer-profile">
                 <header className="customer-profile-header">
-                    <div>
-                        <h2 className="agency-title">Customer Profiles</h2>
-                        <p className="muted">
-                            Keep traveler records up to date to unlock curated itineraries and proactive service options.
-                        </p>
+                    <div className="agency-header">
+                        <div>
+                            <h2 className="agency-title">Customer Profiles</h2>
+                        </div>
+                        <button
+                            type="button"
+                            className="infoBtn"
+                            aria-label="Customer profile steps"
+                            onClick={() => setInfoOpen(true)}
+                        >
+                            <InfoOutlinedIcon fontSize="small" />
+                        </button>
                     </div>
                 </header>
 
@@ -506,6 +515,31 @@ export default function CustomerProfile() {
                     </footer>
                 </section>
             </section>
+
+            {infoOpen && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Customer profile guide">
+                    <button
+                        type="button"
+                        className="ddModal-backdrop"
+                        aria-label="Close"
+                        onClick={() => setInfoOpen(false)}
+                    />
+
+                    <div className="ddModal-card">
+                        <div className="ddModal-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
+                            Recommended steps for managing traveler records:
+                        </div>
+                        <div className="ddModal-content">
+                            <ol>
+                                <li>Complete the form with name, contact info, demographics, and submit to save the profile.</li>
+                                <li>Use the Clear button when switching between new entries or abandoning edits.</li>
+                                <li>Search the table to locate travelers, then open actions to View or Edit details.</li>
+                                <li>Delete outdated records to keep your workspace focused on active customers.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {viewModalOpen && selectedCustomer && (
                 <div

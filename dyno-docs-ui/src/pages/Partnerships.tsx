@@ -6,6 +6,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
     createPartnership,
     deletePartnership,
@@ -90,6 +91,7 @@ export default function Partnerships() {
     const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
     const [selectedPartnership, setSelectedPartnership] = useState<PartnershipRecord | null>(null);
     const [partnershipToDelete, setPartnershipToDelete] = useState<PartnershipRecord | null>(null);
+    const [infoOpen, setInfoOpen] = useState(false);
     const itemsPerPage = 5;
     const imagesInputRef = useRef<HTMLInputElement | null>(null);
     const formTopRef = useRef<HTMLDivElement | null>(null);
@@ -364,7 +366,17 @@ export default function Partnerships() {
                 </div>
             )}
             <div className="agency" ref={formTopRef}>
-                <h2 className="agency-title">Partnerships</h2>
+                <div className="agency-header">
+                    <h2 className="agency-title">Partnerships</h2>
+                    <button
+                        type="button"
+                        className="infoBtn"
+                        aria-label="Partnership workflow steps"
+                        onClick={() => setInfoOpen(true)}
+                    >
+                        <InfoOutlinedIcon fontSize="small" />
+                    </button>
+                </div>
 
                 <section className="panel">
                     <div className="panel-body">
@@ -668,6 +680,31 @@ export default function Partnerships() {
                     </div>
                 </section>
             </div>
+
+            {infoOpen && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Partnerships guide">
+                    <button
+                        type="button"
+                        className="ddModal-backdrop"
+                        aria-label="Close"
+                        onClick={() => setInfoOpen(false)}
+                    />
+
+                    <div className="ddModal-card">
+                        <div className="ddModal-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
+                            Follow these steps to add and manage partner records:
+                        </div>
+                        <div className="ddModal-content">
+                            <ol>
+                                <li>Complete the form with title, partnership type, district, and optional description.</li>
+                                <li>Attach up to five supporting images via drag-and-drop or by browsing from your device.</li>
+                                <li>Use the Submit button to save new partners or switch to edit mode to update existing ones.</li>
+                                <li>Search the table to find specific partners and use the action buttons to View, Edit, or Delete.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {viewModalOpen && selectedPartnership && (
                 <div
