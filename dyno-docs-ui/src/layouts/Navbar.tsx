@@ -135,6 +135,14 @@ const DEFAULT_ITEMS: NavbarItem[] = [
     },
 ];
 
+type SubscriptionInfo = {
+    plan: string;
+    expiry: string | null;
+    isActive: boolean;
+    reportLimit: string | null;
+    templateLimit: string | null;
+};
+
 type PricingModalProps = {
     open: boolean;
     onClose: () => void;
@@ -379,16 +387,31 @@ export default function Navbar({ children, items }: NavbarProps) {
     const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
     const [pricingOpen, setPricingOpen] = useState(false);
     const [idleModalOpen, setIdleModalOpen] = useState(false);
+    const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo>(() => ({
+        plan: sessionStorage.getItem("dd_subscription_plan") || "Free",
+        expiry: sessionStorage.getItem("dd_subscription_expiry"),
+        isActive: sessionStorage.getItem("dd_subscription_isActive") === "true",
+        reportLimit: sessionStorage.getItem("dd_report_limit"),
+        templateLimit: sessionStorage.getItem("dd_template_limit"),
+    }));
 
     const navItems = items ?? DEFAULT_ITEMS;
 
     const token = sessionStorage.getItem("dd_token") || "";
     const userName = sessionStorage.getItem("dd_full_name") || "User";
-    const subscriptionPlan = sessionStorage.getItem("dd_subscription_plan") || "Free";
-    const subscriptionExpiry = sessionStorage.getItem("dd_subscription_expiry");
-    const subscriptionIsActive = sessionStorage.getItem("dd_subscription_isActive") === "true";
-    const reportLimit = sessionStorage.getItem("dd_report_limit");
-    const templateLimit = sessionStorage.getItem("dd_template_limit");
+    const subscriptionPlan = subscriptionInfo.plan || "Free";
+    const subscriptionExpiry = subscriptionInfo.expiry;
+    const subscriptionIsActive = subscriptionInfo.isActive;
+    const reportLimit = subscriptionInfo.reportLimit;
+    const templateLimit = subscriptionInfo.templateLimit;
+
+    const persistSessionValue = (key: string, value: string | null) => {
+        if (value === null) {
+            sessionStorage.removeItem(key);
+        } else {
+            sessionStorage.setItem(key, value);
+        }
+    };
 
     const formattedExpiry = (() => {
         if (!subscriptionExpiry) return "";
@@ -434,12 +457,34 @@ export default function Navbar({ children, items }: NavbarProps) {
         try {
             const res = await getMe(token, sessionStorage.getItem("dd_tenant_id") || "");
             console.log(res);
-            sessionStorage.setItem("dd_subscription_plan", res.planName);
-            sessionStorage.setItem("dd_subscription_expiry", res.endDate);
-            sessionStorage.setItem("dd_report_limit", res.reportsLimit);
-            sessionStorage.setItem("dd_template_limit", res.templatesLimit);
-            sessionStorage.setItem("dd_discount_percentage", res.discountPercentage);
-            sessionStorage.setItem("dd_subscription_isActive", res.isActive);
+
+            const nextInfo: SubscriptionInfo = {
+                plan: res.planName ?? "Free",
+                expiry: res.endDate ?? null,
+                isActive: Boolean(res.isActive),
+                reportLimit:
+                    res.reportsLimit === null || res.reportsLimit === undefined
+                        ? null
+                        : String(res.reportsLimit),
+                templateLimit:
+                    res.templatesLimit === null || res.templatesLimit === undefined
+                        ? null
+                        : String(res.templatesLimit),
+            };
+
+            setSubscriptionInfo(nextInfo);
+
+            sessionStorage.setItem("dd_subscription_plan", nextInfo.plan);
+            persistSessionValue("dd_subscription_expiry", nextInfo.expiry);
+            persistSessionValue("dd_report_limit", nextInfo.reportLimit);
+            persistSessionValue("dd_template_limit", nextInfo.templateLimit);
+            persistSessionValue(
+                "dd_discount_percentage",
+                res.discountPercentage === null || res.discountPercentage === undefined
+                    ? null
+                    : String(res.discountPercentage),
+            );
+            sessionStorage.setItem("dd_subscription_isActive", String(nextInfo.isActive));
         } catch (error) {
             console.error(error);
         }
