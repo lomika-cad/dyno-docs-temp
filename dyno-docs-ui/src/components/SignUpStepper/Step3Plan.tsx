@@ -187,7 +187,7 @@ export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props)
       </div>
 
       <div className="more-details">
-        <button type="button" className="link" onClick={() => navigate('/pricing')}>More Details</button>
+        {/* <button type="button" className="link" onClick={() => navigate('/pricing')}>More Details</button> */}
       </div>
 
       <div className="terms">
