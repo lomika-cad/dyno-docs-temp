@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
@@ -24,6 +24,8 @@ import { getPricingPlans } from "../services/pricing-plan-api";
 import { updateSubscription } from "../services/user-subscription-api";
 import { showError, showSuccess } from "../components/Toast";
 import CardPayment from "../components/CardPayment";
+import useIdleTimer from "../hooks/IdleTimer";
+import TimeoutImg from "../assets/waste.png";
 
 export type NavbarItem = {
     label: string;
@@ -376,6 +378,7 @@ export default function Navbar({ children, items }: NavbarProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
     const [pricingOpen, setPricingOpen] = useState(false);
+    const [idleModalOpen, setIdleModalOpen] = useState(false);
 
     const navItems = items ?? DEFAULT_ITEMS;
 
@@ -397,6 +400,35 @@ export default function Navbar({ children, items }: NavbarProps) {
             day: "2-digit",
         });
     })();
+
+    const handleIdleModalClose = useCallback(() => {
+        setIdleModalOpen(false);
+        sessionStorage.clear();
+        window.location.href = "/";
+    }, []);
+
+    const handleIdleTimeout = () => {
+        setIdleModalOpen(true);
+    }
+
+    useIdleTimer({
+        timeout: 15 * 60 * 1000,
+        onIdle: handleIdleTimeout,
+    });
+
+    useEffect(() => {
+        if (!idleModalOpen) return;
+
+        const handleGlobalClick = () => {
+            handleIdleModalClose();
+        };
+
+        window.addEventListener("click", handleGlobalClick);
+
+        return () => {
+            window.removeEventListener("click", handleGlobalClick);
+        };
+    }, [idleModalOpen, handleIdleModalClose]);
 
     const handleMe = async () => {
         try {
@@ -487,6 +519,31 @@ export default function Navbar({ children, items }: NavbarProps) {
                             >
                                 Logout
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {idleModalOpen && (
+                <div
+                    className="ddModal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Session timed out"
+                >
+                    <button
+                        type="button"
+                        className="ddModal-backdrop"
+                        aria-label="Dismiss session timeout"
+                        onClick={handleIdleModalClose}
+                    />
+
+                    <div className="ddModal-card">
+                        <div className="ddModal-title">Session timed out</div>
+                        <br />
+                        <img style={{width: "80px", height: "80px"}} src={TimeoutImg} alt="" />
+                        <br />
+                        <div className="ddModal-subtitle">
+                            You were inactive for too long. Click anywhere to continue.
                         </div>
                     </div>
                 </div>
