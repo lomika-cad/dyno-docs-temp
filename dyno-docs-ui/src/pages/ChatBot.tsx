@@ -165,8 +165,8 @@ export default function ChatBot() {
                                                     clientOptions: e.target.value === "message" ? [] : flow.clientOptions
                                                 })}
                                             >
-                                                <option value="message">Type Message</option>
-                                                <option value="options">Select Option</option>
+                                                <option value="message">Type a Message</option>
+                                                <option value="options">Options</option>
                                             </select>
                                         </div>
 
