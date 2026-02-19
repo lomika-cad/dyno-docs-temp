@@ -4,6 +4,9 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import PersonIcon from "@mui/icons-material/Person";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import LockIcon from "@mui/icons-material/Lock";
+import LockOpenIcon from "@mui/icons-material/LockOpen";
 import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import "../styles/chatBot.css";
@@ -19,6 +22,7 @@ interface DialogFlow {
     clientText: string;
     clientOptions: DialogOption[];
     agentResponse: string;
+    isLocked?: boolean;
 }
 
 export default function ChatBot() {
@@ -29,7 +33,8 @@ export default function ChatBot() {
             clientType: "message",
             clientText: "",
             clientOptions: [],
-            agentResponse: ""
+            agentResponse: "",
+            isLocked: false
         }
     ]);
 
@@ -39,7 +44,8 @@ export default function ChatBot() {
             clientType: "message",
             clientText: "",
             clientOptions: [],
-            agentResponse: ""
+            agentResponse: "",
+            isLocked: false
         };
         setDialogFlows([...dialogFlows, newFlow]);
     };
@@ -89,6 +95,21 @@ export default function ChatBot() {
         }
     };
 
+    const isStepComplete = (flow: DialogFlow): boolean => {
+        if (!flow.agentResponse.trim()) return false;
+        if (flow.clientType === "options") {
+            return flow.clientOptions.length > 0 && 
+                   flow.clientOptions.every(option => option.text.trim() !== "");
+        }
+        return true;
+    };
+
+    const toggleLock = (flowId: string) => {
+        updateDialogFlow(flowId, { 
+            isLocked: !dialogFlows.find(f => f.id === flowId)?.isLocked 
+        });
+    };
+
     const handleSaveDialogFlow = () => {
         // Here you can implement the logic to save the dialog flows
         console.log("Dialog Flows:", dialogFlows);
@@ -109,9 +130,6 @@ export default function ChatBot() {
                         <InfoOutlinedIcon fontSize="small" />
                     </button>
                 </div>
-                <p className="panel-hint">
-                    Connect DynoDocs with your preferred chat widget and expose instant travel answers on your site.
-                </p>
 
                 {/* Dialog Flow Builder */}
                 <div className="chatbot-builder">
@@ -132,19 +150,40 @@ export default function ChatBot() {
 
                     <div className="chatbot-flows">
                         {dialogFlows.map((flow, index) => (
-                            <div key={flow.id} className="chatbot-flow-card">
+                            <div key={flow.id} className={`chatbot-flow-card ${flow.isLocked ? 'chatbot-flow-card--locked' : ''}`}>
                                 <div className="chatbot-flow-header">
-                                    <span className="chatbot-flow-number">Step {index + 1}</span>
-                                    {dialogFlows.length > 1 && (
+                                    <div className="chatbot-flow-status">
+                                        <span className="chatbot-flow-number">Step {index + 1}</span>
+                                        {isStepComplete(flow) && (
+                                            <CheckCircleIcon className="chatbot-done-icon" />
+                                        )}
+                                    </div>
+                                    <div className="chatbot-flow-actions">
                                         <button
                                             type="button"
-                                            className="chatbot-remove-btn"
-                                            onClick={() => removeDialogFlow(flow.id)}
-                                            aria-label="Remove dialog step"
+                                            className={`chatbot-lock-btn ${flow.isLocked ? 'chatbot-lock-btn--locked' : ''}`}
+                                            onClick={() => toggleLock(flow.id)}
+                                            aria-label={flow.isLocked ? "Unlock step" : "Lock step"}
+                                            title={flow.isLocked ? "Unlock step" : "Lock step"}
                                         >
-                                            <DeleteOutlineIcon fontSize="small" />
+                                            {flow.isLocked ? (
+                                                <LockIcon fontSize="small" />
+                                            ) : (
+                                                <LockOpenIcon fontSize="small" />
+                                            )}
                                         </button>
-                                    )}
+                                        {dialogFlows.length > 1 && (
+                                            <button
+                                                type="button"
+                                                className="chatbot-remove-btn"
+                                                onClick={() => removeDialogFlow(flow.id)}
+                                                aria-label="Remove dialog step"
+                                                disabled={flow.isLocked}
+                                            >
+                                                <DeleteOutlineIcon fontSize="small" />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="chatbot-flow-content">
@@ -160,6 +199,7 @@ export default function ChatBot() {
                                             <select
                                                 className="formField-input"
                                                 value={flow.clientType}
+                                                disabled={flow.isLocked}
                                                 onChange={(e) => updateDialogFlow(flow.id, {
                                                     clientType: e.target.value as "message" | "options",
                                                     clientOptions: e.target.value === "message" ? [] : flow.clientOptions
@@ -190,6 +230,7 @@ export default function ChatBot() {
                                                     <button
                                                         type="button"
                                                         className="chatbot-add-option-btn"
+                                                        disabled={flow.isLocked}
                                                         onClick={() => addClientOption(flow.id)}
                                                     >
                                                         <AddIcon fontSize="small" />
@@ -205,11 +246,13 @@ export default function ChatBot() {
                                                                 className="formField-input"
                                                                 placeholder="Enter option text"
                                                                 value={option.text}
+                                                                disabled={flow.isLocked}
                                                                 onChange={(e) => updateClientOption(flow.id, option.id, e.target.value)}
                                                             />
                                                             <button
                                                                 type="button"
                                                                 className="chatbot-remove-option-btn"
+                                                                disabled={flow.isLocked}
                                                                 onClick={() => removeClientOption(flow.id, option.id)}
                                                                 aria-label="Remove option"
                                                             >
@@ -240,6 +283,7 @@ export default function ChatBot() {
                                                 className="formField-textarea"
                                                 placeholder="Enter agent's response message..."
                                                 value={flow.agentResponse}
+                                                disabled={flow.isLocked}
                                                 onChange={(e) => updateDialogFlow(flow.id, { agentResponse: e.target.value })}
                                                 rows={4}
                                             />
