@@ -1,6 +1,192 @@
 @ChatApp_HostAddress = http://localhost:5085
 
-GET {{ChatApp_HostAddress}}/weatherforecast/
-Accept: application/json
+### ===== INTEGRATED FLOW =====
+
+### 1. Register Agency (Main App) - Auto-creates Chat
+POST {{ChatApp_HostAddress}}/api/identity/register-agency
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="AgencyName"
+
+Test Tourism Agency
+------WebKitFormBoundary
+Content-Disposition: form-data; name="BusinessRegNo"
+
+REG123456
+------WebKitFormBoundary
+Content-Disposition: form-data; name="ContactNo"
+
++94123456789
+------WebKitFormBoundary
+Content-Disposition: form-data; name="Country"
+
+Sri Lanka
+------WebKitFormBoundary
+Content-Disposition: form-data; name="State"
+
+Western
+------WebKitFormBoundary
+Content-Disposition: form-data; name="City"
+
+Colombo
+------WebKitFormBoundary
+Content-Disposition: form-data; name="AgencyAddress"
+
+123 Main Street, Colombo
+------WebKitFormBoundary
+Content-Disposition: form-data; name="AgencyLogo"; filename="logo.png"
+Content-Type: image/png
+
+< /path/to/logo.png >
+------WebKitFormBoundary
+Content-Disposition: form-data; name="FullName"
+
+John Doe
+------WebKitFormBoundary
+Content-Disposition: form-data; name="NICNo"
+
+123456789V
+------WebKitFormBoundary
+Content-Disposition: form-data; name="MobileNo"
+
++94123456789
+------WebKitFormBoundary
+Content-Disposition: form-data; name="Email"
+
+admin@tourism.com
+------WebKitFormBoundary
+Content-Disposition: form-data; name="Password"
+
+password123
+------WebKitFormBoundary
+Content-Disposition: form-data; name="ConfirmPassword"
+
+password123
+------WebKitFormBoundary
+Content-Disposition: form-data; name="PlanId"
+
+1
+------WebKitFormBoundary
+Content-Disposition: form-data; name="PlanName"
+
+Basic Plan
+------WebKitFormBoundary
+Content-Disposition: form-data; name="PlanType"
+
+Basic
+------WebKitFormBoundary--
+
+### 2. Login (Main App) - Returns Dual Tokens
+POST {{ChatApp_HostAddress}}/api/identity/login
+Content-Type: application/json
+
+{
+  "email": "admin@tourism.com",
+  "password": "password123"
+}
+
+### ===== CHAT FEATURES (Use chatToken from login) =====
+
+### Get my chat (tenant's chat)
+GET {{ChatApp_HostAddress}}/api/Chat/my-chat
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+
+### Send a message
+POST {{ChatApp_HostAddress}}/api/Chat/send-message
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "chatId": "your-chat-id-here",
+  "message": "Hello, I need help planning a trip",
+  "conversationIndex": 1
+}
+
+### Get message history
+GET {{ChatApp_HostAddress}}/api/Chat/messages/your-chat-id-here?page=1&pageSize=20
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+
+### Mark message as read
+POST {{ChatApp_HostAddress}}/api/Chat/messages/your-message-id-here/mark-read
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+
+### Get chat users
+GET {{ChatApp_HostAddress}}/api/Chat/users
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+
+### ===== CHAT USER REGISTRATION (Separate from main app) =====
+
+### Register a chat user (Client/Agent)
+POST {{ChatApp_HostAddress}}/api/Auth/register
+Content-Type: application/json
+
+{
+  "email": "client@example.com",
+  "name": "Test Client",
+  "role": "Client"
+}
+
+### Login chat user
+POST {{ChatApp_HostAddress}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "email": "client@example.com"
+}
+
+### ===== AGENT FEATURES =====
+
+### Get available chats (Agent)
+GET {{ChatApp_HostAddress}}/api/Agent/available-chats
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+
+### Toggle user bot mode (Agent)
+POST {{ChatApp_HostAddress}}/api/Agent/toggle-bot/your-user-id-here
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+
+### ===== BOT MANAGEMENT =====
+
+### Process message with bot
+POST {{ChatApp_HostAddress}}/api/ChatBot/process-message
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "chatId": "your-chat-id-here",
+  "message": "hello"
+}
+
+### Get bot commands
+GET {{ChatApp_HostAddress}}/api/ChatBot/commands/your-chat-id-here
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+
+### Create individual bot command
+POST {{ChatApp_HostAddress}}/api/ChatBot/commands
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "chatId": "your-chat-id-here",
+  "index": 5,
+  "message": ["What activities interest you?"],
+  "reply": ["Beach", "Hiking", "Culture", "Food"],
+  "type": "Selection",
+  "keywords": "activities,interest,what to do"
+}
+
+### Update bot command
+PUT {{ChatApp_HostAddress}}/api/ChatBot/commands/your-command-id-here
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "message": ["What activities would you like?"],
+  "keywords": "activities,interest,what to do,fun"
+}
+
+### Delete bot command
+DELETE {{ChatApp_HostAddress}}/api/ChatBot/commands/your-command-id-here
+Authorization: Bearer YOUR_CHAT_TOKEN_HERE
 
 ###

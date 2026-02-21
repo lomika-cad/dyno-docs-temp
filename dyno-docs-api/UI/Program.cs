@@ -1,6 +1,7 @@
 using System.Text;
 using Application;
 using Application.Common.Interfaces;
+using ChatApp;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +22,8 @@ builder.Services.AddCors(options =>
 
 builder.Services
     .AddApplication()
-    .AddInfrastructure(builder.Configuration);
+    .AddInfrastructure(builder.Configuration)
+    .AddChatApp(builder.Configuration);
 
 // Controllers
 builder.Services.AddControllers();
@@ -80,6 +82,10 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
     dbContext.Database.Migrate();
+
+    // Migrate ChatBot database
+    var chatBotDbContext = scope.ServiceProvider.GetRequiredService<ChatApp.Models.ChatBotDbContext>();
+    chatBotDbContext.Database.Migrate();
 }
 
 // Configure middleware pipeline

@@ -1,7 +1,8 @@
 namespace Application.Common.Interfaces;
 
-public interface ICurrentUserService
+/// <summary>
+/// Re-exported from Domain.Common.Interfaces for backward compatibility within Application layer.
+/// </summary>
+public interface ICurrentUserService : Domain.Common.Interfaces.ICurrentUserService
 {
-    Guid? UserId { get; }
-    string? UserName { get; }
 }

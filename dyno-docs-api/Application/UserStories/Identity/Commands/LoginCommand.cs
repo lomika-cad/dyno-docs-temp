@@ -1,5 +1,6 @@
 using Application.Common;
 using Application.Common.Interfaces;
+using ChatApp.Models;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Throw;
@@ -27,11 +28,16 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
 {
     private readonly IApplicationDbContext _context;
     private readonly IJwtService _jwtService;
+    private readonly ChatBotDbContext _chatContext;
 
-    public LoginCommandHandler(IApplicationDbContext context, IJwtService jwtService)
+    public LoginCommandHandler(
+        IApplicationDbContext context,
+        IJwtService jwtService,
+        ChatBotDbContext chatContext)
     {
         _context = context;
         _jwtService = jwtService;
+        _chatContext = chatContext;
     }
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -57,8 +63,32 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
 
         tenant.ThrowIfNull("Invalid tenant.");
 
-        // Generate token
+        // Generate main app token (same token works for chat — TenantId & UserId are in claims)
         var token = _jwtService.GenerateToken(user);
+
+        // Ensure ChatUser exists for this agency owner
+        var chatUser = await _chatContext.ChatUsers
+            .FirstOrDefaultAsync(cu => cu.Email == user.Email && cu.TenantId == user.TenantId, cancellationToken);
+
+        if (chatUser == null)
+        {
+            // Create chat user if doesn't exist
+            chatUser = new ChatUser
+            {
+                Id = Guid.NewGuid(),
+                TenantId = user.TenantId,
+                Email = user.Email,
+                Name = user.FullName,
+                Role = UserRole.Admin, // Agency owners are Admins in chat
+                IsBotOn = false,
+                IsOnline = false,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "system"
+            };
+
+            _chatContext.ChatUsers.Add(chatUser);
+            await _chatContext.SaveChangesAsync(cancellationToken);
+        }
 
         var response = new LoginResponse
         {

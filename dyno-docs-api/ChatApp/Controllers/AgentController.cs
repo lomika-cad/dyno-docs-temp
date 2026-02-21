@@ -1,3 +1,4 @@
+using Domain.Common.Interfaces;
 using ChatApp.Interfaces;
 using ChatApp.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -33,10 +34,10 @@ public class AgentController : ControllerBase
     {
         try
         {
-            // Get chats that don't have an assigned agent
+            // Get all active chats for the tenant (agents can see all chats)
             var availableChats = await _context.Chats
-                .Where(c => c.TenantId == _tenantService.TenantId && c.AgentUserId == null && c.IsActive)
-                .Include(c => c.ClientUser)
+                .Where(c => c.TenantId == _tenantService.TenantId && c.IsActive)
+                .Include(c => c.ChatUsers.Where(cu => cu.Role == UserRole.Client))
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
@@ -45,12 +46,12 @@ public class AgentController : ControllerBase
                 c.Id,
                 c.Name,
                 c.CreatedAt,
-                ClientUser = new
+                ClientUsers = c.ChatUsers.Select(cu => new
                 {
-                    c.ClientUser.Id,
-                    c.ClientUser.Name,
-                    c.ClientUser.Email
-                }
+                    cu.Id,
+                    cu.Name,
+                    cu.Email
+                })
             }));
         }
         catch (Exception ex)
@@ -64,11 +65,14 @@ public class AgentController : ControllerBase
     {
         try
         {
-            var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+            var currentUserId = _currentUserService.UserId;
 
+            // Get chats where current agent user exists and has messages
             var myChats = await _context.Chats
-                .Where(c => c.TenantId == _tenantService.TenantId && c.AgentUserId == currentUserId)
-                .Include(c => c.ClientUser)
+                .Where(c => c.TenantId == _tenantService.TenantId)
+                .Include(c => c.ChatUsers.Where(cu => cu.Role == UserRole.Client))
+                .Include(c => c.Messages.Where(m => m.ChatUserId == currentUserId))
+                .Where(c => c.Messages.Any(m => m.ChatUserId == currentUserId))
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
@@ -78,12 +82,12 @@ public class AgentController : ControllerBase
                 c.Name,
                 c.IsActive,
                 c.CreatedAt,
-                ClientUser = new
+                ClientUsers = c.ChatUsers.Select(cu => new
                 {
-                    c.ClientUser.Id,
-                    c.ClientUser.Name,
-                    c.ClientUser.Email
-                }
+                    cu.Id,
+                    cu.Name,
+                    cu.Email
+                })
             }));
         }
         catch (Exception ex)
@@ -97,15 +101,15 @@ public class AgentController : ControllerBase
     {
         try
         {
-            var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
-            var success = await _chatService.AssignAgentToChatAsync(chatId, currentUserId);
-
-            if (!success)
+            // Since Chat is 1:1 with Tenant, agents can access all chats
+            // This method might not be needed anymore, but keeping it for compatibility
+            var chat = await _context.Chats.FindAsync(chatId);
+            if (chat == null || chat.TenantId != _tenantService.TenantId)
             {
-                return NotFound(new { message = "Chat not found or already assigned" });
+                return NotFound(new { message = "Chat not found" });
             }
 
-            return Ok(new { message = "Chat assigned successfully" });
+            return Ok(new { message = "Chat accessed successfully" });
         }
         catch (Exception ex)
         {
@@ -113,16 +117,16 @@ public class AgentController : ControllerBase
         }
     }
 
-    [HttpPost("toggle-bot/{userId}")]
-    public async Task<IActionResult> ToggleUserBotMode(Guid userId)
+    [HttpPost("toggle-bot/{chatUserId}")]
+    public async Task<IActionResult> ToggleUserBotMode(Guid chatUserId)
     {
         try
         {
-            var user = await _context.ChatUsers.FindAsync(userId);
+            var user = await _context.ChatUsers
+                .FirstOrDefaultAsync(u => u.Id == chatUserId && u.TenantId == _tenantService.TenantId);
+
             if (user == null)
-            {
                 return NotFound(new { message = "User not found" });
-            }
 
             user.IsBotOn = !user.IsBotOn;
             user.LastModifiedAt = DateTime.UtcNow;

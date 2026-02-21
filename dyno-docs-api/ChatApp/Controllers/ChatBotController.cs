@@ -1,5 +1,6 @@
+using Domain.Common.Interfaces;
 using ChatApp.Interfaces;
-using ChatApp.Models;
+using ChatApp.Models.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,43 +12,30 @@ namespace ChatApp.Controllers;
 public class ChatBotController : ControllerBase
 {
     private readonly IChatBotEngine _chatBotEngine;
-    private readonly ChatBotDbContext _context;
     private readonly ITenantService _tenantService;
 
-    public ChatBotController(IChatBotEngine chatBotEngine, ChatBotDbContext context, ITenantService tenantService)
+    public ChatBotController(
+        IChatBotEngine chatBotEngine,
+        ITenantService tenantService)
     {
         _chatBotEngine = chatBotEngine;
-        _context = context;
         _tenantService = tenantService;
     }
 
+    /// <summary>Process a tourist message and return a matching bot command.</summary>
     [HttpPost("process-message")]
     public async Task<IActionResult> ProcessMessage([FromBody] ProcessMessageRequest request)
     {
         try
         {
             var botCommand = await _chatBotEngine.ProcessUserMessageAsync(request.ChatId, request.Message);
-
             if (botCommand == null)
-            {
-                return Ok(new
-                {
-                    hasResponse = false,
-                    message = "No matching bot response found"
-                });
-            }
+                return Ok(new { hasResponse = false, message = "No matching bot response found" });
 
             return Ok(new
             {
                 hasResponse = true,
-                command = new
-                {
-                    botCommand.Id,
-                    botCommand.Index,
-                    botCommand.Message,
-                    botCommand.Reply,
-                    botCommand.Type
-                }
+                command = new { botCommand.Id, botCommand.Index, botCommand.Message, botCommand.Reply, botCommand.Type }
             });
         }
         catch (Exception ex)
@@ -56,6 +44,7 @@ public class ChatBotController : ControllerBase
         }
     }
 
+    /// <summary>Get all bot commands for a specific chat, ordered by Index.</summary>
     [HttpGet("commands/{chatId}")]
     public async Task<IActionResult> GetBotCommands(Guid chatId)
     {
@@ -64,12 +53,7 @@ public class ChatBotController : ControllerBase
             var commands = await _chatBotEngine.GetBotCommandsByChatAsync(chatId);
             return Ok(commands.Select(c => new
             {
-                c.Id,
-                c.Index,
-                c.Message,
-                c.Reply,
-                c.Type,
-                c.Keywords
+                c.Id, c.Index, c.Message, c.Reply, c.Type, c.Keywords, c.CreatedAt
             }));
         }
         catch (Exception ex)
@@ -78,25 +62,62 @@ public class ChatBotController : ControllerBase
         }
     }
 
-    [HttpPost("create-commands")]
-    public async Task<IActionResult> CreateBotCommands([FromBody] CreateBotCommandsRequest request)
+    /// <summary>Add a new bot command to a chat manually.</summary>
+    [HttpPost("commands")]
+    public async Task<IActionResult> AddBotCommand([FromBody] CreateChatbotCommandDto dto)
     {
         try
         {
-            var success = await _chatBotEngine.CreateBotCommandsForChatAsync(request.ChatId, _tenantService.TenantId);
-
-            if (success)
+            var command = await _chatBotEngine.AddBotCommandAsync(_tenantService.TenantId, dto);
+            return Ok(new
             {
-                return Ok(new { message = "Bot commands created successfully" });
-            }
-            else
-            {
-                return BadRequest(new { message = "Failed to create bot commands" });
-            }
+                message = "Bot command created successfully",
+                command = new { command.Id, command.Index, command.Message, command.Reply, command.Type, command.Keywords }
+            });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Failed to create bot commands", error = ex.Message });
+            return StatusCode(500, new { message = "Failed to create bot command", error = ex.Message });
+        }
+    }
+
+    /// <summary>Update an existing bot command (partial — only provided fields are changed).</summary>
+    [HttpPut("commands/{commandId}")]
+    public async Task<IActionResult> UpdateBotCommand(Guid commandId, [FromBody] UpdateChatbotCommandDto dto)
+    {
+        try
+        {
+            var command = await _chatBotEngine.UpdateBotCommandAsync(commandId, _tenantService.TenantId, dto);
+            if (command == null)
+                return NotFound(new { message = "Bot command not found" });
+
+            return Ok(new
+            {
+                message = "Bot command updated successfully",
+                command = new { command.Id, command.Index, command.Message, command.Reply, command.Type, command.Keywords }
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to update bot command", error = ex.Message });
+        }
+    }
+
+    /// <summary>Delete a bot command.</summary>
+    [HttpDelete("commands/{commandId}")]
+    public async Task<IActionResult> DeleteBotCommand(Guid commandId)
+    {
+        try
+        {
+            var deleted = await _chatBotEngine.DeleteBotCommandAsync(commandId, _tenantService.TenantId);
+            if (!deleted)
+                return NotFound(new { message = "Bot command not found" });
+
+            return Ok(new { message = "Bot command deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to delete bot command", error = ex.Message });
         }
     }
 }
@@ -104,10 +125,5 @@ public class ChatBotController : ControllerBase
 public class ProcessMessageRequest
 {
     public Guid ChatId { get; set; }
-    public string Message { get; set; }
-}
-
-public class CreateBotCommandsRequest
-{
-    public Guid ChatId { get; set; }
+    public string Message { get; set; } = string.Empty;
 }

@@ -1,5 +1,7 @@
 using Application.Common.Interfaces;
 using Infrastructure.Persistence;
+using Application.Common.Interfaces;
+using Domain.Common.Interfaces;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,9 +21,14 @@ public static class InfrastructureDependencyInjection
 
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
-        // Core Services
-        services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<ITenantService, TenantService>();
+        // Core Services - register both Application and Domain interface aliases
+        services.AddScoped<CurrentUserService>();
+        services.AddScoped<Application.Common.Interfaces.ICurrentUserService>(p => p.GetRequiredService<CurrentUserService>());
+        services.AddScoped<Domain.Common.Interfaces.ICurrentUserService>(p => p.GetRequiredService<CurrentUserService>());
+
+        services.AddScoped<TenantService>();
+        services.AddScoped<Application.Common.Interfaces.ITenantService>(p => p.GetRequiredService<TenantService>());
+        services.AddScoped<Domain.Common.Interfaces.ITenantService>(p => p.GetRequiredService<TenantService>());
 
         // Application Services
         services.AddScoped<IJwtService, JwtService>();

@@ -1,6 +1,8 @@
 using Application.Common;
 using Application.Common.Interfaces;
 using Application.UserStories.Operations.UserSubscriptions.Commands;
+using ChatApp.Interfaces;
+using ChatApp.Models;
 using Domain.Common;
 using Domain.Entities.Identity;
 using Domain.Entities.Operations;
@@ -36,11 +38,19 @@ public class RegisterAgencyCommandHandler : IRequestHandler<RegisterAgencyComman
 {
     private readonly IApplicationDbContext _context;
     public  readonly IMediator _mediator;
+    private readonly ChatBotDbContext _chatContext;
+    private readonly IChatService _chatService;
 
-    public RegisterAgencyCommandHandler(IApplicationDbContext context, IMediator mediator)
+    public RegisterAgencyCommandHandler(
+        IApplicationDbContext context, 
+        IMediator mediator,
+        ChatBotDbContext chatContext,
+        IChatService chatService)
     {
         _context = context;
         _mediator = mediator;
+        _chatContext = chatContext;
+        _chatService = chatService;
     }
 
     public async Task<Result> Handle(RegisterAgencyCommand request, CancellationToken cancellationToken)
@@ -127,6 +137,36 @@ public class RegisterAgencyCommandHandler : IRequestHandler<RegisterAgencyComman
 
         // Save changes
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Create Chat for the tenant
+        try
+        {
+            // Create Chat entity (1:1 with Tenant)
+            var chat = await _chatService.CreateChatAsync(tenant.Id, $"{tenant.AgencyName} Chat");
+            
+            // Create ChatUser for the agency admin
+            var chatUser = new ChatUser
+            {
+                Id = Guid.NewGuid(),
+                TenantId = tenant.Id,
+                Email = user.Email,
+                Name = user.FullName,
+                Role = UserRole.Admin, // Agency owner is Admin in chat
+                IsBotOn = false, // Admins don't start with bot
+                IsOnline = false,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "system"
+            };
+
+            _chatContext.ChatUsers.Add(chatUser);
+            await _chatContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't fail registration if chat creation fails
+            // In production, you might want to implement retry logic or notifications
+            Console.WriteLine($"Failed to create chat for tenant {tenant.Id}: {ex.Message}");
+        }
 
         var result = Result.Success("Agency registered successfully.");
         result.SetData(tenant.Id);

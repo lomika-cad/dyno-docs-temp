@@ -8,8 +8,8 @@ public class Chat
     public Guid Id { get; set; }
     public Guid TenantId { get; set; }
     public string Name { get; set; }
-    public Guid ClientUserId { get; set; }
-    public Guid? AgentUserId { get; set; }
+    // public Guid ClientUserId { get; set; }
+    // public Guid? AgentUserId { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public string CreatedBy { get; set; }
@@ -17,8 +17,7 @@ public class Chat
     public string? LastModifiedBy { get; set; }
 
     // Navigation
-    public virtual ChatUser ClientUser { get; set; }
-    public virtual ChatUser? AgentUser { get; set; }
     public virtual ICollection<ChatMessage> Messages { get; set; }
     public virtual ICollection<ChatbotCommands> BotCommands { get; set; }
+    public virtual ICollection<ChatUser> ChatUsers { get; set; }
 }

@@ -1,7 +1,9 @@
 namespace Application.Common.Interfaces;
 
-public interface ITenantService
+/// <summary>
+/// Re-exported from Domain.Common.Interfaces for backward compatibility within Application layer.
+/// </summary>
+public interface ITenantService : Domain.Common.Interfaces.ITenantService
 {
-    Guid TenantId { get; }
 }
 

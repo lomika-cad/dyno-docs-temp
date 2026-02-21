@@ -1,5 +1,7 @@
+using Domain.Common.Interfaces;
 using ChatApp.Interfaces;
 using ChatApp.Models;
+using ChatApp.Models.Dtos;
 using Microsoft.EntityFrameworkCore;
 
 namespace ChatApp.Services;
@@ -17,17 +19,13 @@ public class ChatBotEngine : IChatBotEngine
 
     public async Task<ChatbotCommands?> ProcessUserMessageAsync(Guid chatId, string userMessage)
     {
-        // Simple keyword matching for tourism queries
         var keywords = userMessage.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        // Find matching bot commands based on keywords
-        var matchingCommand = await _context.ChatbotCommands
+        return await _context.ChatbotCommands
             .Where(c => c.ChatId == chatId)
             .Where(c => keywords.Any(k => c.Keywords.ToLower().Contains(k)))
             .OrderBy(c => c.Index)
             .FirstOrDefaultAsync();
-
-        return matchingCommand;
     }
 
     public async Task<ChatbotCommands> GetNextBotCommandAsync(Guid chatId, int currentIndex)
@@ -38,6 +36,85 @@ public class ChatBotEngine : IChatBotEngine
             .FirstOrDefaultAsync() ?? await GetDefaultWelcomeCommandAsync(chatId);
     }
 
+    public async Task<IEnumerable<ChatbotCommands>> GetBotCommandsByChatAsync(Guid chatId)
+    {
+        return await _context.ChatbotCommands
+            .Where(c => c.ChatId == chatId)
+            .OrderBy(c => c.Index)
+            .ToListAsync();
+    }
+
+    public async Task<ChatbotCommands> AddBotCommandAsync(Guid tenantId, CreateChatbotCommandDto dto)
+    {
+        var command = new ChatbotCommands
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            ChatId = dto.ChatId,
+            Index = dto.Index,
+            Message = dto.Message,
+            Reply = dto.Reply,
+            Type = dto.Type,
+            Keywords = dto.Keywords,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = _currentUserService.UserName ?? "system"
+        };
+
+        _context.ChatbotCommands.Add(command);
+        await _context.SaveChangesAsync();
+
+        return command;
+    }
+
+    public async Task<ChatbotCommands?> UpdateBotCommandAsync(Guid commandId, Guid tenantId, UpdateChatbotCommandDto dto)
+    {
+        var command = await _context.ChatbotCommands
+            .FirstOrDefaultAsync(c => c.Id == commandId && c.TenantId == tenantId);
+
+        if (command == null) return null;
+
+        if (dto.Index.HasValue)    command.Index    = dto.Index.Value;
+        if (dto.Message != null)   command.Message  = dto.Message;
+        if (dto.Reply != null)     command.Reply    = dto.Reply;
+        if (dto.Type.HasValue)     command.Type     = dto.Type.Value;
+        if (dto.Keywords != null)  command.Keywords = dto.Keywords;
+
+        command.LastModifiedAt = DateTime.UtcNow;
+        command.LastModifiedBy = _currentUserService.UserName ?? "system";
+
+        await _context.SaveChangesAsync();
+
+        return command;
+    }
+
+    public async Task<bool> DeleteBotCommandAsync(Guid commandId, Guid tenantId)
+    {
+        var command = await _context.ChatbotCommands
+            .FirstOrDefaultAsync(c => c.Id == commandId && c.TenantId == tenantId);
+
+        if (command == null) return false;
+
+        _context.ChatbotCommands.Remove(command);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    private async Task<ChatbotCommands> GetDefaultWelcomeCommandAsync(Guid chatId)
+    {
+        return await _context.ChatbotCommands
+            .Where(c => c.ChatId == chatId && c.Index == 0)
+            .FirstOrDefaultAsync() ?? new ChatbotCommands
+            {
+                Message = new[] { "How can I help you today?" },
+                Reply = new[] { "Start Over", "Speak to Agent" },
+                Type = CommandType.Selection
+            };
+    }
+
+    
+
+    
     public async Task<bool> CreateBotCommandsForChatAsync(Guid chatId, Guid tenantId)
     {
         // Create default tourism bot commands for a new chat
@@ -89,24 +166,5 @@ public class ChatBotEngine : IChatBotEngine
 
         return true;
     }
-
-    public async Task<IEnumerable<ChatbotCommands>> GetBotCommandsByChatAsync(Guid chatId)
-    {
-        return await _context.ChatbotCommands
-            .Where(c => c.ChatId == chatId)
-            .OrderBy(c => c.Index)
-            .ToListAsync();
-    }
-
-    private async Task<ChatbotCommands> GetDefaultWelcomeCommandAsync(Guid chatId)
-    {
-        return await _context.ChatbotCommands
-            .Where(c => c.ChatId == chatId && c.Index == 0)
-            .FirstOrDefaultAsync() ?? new ChatbotCommands
-            {
-                Message = new[] { "How can I help you today?" },
-                Reply = new[] { "Start Over", "Speak to Agent" },
-                Type = CommandType.Selection
-            };
-    }
+    
 }
