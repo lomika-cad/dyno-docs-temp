@@ -4,12 +4,18 @@ import Header from "../layouts/Header";
 import "../styles/home.css";
 import { getPricingPlans } from "../services/pricing-plan-api";
 import { CircularProgress } from "@mui/material";
+import SignInModal from "../components/SignInModal";
 
 export default function PricingPage() {
     const [yearly, setYearly] = useState(false);
     const [plans, setPlans] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [openSignIn, setOpenSignIn] = useState(false);
+
+    const handleCloseSignIn = () => {
+        setOpenSignIn(false);
+    }
 
     const handleGetPricingPlans = async () => {
         setLoading(true);
@@ -41,6 +47,7 @@ export default function PricingPage() {
         <div>
             <Header />
 
+            <SignInModal open={openSignIn} onClose={handleCloseSignIn} />
             <main className="pricing-page">
                 <section className="pricing-hero">
                     <h1>
@@ -103,6 +110,7 @@ export default function PricingPage() {
                                         className={isHighlight ? "btn btn-primary1" : "btn btn-ghost"}
                                         disabled={isFree}
                                         style={isFree ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
+                                        onClick={() => setOpenSignIn(true)}
                                     >
                                         Get Started
                                     </button>
