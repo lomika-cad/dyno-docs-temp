@@ -82,12 +82,6 @@ const FILTER_OPTIONS: FilterOption[] = [
 
 const FALLBACK_DESCRIPTION = "Smart layouts crafted for travel reports.";
 const FALLBACK_PREVIEW = "<p style=\"color:#6b7280;font-size:14px\">No preview available for this template.</p>";
-const LKR_FORMATTER = new Intl.NumberFormat("en-LK", {
-  style: "currency",
-  currency: "LKR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
 
 const DEFAULT_ASSIGNMENT_DESIGN = `{
   "version": "1.0",
@@ -365,7 +359,12 @@ const normalizeTemplates = (payload: TemplateApiResponse[]): TemplateCardModel[]
       typeof priceNumber === "number" && !Number.isNaN(priceNumber) ? priceNumber : null;
     const priceLabel =
       isPaid && normalizedPrice !== null
-        ? LKR_FORMATTER.format(normalizedPrice)
+        ? new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          }).format(normalizedPrice)
         : isPaid
           ? "Premium"
           : "Free";
