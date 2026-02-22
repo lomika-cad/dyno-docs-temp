@@ -40,7 +40,8 @@ public class CreateTemplateCommandHandler : IRequestHandler<CreateTemplateComman
             TemplateDesign = request.TemplateDesign,
             isPaid = request.isPaid,
             Price = request.Price,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.Now,
+            CreatedBy = "System"
         };
 
         _dbContext.Template.Add(entity);
