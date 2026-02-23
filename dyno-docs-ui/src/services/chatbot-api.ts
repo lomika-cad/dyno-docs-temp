@@ -28,3 +28,16 @@ export const createChatbotCommands = async (data:any, token: string) => {
         throw error;
     }
 }
+
+export const getChatbotCommands = async (botId: string, token: string) => {
+    try {
+        const response = await axios.get(`${API_URL}/commands/${botId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}

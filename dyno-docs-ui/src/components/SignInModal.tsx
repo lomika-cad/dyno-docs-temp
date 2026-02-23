@@ -39,6 +39,7 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
       sessionStorage.setItem("dd_user_id", res.userId);
       sessionStorage.setItem("dd_tenant_id", res.tenantId);
       sessionStorage.setItem("dd_full_name", res.fullName);
+      sessionStorage.setItem("dd_chat_user_id", res.chatUserId === null ? "" : res.chatUserId);
       handleMe(res.token, res.tenantId);
       onClose();
       navigate("/dashboard");

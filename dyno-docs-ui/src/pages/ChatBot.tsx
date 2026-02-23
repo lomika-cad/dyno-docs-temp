@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -10,7 +10,7 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import SaveIcon from "@mui/icons-material/Save";
 import Navbar from "../layouts/Navbar";
 import { showError, showSuccess } from "../components/Toast";
-import { createChatbot, createChatbotCommands } from "../services/chatbot-api";
+import { createChatbot, createChatbotCommands, getChatbotCommands } from "../services/chatbot-api";
 import "../styles/agencyData.css";
 import "../styles/chatBot.css";
 import { CircularProgress } from "@mui/material";
@@ -32,6 +32,7 @@ interface DialogFlow {
 
 export default function ChatBot() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
+    const DD_CHAT_USER_ID = sessionStorage.getItem("dd_chat_user_id") || "";
     const [infoOpen, setInfoOpen] = useState(false);
     const [nameInputModalOpen, setNameInputModalOpen] = useState(false);
     const [saveConfirmModalOpen, setSaveConfirmModalOpen] = useState(false);
@@ -48,6 +49,22 @@ export default function ChatBot() {
             isLocked: false
         }
     ]);
+
+    const handleGetCommands = async (chatId:any) => {
+        sessionStorage.setItem("dd_chat_user_id", chatId);
+        try {
+            const res = await getChatbotCommands(chatId, DD_TOKEN);
+            console.log("Chatbot commands:", res);
+        } catch (error) {
+            console.error("Error fetching chatbot commands:", error);
+        }
+    }
+
+    useEffect(() => {
+        if (DD_CHAT_USER_ID) {
+            handleGetCommands(DD_CHAT_USER_ID);
+        }
+    }, [DD_CHAT_USER_ID]);
 
     const addDialogFlow = () => {
         const newFlow: DialogFlow = {
@@ -208,6 +225,7 @@ export default function ChatBot() {
             }
 
             showSuccess(`Chatbot "${chatbotName}" saved successfully! Dialog flow has been created with all commands.`);
+            handleGetCommands(chatId);
             setSaveConfirmModalOpen(false);
         } catch (error: any) {
             console.error("Failed to save dialog flow:", error);

@@ -22,6 +22,7 @@ public record LoginResponse
     public required string AgencyName { get; init; }
     public required Guid TenantId { get; init; }
     public required Guid UserId { get; init; }
+    public Guid? ChatUserId { get; init; }
 }
 
 public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
@@ -64,6 +65,10 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
 
         // Generate main app token (same token works for chat — TenantId & UserId are in claims)
         var token = _jwtService.GenerateToken(user);
+        
+        var chatUser = await _chatContext.ChatUsers.FirstOrDefaultAsync(cu => cu.Id == user.TenantId, cancellationToken);
+        
+        var chatUserId = chatUser?.Id;
 
         var response = new LoginResponse
         {
@@ -73,7 +78,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
             MobileNo = user.MobileNo,
             AgencyName = tenant.AgencyName,
             TenantId = user.TenantId,
-            UserId = user.Id
+            UserId = user.Id,
+            ChatUserId = chatUserId
         };
 
         return response;
