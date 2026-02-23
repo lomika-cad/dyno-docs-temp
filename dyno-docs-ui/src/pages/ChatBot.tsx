@@ -37,6 +37,7 @@ export default function ChatBot() {
     const [nameInputModalOpen, setNameInputModalOpen] = useState(false);
     const [saveConfirmModalOpen, setSaveConfirmModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [chatbotName, setChatbotName] = useState("");
     const [dialogFlows, setDialogFlows] = useState<DialogFlow[]>([
         {
@@ -50,13 +51,63 @@ export default function ChatBot() {
         }
     ]);
 
-    const handleGetCommands = async (chatId:any) => {
+    const convertCommandsToDialogFlows = (commands: any[]): DialogFlow[] => {
+        if (!commands || commands.length === 0) {
+            return [{
+                id: "1",
+                clientType: "message",
+                clientText: "",
+                clientOptions: [],
+                agentResponse: "",
+                agentOptions: [],
+                isLocked: false
+            }];
+        }
+
+        return commands.map(command => {
+            const isOptionsType = command.type === 1;
+            const clientOptions: DialogOption[] = isOptionsType
+                ? command.message.map((msg: string, index: number) => ({
+                    id: `${command.id}_client_${index}`,
+                    text: msg
+                }))
+                : [];
+
+            const agentOptions: DialogOption[] = isOptionsType && command.reply
+                ? command.reply.map((reply: string, index: number) => ({
+                    id: `${command.id}_agent_${index}`,
+                    text: reply
+                }))
+                : [];
+
+            return {
+                id: command.id || command.index.toString(),
+                clientType: isOptionsType ? "options" as const : "message" as const,
+                clientText: "",
+                clientOptions,
+                agentResponse: !isOptionsType && command.reply && command.reply.length > 0 ? command.reply[0] : "",
+                agentOptions,
+                isLocked: false
+            };
+        });
+    };
+
+    const handleGetCommands = async (chatId: any) => {
         sessionStorage.setItem("dd_chat_user_id", chatId);
         try {
+            setIsLoading(true);
             const res = await getChatbotCommands(chatId, DD_TOKEN);
-            console.log("Chatbot commands:", res);
+            if (res && Array.isArray(res)) {
+                const convertedFlows = convertCommandsToDialogFlows(res);
+                setDialogFlows(convertedFlows);
+                console.log("Loaded chatbot commands:", res);
+                console.log("Converted to dialog flows:", convertedFlows);
+            }
         } catch (error) {
             console.error("Error fetching chatbot commands:", error);
+            showError("Failed to load existing chatbot commands.");
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -269,8 +320,14 @@ export default function ChatBot() {
                     </div>
 
                     <div className="chatbot-flows">
-                        {dialogFlows.map((flow, index) => (
-                            <div key={flow.id} className={`chatbot-flow-card ${flow.isLocked ? 'chatbot-flow-card--locked' : ''}`}>
+                        {isLoading ? (
+                            <div className="chatbot-loading" style={{ textAlign: 'center', padding: '40px' }}>
+                                <CircularProgress size={40} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
+                                <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>Loading existing commands...</p>
+                            </div>
+                        ) : (
+                            dialogFlows.map((flow, index) => (
+                                <div key={flow.id} className={`chatbot-flow-card ${flow.isLocked ? 'chatbot-flow-card--locked' : ''}`}>
                                 <div className="chatbot-flow-header">
                                     <div className="chatbot-flow-status">
                                         <span className="chatbot-flow-number">Step {index + 1}</span>
@@ -459,7 +516,8 @@ export default function ChatBot() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                            ))
+                        )}
                     </div>
 
                     <div className="chatbot-builder-actions">

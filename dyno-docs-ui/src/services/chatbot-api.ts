@@ -29,6 +29,20 @@ export const createChatbotCommands = async (data:any, token: string) => {
     }
 }
 
+export const updateChatbotCommands = async (data:any, botId: string, token: string) => {
+    try {
+        const response = await axios.put(API_URL+"/commands/"+botId, data, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error) {        
+        throw error;
+    }
+}
+
+
 export const getChatbotCommands = async (botId: string, token: string) => {
     try {
         const response = await axios.get(`${API_URL}/commands/${botId}`, {
