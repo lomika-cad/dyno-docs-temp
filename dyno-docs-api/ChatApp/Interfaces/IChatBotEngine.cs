@@ -12,4 +12,5 @@ public interface IChatBotEngine
     Task<ChatbotCommands> AddBotCommandAsync(Guid tenantId, CreateChatbotCommandDto dto);
     Task<ChatbotCommands?> UpdateBotCommandAsync(Guid commandId, Guid tenantId, UpdateChatbotCommandDto dto);
     Task<bool> DeleteBotCommandAsync(Guid commandId, Guid tenantId);
+    Task<string> GetBotNameAsync(Guid chatId);
 }

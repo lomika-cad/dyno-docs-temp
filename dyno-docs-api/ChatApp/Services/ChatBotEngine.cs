@@ -119,6 +119,12 @@ public class ChatBotEngine : IChatBotEngine
 
         return true;
     }
+    
+    public async Task<string> GetBotNameAsync(Guid chatId)
+    {
+        var chat = await _context.Chats.FirstOrDefaultAsync(c => c.Id == chatId);
+        return chat?.Name ?? "Tourism Bot";
+    }
 
     private async Task<ChatbotCommands> GetDefaultWelcomeCommandAsync(Guid chatId)
     {

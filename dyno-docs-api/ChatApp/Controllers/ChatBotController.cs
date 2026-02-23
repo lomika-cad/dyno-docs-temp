@@ -77,6 +77,20 @@ public class ChatBotController : ControllerBase
             return StatusCode(500, new { message = "Failed to get bot commands", error = ex.Message });
         }
     }
+    
+    [HttpGet("bot-name/{chatId}")]
+    public async Task<IActionResult> GetBotName(Guid chatId)
+    {
+        try
+        {
+            var botName = await _chatBotEngine.GetBotNameAsync(chatId);
+            return Ok(new { botName });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to get bot name", error = ex.Message });
+        }
+    }
 
     /// <summary>Add a new bot command to a chat manually.</summary>
     [HttpPost("commands")]

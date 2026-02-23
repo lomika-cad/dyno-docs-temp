@@ -1,16 +1,25 @@
 import { useLocation } from "react-router-dom";
-import { getChatbotCommands } from "../services/chatbot-api";
+import { getChatbotCommands, getChatbotName } from "../services/chatbot-api";
 import { useEffect } from "react";
 
 export default function Chat() {
     const location = useLocation();
 
     const handleGetCommands = async () => {
-        const token = sessionStorage.getItem("dd_token") || "";
         const botId = location.pathname.split("/").pop();
 
         try {
-            const res = await getChatbotCommands(botId || "", token);
+            const res = await getChatbotCommands(botId || "", "");
+        } catch (error) {
+            
+        }
+    }
+
+    const handleGetBotName = async () => {
+        const botId = location.pathname.split("/").pop();
+        
+        try {
+            const res = await getChatbotName(botId || "", "");
         } catch (error) {
             
         }
@@ -18,6 +27,7 @@ export default function Chat() {
 
     useEffect(() => {
         handleGetCommands();
+        handleGetBotName();
     }, [location.pathname]);
 
     return (
