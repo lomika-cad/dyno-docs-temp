@@ -10,7 +10,7 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import SaveIcon from "@mui/icons-material/Save";
 import Navbar from "../layouts/Navbar";
 import { showError, showSuccess } from "../components/Toast";
-import { createChatbot, createChatbotCommands, getChatbotCommands, updateChatbotCommands, deleteChatbotCommand } from "../services/chatbot-api";
+import { createChatbot, createChatbotCommands, getChatbotCommands, deleteChatbotCommand } from "../services/chatbot-api";
 import "../styles/agencyData.css";
 import "../styles/chatBot.css";
 import { CircularProgress } from "@mui/material";

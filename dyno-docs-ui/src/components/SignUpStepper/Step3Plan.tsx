@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import type { SignUpForm } from "./SignUpStepper";
 import { CircularProgress } from "@mui/material";
 import CardPayment from "../CardPayment";
@@ -13,7 +12,6 @@ type Props = {
 };
 
 export default function Step3Plan({ initial, onBack, onSubmit, loading }: Props) {
-  const navigate = useNavigate();
   const [planId, setPlanId] = useState(initial?.planId ?? "1");
   const [planType, setPlanType] = useState(initial?.planType ?? "0");
   const [terms, setTerms] = useState(initial?.termsAccepted ?? false);
