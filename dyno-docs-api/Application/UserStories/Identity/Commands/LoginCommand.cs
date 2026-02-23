@@ -66,7 +66,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         // Generate main app token (same token works for chat — TenantId & UserId are in claims)
         var token = _jwtService.GenerateToken(user);
         
-        var chatUser = await _chatContext.ChatUsers.FirstOrDefaultAsync(cu => cu.Id == user.TenantId, cancellationToken);
+        var chatUser = await _chatContext.Chats.FirstOrDefaultAsync(cu => cu.TenantId == user.TenantId, cancellationToken);
         
         var chatUserId = chatUser?.Id;
 
