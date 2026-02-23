@@ -3,7 +3,6 @@ import { getChatbotCommands, getChatbotName } from "../services/chatbot-api";
 import { useEffect, useState, useRef } from "react";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import SendIcon from "@mui/icons-material/Send";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { CircularProgress } from "@mui/material";
 import "../styles/chat.css";
 

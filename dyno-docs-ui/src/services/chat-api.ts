@@ -11,3 +11,21 @@ export const getMessages = async (chatId: string) => {
         throw error;
     }
 }
+
+export const registerClient = async (data: any) => {
+    try {
+        const response = await axios.post(`${API_URL}/register-client`, data);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const checkClient = async (body: any) => {
+    try {
+        const response = await axios.post(`${API_URL}/check-client`, body);
+        return response.data;
+    } catch (error) {       
+        throw error;
+    }
+}

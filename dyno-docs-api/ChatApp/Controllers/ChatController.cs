@@ -96,6 +96,38 @@ public class ChatController : ControllerBase
             return StatusCode(500, new { message = "Client registration failed", error = ex.Message });
         }
     }
+    
+    [HttpPost("check-client")]
+    [AllowAnonymous]
+    public async Task<IActionResult> CheckClientExists([FromBody] string email)
+    {
+        try
+        {
+            var chatUser = await _context.ChatUsers
+                .FirstOrDefaultAsync(u => u.Email == email
+                                       && u.Role == UserRole.Client);
+
+            if (chatUser == null)
+                return NotFound(new { message = "Client not found" });
+
+            return Ok(new
+            {
+                chatUser = new
+                {
+                    chatUser.Id,
+                    chatUser.Name,
+                    chatUser.Email,
+                    chatUser.TenantId,
+                    chatUser.Role,
+                    chatUser.IsBotOn
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to check client", error = ex.Message });
+        }
+    }
 
     /// <summary>
     /// Login an existing client by email + tenantId.
