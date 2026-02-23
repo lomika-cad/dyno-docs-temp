@@ -2,7 +2,7 @@ namespace ChatApp.Models;
 
 public enum UserRole
 {
-    Client,
-    Agent,
-    Admin
+    Client = 0,
+    Agent = 1,
+    Admin = 2
 }

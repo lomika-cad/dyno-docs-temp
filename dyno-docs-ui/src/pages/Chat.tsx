@@ -1,6 +1,6 @@
 import { useLocation, useParams } from "react-router-dom";
 import { getChatbotCommands, getChatbotName } from "../services/chatbot-api";
-import { checkClient, registerClient } from "../services/chat-api";
+import { checkClient, registerClient, sendMessage } from "../services/chat-api";
 import { showError, showSuccess } from "../components/Toast";
 import { useEffect, useState, useRef } from "react";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
@@ -34,6 +34,8 @@ export default function Chat() {
     const [inputText, setInputText] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [currentCommandIndex, setCurrentCommandIndex] = useState(0);
+    const [currentInputType, setCurrentInputType] = useState<number | null>(null); // 1 = options, 2 = free text
+    const [currentOptions, setCurrentOptions] = useState<string[]>([]);
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(true);
     const [email, setEmail] = useState("");
     const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
@@ -48,6 +50,18 @@ export default function Chat() {
         scrollToBottom();
     }, [messages]);
 
+    // On mount, if we already have a stored chat client, skip the email modal
+    useEffect(() => {
+        const storedChatUserId = sessionStorage.getItem("dd_public_chat_user_id");
+        const storedToken = sessionStorage.getItem("dd_public_chat_token");
+        const storedChatId = sessionStorage.getItem("dd_public_chat_id");
+
+        if (storedChatUserId && storedToken && storedChatId) {
+            setIsClientReady(true);
+            setIsEmailModalOpen(false);
+        }
+    }, []);
+
     const handleGetCommands = async () => {
         const botId = chatId || location.pathname.split("/").pop();
         try {
@@ -56,19 +70,12 @@ export default function Chat() {
             if (res && Array.isArray(res)) {
                 setCommands(res.sort((a, b) => a.index - b.index));
                 
-                // Send first welcome message
-                if (res.length > 0) {
-                    const firstCommand = res.find(cmd => cmd.index === 1);
-                    if (firstCommand) {
-                        const welcomeMessage: Message = {
-                            id: Date.now().toString(),
-                            text: firstCommand.message[0] || "Hello! How can I help you?",
-                            sender: "bot",
-                            timestamp: new Date(),
-                            options: firstCommand.type === 1 ? firstCommand.message : undefined
-                        };
-                        setMessages([welcomeMessage]);
-                    }
+                // Initialize first command state (no messages yet; user starts the flow)
+                const firstCommand = res.find(cmd => cmd.index === 1);
+                if (firstCommand) {
+                    setCurrentCommandIndex(firstCommand.index);
+                    setCurrentInputType(firstCommand.type);
+                    setCurrentOptions(firstCommand.type === 1 ? firstCommand.message : []);
                 }
             }
         } catch (error) {
@@ -116,6 +123,11 @@ export default function Chat() {
 
                 if (res?.chatUser) {
                     showSuccess("Welcome back! Let's continue your chat.");
+                    sessionStorage.setItem("dd_public_chat_user_id", res.chatUser.id);
+                    sessionStorage.setItem("dd_public_chat_email", res.chatUser.email ?? trimmedEmail);
+                    sessionStorage.setItem("dd_public_chat_tenant_id", res.chatUser.tenantId ?? String(tenantId));
+                    sessionStorage.setItem("dd_public_chat_id", location.pathname.split("/").pop() || "");
+                    sessionStorage.setItem("dd_public_chat_token", res.token);
                 } else {
                     showSuccess("Welcome back!");
                 }
@@ -141,11 +153,19 @@ export default function Chat() {
             const defaultName = trimmedEmail.split("@")[0] || "Guest";
 
             try {
-                await registerClient({
+                const res = await registerClient({
                     tenantId,
                     name: defaultName,
                     email: trimmedEmail,
                 });
+
+                if (res?.chatUser?.id && res?.chatId && res?.token) {
+                    sessionStorage.setItem("dd_public_chat_user_id", res.chatUser.id);
+                    sessionStorage.setItem("dd_public_chat_email", res.chatUser.email ?? trimmedEmail);
+                    sessionStorage.setItem("dd_public_chat_tenant_id", res.chatUser.tenantId ?? String(tenantId));
+                    sessionStorage.setItem("dd_public_chat_id", res.chatId);
+                    sessionStorage.setItem("dd_public_chat_token", res.token);
+                }
 
                 showSuccess("You're registered. Let's start chatting!");
                 setIsClientReady(true);
@@ -158,9 +178,21 @@ export default function Chat() {
         }
     };
 
-    const handleSendMessage = (messageText?: string) => {
+    const handleSendMessage = async (messageText?: string) => {
         const textToSend = messageText || inputText.trim();
         if (!textToSend) return;
+
+        const activeChatId = sessionStorage.getItem("dd_public_chat_id");
+        if (!activeChatId) {
+            showError("Chat is not ready. Please refresh the page.");
+            return;
+        }
+
+        const activeCommand = commands.find(cmd => cmd.index === currentCommandIndex);
+        if (!activeCommand) {
+            showError("Chat flow is not ready. Please try again later.");
+            return;
+        }
 
         // Add user message
         const userMessage: Message = {
@@ -169,33 +201,51 @@ export default function Chat() {
             sender: "user",
             timestamp: new Date()
         };
-        setMessages(prev => [...prev, userMessage]);
         setInputText("");
 
-        // Find matching command and send bot response
-        setTimeout(() => {
-            const nextCommand = commands.find(cmd => cmd.index === currentCommandIndex + 1);
-            
-            if (nextCommand) {
-                const botResponse: Message = {
-                    id: (Date.now() + 1).toString(),
-                    text: nextCommand.reply[0] || "Thank you for your response.",
-                    sender: "bot",
-                    timestamp: new Date(),
-                    options: nextCommand.type === 1 ? nextCommand.reply : undefined
-                };
-                setMessages(prev => [...prev, botResponse]);
-                setCurrentCommandIndex(prev => prev + 1);
-            } else {
-                const finalMessage: Message = {
-                    id: (Date.now() + 1).toString(),
-                    text: "Thank you for chatting with us! Is there anything else I can help you with?",
-                    sender: "bot",
-                    timestamp: new Date()
-                };
-                setMessages(prev => [...prev, finalMessage]);
+        // Send to backend chat API (fire and forget for now)
+        try {
+            await sendMessage({
+                chatId: activeChatId,
+                tenantId: sessionStorage.getItem("dd_public_chat_tenant_id") || "",
+                chatUserId : sessionStorage.getItem("dd_public_chat_user_id") || "",
+                message: textToSend,
+                conversationIndex: currentCommandIndex || null,
+            });
+        } catch (error) {
+            console.error("Failed to send message to server", error);
+        }
+
+        // Determine bot reply for the current step
+        const getBotReplyForCommand = (command: Command, userText: string): string => {
+            if (command.type === 1) {
+                const idx = command.message.findIndex(m => m === userText);
+                return command.reply[idx >= 0 ? idx : 0] || "Thank you for your response.";
             }
-        }, 600);
+            return command.reply[0] || "Thank you for your response.";
+        };
+
+        const botText = getBotReplyForCommand(activeCommand, textToSend);
+        const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            text: botText,
+            sender: "bot",
+            timestamp: new Date()
+        };
+
+        // Append both user and bot messages in order
+        setMessages(prev => [...prev, userMessage, botMessage]);
+
+        // Move to next command step and update options/input mode
+        const nextCommand = commands.find(cmd => cmd.index === activeCommand.index + 1);
+        if (nextCommand) {
+            setCurrentCommandIndex(nextCommand.index);
+            setCurrentInputType(nextCommand.type);
+            setCurrentOptions(nextCommand.type === 1 ? nextCommand.message : []);
+        } else {
+            setCurrentInputType(null);
+            setCurrentOptions([]);
+        }
     };
 
     const handleOptionClick = (option: string) => {
@@ -248,19 +298,6 @@ export default function Chat() {
                             <div className={`chatPage-messageBubble chatPage-messageBubble--${message.sender}`}>
                                 {message.text}
                             </div>
-                            {message.options && message.options.length > 0 && (
-                                <div className="chatPage-messageOptions">
-                                    {message.options.map((option, index) => (
-                                        <button
-                                            key={index}
-                                            className="chatPage-optionBtn"
-                                            onClick={() => handleOptionClick(option)}
-                                        >
-                                            {option}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
                             <span className="chatPage-messageTime">
                                 {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
@@ -269,6 +306,21 @@ export default function Chat() {
                 ))}
                 <div ref={messagesEndRef} />
             </div>
+
+            {/* Global options area near the input, on the right side */}
+            {currentInputType === 1 && currentOptions.length > 0 && (
+                <div className="chatPage-messageOptions chatPage-messageOptions--bottom">
+                    {currentOptions.map((option, index) => (
+                        <button
+                            key={index}
+                            className="chatPage-optionBtn"
+                            onClick={() => handleOptionClick(option)}
+                        >
+                            {option}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Input Area */}
             <div className="chatPage-inputContainer">
@@ -280,11 +332,12 @@ export default function Chat() {
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
                         onKeyPress={handleKeyPress}
+                        disabled={currentInputType === 1}
                     />
                     <button
                         className="chatPage-sendBtn"
                         onClick={() => handleSendMessage()}
-                        disabled={!inputText.trim()}
+                        disabled={currentInputType === 1 || !inputText.trim()}
                         aria-label="Send message"
                     >
                         <SendIcon />

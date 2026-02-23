@@ -29,3 +29,12 @@ export const checkClient = async (email: string) => {
         throw error;
     }
 }
+
+export const sendMessage = async (data: any) => {
+    try {
+        const response = await axios.post(`${API_URL}/send-message`, data);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}
