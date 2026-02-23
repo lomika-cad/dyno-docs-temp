@@ -23,19 +23,16 @@ public class ChatBotController : ControllerBase
     }
     
     [HttpPost("create-bot")]
-    public async Task<object> CreateBot([FromBody] CreateChatbotDto dto)
+    public async Task<Guid> CreateBot([FromBody] CreateChatbotDto dto)
     {
         try
         {
             var bot = await _chatBotEngine.CreateChatBotAsync(_tenantService.TenantId, dto);
-            return new
-            {
-                message = "Chat bot created successfully",
-            };
+            return bot;
         }
         catch (Exception ex)
         {
-            return new { message = "Failed to create chat bot", error = ex.Message };
+            throw new Exception("Failed to create chatbot", ex);
         }
     }
 

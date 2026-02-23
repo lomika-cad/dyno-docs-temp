@@ -17,15 +17,8 @@ public class ChatBotEngine : IChatBotEngine
         _currentUserService = currentUserService;
     }
     
-    public async Task<object> CreateChatBotAsync (Guid tenantId, CreateChatbotDto dto)
+    public async Task<Guid> CreateChatBotAsync (Guid tenantId, CreateChatbotDto dto)
     {
-        var existingChat = await _context.Chats.FirstOrDefaultAsync(c => c.TenantId == tenantId);
-        
-        if(existingChat != null)
-        {
-            return new { Success = false, Message = "A chatbot already exists for this tenant." };
-        }
-        
         var bot = new Chat()
         {
             Id = Guid.NewGuid(),
@@ -38,7 +31,7 @@ public class ChatBotEngine : IChatBotEngine
         
         _context.Chats.Add(bot);
         await _context.SaveChangesAsync();
-        return bot;
+        return bot.Id;
     }
 
     public async Task<ChatbotCommands?> ProcessUserMessageAsync(Guid chatId, string userMessage)

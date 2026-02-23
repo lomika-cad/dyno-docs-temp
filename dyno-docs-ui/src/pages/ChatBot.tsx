@@ -25,14 +25,17 @@ interface DialogFlow {
     clientText: string;
     clientOptions: DialogOption[];
     agentResponse: string;
+    agentOptions: DialogOption[];
     isLocked?: boolean;
 }
 
 export default function ChatBot() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
     const [infoOpen, setInfoOpen] = useState(false);
+    const [nameInputModalOpen, setNameInputModalOpen] = useState(false);
     const [saveConfirmModalOpen, setSaveConfirmModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [chatbotName, setChatbotName] = useState("");
     const [dialogFlows, setDialogFlows] = useState<DialogFlow[]>([
         {
             id: "1",
@@ -40,6 +43,7 @@ export default function ChatBot() {
             clientText: "",
             clientOptions: [],
             agentResponse: "",
+            agentOptions: [],
             isLocked: false
         }
     ]);
@@ -51,6 +55,7 @@ export default function ChatBot() {
             clientText: "",
             clientOptions: [],
             agentResponse: "",
+            agentOptions: [],
             isLocked: false
         };
         setDialogFlows([...dialogFlows, newFlow]);
@@ -71,12 +76,17 @@ export default function ChatBot() {
     const addClientOption = (flowId: string) => {
         const flow = dialogFlows.find(f => f.id === flowId);
         if (flow) {
-            const newOption: DialogOption = {
+            const newClientOption: DialogOption = {
                 id: Date.now().toString(),
                 text: ""
             };
+            const newAgentOption: DialogOption = {
+                id: Date.now().toString() + "_agent",
+                text: ""
+            };
             updateDialogFlow(flowId, {
-                clientOptions: [...flow.clientOptions, newOption]
+                clientOptions: [...flow.clientOptions, newClientOption],
+                agentOptions: [...flow.agentOptions, newAgentOption]
             });
         }
     };
@@ -84,12 +94,13 @@ export default function ChatBot() {
     const removeClientOption = (flowId: string, optionId: string) => {
         const flow = dialogFlows.find(f => f.id === flowId);
         if (flow) {
+            const optionIndex = flow.clientOptions.findIndex(opt => opt.id === optionId);
             updateDialogFlow(flowId, {
-                clientOptions: flow.clientOptions.filter(opt => opt.id !== optionId)
+                clientOptions: flow.clientOptions.filter(opt => opt.id !== optionId),
+                agentOptions: flow.agentOptions.filter((_, index) => index !== optionIndex)
             });
         }
     };
-
     const updateClientOption = (flowId: string, optionId: string, text: string) => {
         const flow = dialogFlows.find(f => f.id === flowId);
         if (flow) {
@@ -100,14 +111,25 @@ export default function ChatBot() {
             });
         }
     };
+    const updateAgentOption = (flowId: string, optionIndex: number, text: string) => {
+        const flow = dialogFlows.find(f => f.id === flowId);
+        if (flow) {
+            updateDialogFlow(flowId, {
+                agentOptions: flow.agentOptions.map((opt, index) => 
+                    index === optionIndex ? { ...opt, text } : opt
+                )
+            });
+        }
+    };
 
     const isStepComplete = (flow: DialogFlow): boolean => {
-        if (!flow.agentResponse.trim()) return false;
         if (flow.clientType === "options") {
             return flow.clientOptions.length > 0 && 
-                   flow.clientOptions.every(option => option.text.trim() !== "");
+                   flow.clientOptions.every(option => option.text.trim() !== "") &&
+                   flow.agentOptions.length > 0 &&
+                   flow.agentOptions.every(option => option.text.trim() !== "");
         }
-        return true;
+        return flow.agentResponse.trim() !== "";
     };
 
     const toggleLock = (flowId: string) => {
@@ -129,7 +151,19 @@ export default function ChatBot() {
             return;
         }
 
-        // Open confirmation dialog
+        // Open name input dialog first
+        setChatbotName(""); // Reset name
+        setNameInputModalOpen(true);
+    };
+
+    const handleNameSubmit = () => {
+        if (!chatbotName.trim()) {
+            showError("Please enter a chatbot name.");
+            return;
+        }
+        
+        // Close name modal and open confirmation modal
+        setNameInputModalOpen(false);
         setSaveConfirmModalOpen(true);
     };
 
@@ -137,23 +171,15 @@ export default function ChatBot() {
         try {
             setIsSaving(true);
             const userName = sessionStorage.getItem("dd_full_name") || "User";
-            const currentDate = new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
 
             // First, create the chatbot
             const chatbotData = {
-                name: `Dialog Flow Chatbot - ${currentDate}`,
+                name: chatbotName.trim(),
                 isActive: true,
                 createdBy: userName
             };
 
             const chatbotResponse = await createChatbot(chatbotData, DD_TOKEN);
-            console.log("Chatbot created:", chatbotResponse);
 
             // Then, create commands for each dialog flow
             for (let i = 0; i < dialogFlows.length; i++) {
@@ -165,15 +191,19 @@ export default function ChatBot() {
                     message: flow.clientType === "options" 
                         ? flow.clientOptions.map(opt => opt.text).filter(text => text.trim() !== "")
                         : [], // Empty for message type
-                    reply: [flow.agentResponse],
+                    reply: flow.clientType === "options"
+                        ? flow.agentOptions.map(opt => opt.text).filter(text => text.trim() !== "")
+                        : [flow.agentResponse],
                     type: flow.clientType === "options" ? 0 : 1, // 0 = Selection, 1 = Enter (based on CommandType enum)
-                    keywords: flow.agentResponse.split(" ").slice(0, 3).join(", ").toLowerCase() // Generate keywords from response
+                    keywords: flow.clientType === "options"
+                        ? flow.agentOptions.map(opt => opt.text).join(", ").toLowerCase()
+                        : flow.agentResponse.split(" ").slice(0, 3).join(", ").toLowerCase() // Generate keywords from response
                 };
 
                 await createChatbotCommands(commandData, DD_TOKEN);
             }
 
-            showSuccess("Dialog flow saved successfully! Chatbot has been created with all commands.");
+            showSuccess(`Chatbot "${chatbotName}" saved successfully! Dialog flow has been created with all commands.`);
             setSaveConfirmModalOpen(false);
         } catch (error: any) {
             console.error("Failed to save dialog flow:", error);
@@ -268,10 +298,30 @@ export default function ChatBot() {
                                                 className="formField-input"
                                                 value={flow.clientType}
                                                 disabled={flow.isLocked}
-                                                onChange={(e) => updateDialogFlow(flow.id, {
-                                                    clientType: e.target.value as "message" | "options",
-                                                    clientOptions: e.target.value === "message" ? [] : flow.clientOptions
-                                                })}
+                                                onChange={(e) => {
+                                                    const newType = e.target.value as "message" | "options";
+                                                    if (newType === "options") {
+                                                        // When switching to options, create initial agent options to match client options
+                                                        const initialAgentOptions = flow.clientOptions.length > 0 
+                                                            ? flow.clientOptions.map((_, index) => ({
+                                                                id: `${flow.id}_agent_${index}_${Date.now()}`,
+                                                                text: ""
+                                                            }))
+                                                            : [];
+                                                        updateDialogFlow(flow.id, {
+                                                            clientType: newType,
+                                                            agentOptions: initialAgentOptions,
+                                                            agentResponse: "" // Clear single response when switching to options
+                                                        });
+                                                    } else {
+                                                        // When switching to message, clear options
+                                                        updateDialogFlow(flow.id, {
+                                                            clientType: newType,
+                                                            clientOptions: [],
+                                                            agentOptions: []
+                                                        });
+                                                    }
+                                                }}
                                             >
                                                 <option value="message">Type a Message</option>
                                                 <option value="options">Options</option>
@@ -345,17 +395,45 @@ export default function ChatBot() {
                                             <span className="chatbot-side-title">Agent Response</span>
                                         </div>
 
-                                        <div className="formField">
-                                            <label className="formField-label">Response Message</label>
-                                            <textarea
-                                                className="formField-textarea"
-                                                placeholder="Enter agent's response message..."
-                                                value={flow.agentResponse}
-                                                disabled={flow.isLocked}
-                                                onChange={(e) => updateDialogFlow(flow.id, { agentResponse: e.target.value })}
-                                                rows={4}
-                                            />
-                                        </div>
+                                        {flow.clientType === "message" ? (
+                                            <div className="formField">
+                                                <label className="formField-label">Response Message</label>
+                                                <textarea
+                                                    className="formField-textarea"
+                                                    placeholder="Enter agent's response message..."
+                                                    value={flow.agentResponse}
+                                                    disabled={flow.isLocked}
+                                                    onChange={(e) => updateDialogFlow(flow.id, { agentResponse: e.target.value })}
+                                                    rows={4}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="formField">
+                                                <div className="chatbot-options-header">
+                                                    <label className="formField-label">Agent Response Options</label>
+                                                </div>
+                                                
+                                                <div className="chatbot-options-list">
+                                                    {flow.agentOptions.map((option, index) => (
+                                                        <div key={index} className="chatbot-option-item">
+                                                            <input
+                                                                type="text"
+                                                                className="formField-input"
+                                                                placeholder={`Response for option ${index + 1}`}
+                                                                value={option.text}
+                                                                disabled={flow.isLocked}
+                                                                onChange={(e) => updateAgentOption(flow.id, index, e.target.value)}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                    {flow.agentOptions.length === 0 && (
+                                                        <p className="chatbot-empty-options">
+                                                            Add client options to create corresponding agent responses.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -383,6 +461,64 @@ export default function ChatBot() {
                 </div>
             </div>
 
+            {nameInputModalOpen && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Enter chatbot name">
+                    <button
+                        type="button"
+                        className="ddModal-backdrop"
+                        aria-label="Close"
+                        onClick={() => setNameInputModalOpen(false)}
+                    />
+
+                    <div className="ddModal-card">
+                        <div className="ddModal-logo" aria-hidden="true">
+                            <SmartToyIcon style={{ fontSize: 48, color: "#f59e0b" }} />
+                        </div>
+
+                        <div className="ddModal-title">Name Your Chatbot</div>
+                        <div className="ddModal-subtitle">
+                            Enter a name for your chatbot. This will help you identify it later.
+                        </div>
+
+                        <div className="ddModal-content" style={{ marginTop: 20 }}>
+                            <div className="formField">
+                                <label className="formField-label">Chatbot Name</label>
+                                <input
+                                    type="text"
+                                    className="formField-input"
+                                    placeholder="Enter chatbot name..."
+                                    value={chatbotName}
+                                    onChange={(e) => setChatbotName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleNameSubmit();
+                                        }
+                                    }}
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+
+                        <div className="ddModal-actions">
+                            <button
+                                type="button"
+                                className="ddModal-btn ddModal-btn--ghost"
+                                onClick={() => setNameInputModalOpen(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn--orange"
+                                onClick={handleNameSubmit}
+                            >
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {saveConfirmModalOpen && (
                 <div className="ddModal" role="dialog" aria-modal="true" aria-label="Confirm save dialog flow">
                     <button
@@ -403,7 +539,7 @@ export default function ChatBot() {
 
                         <div className="ddModal-title">Save Dialog Flow</div>
                         <div className="ddModal-subtitle">
-                            Are you sure you want to save this dialog flow? This will create a new chatbot with <strong>{dialogFlows.length} dialog step{dialogFlows.length > 1 ? 's' : ''}</strong>.
+                            Are you sure you want to save the chatbot <strong>"{chatbotName}"</strong> with <strong>{dialogFlows.length} dialog step{dialogFlows.length > 1 ? 's' : ''}</strong>?
                         </div>
 
                         <div className="ddModal-actions">

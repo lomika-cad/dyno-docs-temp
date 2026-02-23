@@ -2,6 +2,6 @@ namespace ChatApp.Models;
 
 public enum CommandType
 {
-    Selection,
-    Enter
+    Selection = 1,
+    Enter = 2,
 }
