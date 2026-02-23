@@ -10,7 +10,7 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import SaveIcon from "@mui/icons-material/Save";
 import Navbar from "../layouts/Navbar";
 import { showError, showSuccess } from "../components/Toast";
-import { createChatbot, createChatbotCommands, getChatbotCommands } from "../services/chatbot-api";
+import { createChatbot, createChatbotCommands, getChatbotCommands, updateChatbotCommands, deleteChatbotCommand } from "../services/chatbot-api";
 import "../styles/agencyData.css";
 import "../styles/chatBot.css";
 import { CircularProgress } from "@mui/material";
@@ -38,6 +38,7 @@ export default function ChatBot() {
     const [saveConfirmModalOpen, setSaveConfirmModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [existingCommands, setExistingCommands] = useState<any[]>([]);
     const [chatbotName, setChatbotName] = useState("");
     const [dialogFlows, setDialogFlows] = useState<DialogFlow[]>([
         {
@@ -98,6 +99,7 @@ export default function ChatBot() {
             setIsLoading(true);
             const res = await getChatbotCommands(chatId, DD_TOKEN);
             if (res && Array.isArray(res)) {
+                setExistingCommands(res); // Store existing commands with their IDs
                 const convertedFlows = convertCommandsToDialogFlows(res);
                 setDialogFlows(convertedFlows);
                 console.log("Loaded chatbot commands:", res);
@@ -220,9 +222,15 @@ export default function ChatBot() {
             return;
         }
 
-        // Open name input dialog first
-        setChatbotName(""); // Reset name
-        setNameInputModalOpen(true);
+        // Check if we're updating existing chatbot or creating new one
+        if (DD_CHAT_USER_ID) {
+            // Updating existing chatbot - skip name input and go directly to confirmation
+            setSaveConfirmModalOpen(true);
+        } else {
+            // Creating new chatbot - open name input dialog first
+            setChatbotName(""); // Reset name
+            setNameInputModalOpen(true);
+        }
     };
 
     const handleNameSubmit = () => {
@@ -241,43 +249,79 @@ export default function ChatBot() {
             setIsSaving(true);
             const userName = sessionStorage.getItem("dd_full_name") || "User";
 
-            // First, create the chatbot
-            const chatbotData = {
-                name: chatbotName.trim(),
-                isActive: true,
-                createdBy: userName
-            };
+            if (DD_CHAT_USER_ID) {
+                // First, delete all existing commands
+                if (existingCommands.length > 0) {
+                    for (const existingCommand of existingCommands) {
+                        await deleteChatbotCommand(existingCommand.id, DD_TOKEN);
+                    }
+                }
 
-            const chatbotResponse = await createChatbot(chatbotData, DD_TOKEN);
+                // Then, create all new commands
+                for (let i = 0; i < dialogFlows.length; i++) {
+                    const flow = dialogFlows[i];
+                    
+                    const commandData = {
+                        chatId: DD_CHAT_USER_ID,
+                        index: i + 1,
+                        message: flow.clientType === "options"
+                            ? flow.clientOptions.map(opt => opt.text).filter(text => text.trim() !== "")
+                            : [], // Empty for message type
+                        reply: flow.clientType === "options"
+                            ? flow.agentOptions.map(opt => opt.text).filter(text => text.trim() !== "")
+                            : [flow.agentResponse],
+                        type: flow.clientType === "options" ? 1 : 2, // 1 = Options/Selection, 2 = Message/Enter
+                        keywords: flow.clientType === "options"
+                            ? flow.agentOptions.map(opt => opt.text).join(", ").toLowerCase()
+                            : flow.agentResponse.split(" ").slice(0, 3).join(", ").toLowerCase() // Generate keywords from response
+                    };
 
-            // Extract ChatId from the response
-            const chatId = chatbotResponse;
+                    // Create new command
+                    await createChatbotCommands(commandData, DD_TOKEN);
+                }
 
-            // Then, create commands for each dialog flow
-            for (let i = 0; i < dialogFlows.length; i++) {
-                const flow = dialogFlows[i];
-
-                const commandData = {
-                    chatId: chatId, // Use the actual ChatId from createChatbot response
-                    index: i + 1,
-                    message: flow.clientType === "options"
-                        ? flow.clientOptions.map(opt => opt.text).filter(text => text.trim() !== "")
-                        : [], // Empty for message type
-                    reply: flow.clientType === "options"
-                        ? flow.agentOptions.map(opt => opt.text).filter(text => text.trim() !== "")
-                        : [flow.agentResponse],
-                    type: flow.clientType === "options" ? 1 : 2, // 1 = Options/Selection, 2 = Message/Enter
-                    keywords: flow.clientType === "options"
-                        ? flow.agentOptions.map(opt => opt.text).join(", ").toLowerCase()
-                        : flow.agentResponse.split(" ").slice(0, 3).join(", ").toLowerCase() // Generate keywords from response
+                showSuccess("Chatbot commands updated successfully!");
+                setSaveConfirmModalOpen(false);
+            } else {
+                // Create new chatbot
+                const chatbotData = {
+                    name: chatbotName.trim(),
+                    isActive: true,
+                    createdBy: userName
                 };
 
-                await createChatbotCommands(commandData, DD_TOKEN);
+                const chatbotResponse = await createChatbot(chatbotData, DD_TOKEN);
+
+                // Extract ChatId from the response
+                const chatId = chatbotResponse;
+
+                // Then, create commands for each dialog flow
+                for (let i = 0; i < dialogFlows.length; i++) {
+                    const flow = dialogFlows[i];
+
+                    const commandData = {
+                        chatId: chatId, // Use the actual ChatId from createChatbot response
+                        index: i + 1,
+                        message: flow.clientType === "options"
+                            ? flow.clientOptions.map(opt => opt.text).filter(text => text.trim() !== "")
+                            : [], // Empty for message type
+                        reply: flow.clientType === "options"
+                            ? flow.agentOptions.map(opt => opt.text).filter(text => text.trim() !== "")
+                            : [flow.agentResponse],
+                        type: flow.clientType === "options" ? 1 : 2, // 1 = Options/Selection, 2 = Message/Enter
+                        keywords: flow.clientType === "options"
+                            ? flow.agentOptions.map(opt => opt.text).join(", ").toLowerCase()
+                            : flow.agentResponse.split(" ").slice(0, 3).join(", ").toLowerCase() // Generate keywords from response
+                    };
+
+                    await createChatbotCommands(commandData, DD_TOKEN);
+                }
+
+                showSuccess(`Chatbot "${chatbotName}" saved successfully! Dialog flow has been created with all commands.`);
+                handleGetCommands(chatId);
+                setSaveConfirmModalOpen(false);
             }
 
-            showSuccess(`Chatbot "${chatbotName}" saved successfully! Dialog flow has been created with all commands.`);
-            handleGetCommands(chatId);
-            setSaveConfirmModalOpen(false);
         } catch (error: any) {
             console.error("Failed to save dialog flow:", error);
             const errorMessage = error?.response?.data?.message || error?.message || "Failed to save dialog flow. Please try again.";
@@ -617,9 +661,13 @@ export default function ChatBot() {
                             <SaveIcon style={{ fontSize: 48, color: "#22c55e" }} />
                         </div>
 
-                        <div className="ddModal-title">Save Dialog Flow</div>
+                        <div className="ddModal-title">{DD_CHAT_USER_ID ? 'Update' : 'Save'} Dialog Flow</div>
                         <div className="ddModal-subtitle">
-                            Are you sure you want to save the chatbot <strong>"{chatbotName}"</strong> with <strong>{dialogFlows.length} dialog step{dialogFlows.length > 1 ? 's' : ''}</strong>?
+                            {DD_CHAT_USER_ID ? (
+                                `Are you sure you want to update the chatbot commands with ${dialogFlows.length} dialog step${dialogFlows.length > 1 ? 's' : ''}?`
+                            ) : (
+                                <>Are you sure you want to save the chatbot <strong>"{chatbotName}"</strong> with <strong>{dialogFlows.length} dialog step{dialogFlows.length > 1 ? 's' : ''}</strong>?</>
+                            )}
                         </div>
 
                         <div className="ddModal-actions">
@@ -638,7 +686,7 @@ export default function ChatBot() {
                                 disabled={isSaving}
                             >
                                 <SaveIcon fontSize="small" />
-                                {isSaving ? 'Saving...' : 'Save Dialog Flow'}
+                                {isSaving ? (DD_CHAT_USER_ID ? 'Updating...' : 'Saving...') : (DD_CHAT_USER_ID ? 'Update Commands' : 'Save Dialog Flow')}
                             </button>
                         </div>
                     </div>

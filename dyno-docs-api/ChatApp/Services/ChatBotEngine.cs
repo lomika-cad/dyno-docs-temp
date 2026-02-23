@@ -63,6 +63,9 @@ public class ChatBotEngine : IChatBotEngine
 
     public async Task<ChatbotCommands> AddBotCommandAsync(Guid tenantId, CreateChatbotCommandDto dto)
     {
+        var existingCommands = await _context.ChatbotCommands
+            .Where(c => c.ChatId == dto.ChatId).ToListAsync();
+        
         var command = new ChatbotCommands
         {
             Id = Guid.NewGuid(),
@@ -86,7 +89,7 @@ public class ChatBotEngine : IChatBotEngine
     public async Task<ChatbotCommands?> UpdateBotCommandAsync(Guid commandId, Guid tenantId, UpdateChatbotCommandDto dto)
     {
         var command = await _context.ChatbotCommands
-            .FirstOrDefaultAsync(c => c.Id == commandId && c.TenantId == tenantId);
+            .FirstOrDefaultAsync(c => c.ChatId == commandId && c.TenantId == tenantId);
 
         if (command == null) return null;
 

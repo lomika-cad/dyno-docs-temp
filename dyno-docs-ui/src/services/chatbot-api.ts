@@ -43,6 +43,19 @@ export const updateChatbotCommands = async (data:any, botId: string, token: stri
 }
 
 
+export const deleteChatbotCommand = async (commandId: string, token: string) => {
+    try {
+        const response = await axios.delete(`${API_URL}/commands/${commandId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export const getChatbotCommands = async (botId: string, token: string) => {
     try {
         const response = await axios.get(`${API_URL}/commands/${botId}`, {
