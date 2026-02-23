@@ -7,7 +7,10 @@ import PersonIcon from "@mui/icons-material/Person";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
+import SaveIcon from "@mui/icons-material/Save";
 import Navbar from "../layouts/Navbar";
+import { showError, showSuccess } from "../components/Toast";
+import { createChatbot, createChatbotCommands } from "../services/chatbot-api";
 import "../styles/agencyData.css";
 import "../styles/chatBot.css";
 
@@ -26,7 +29,10 @@ interface DialogFlow {
 }
 
 export default function ChatBot() {
+    const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
     const [infoOpen, setInfoOpen] = useState(false);
+    const [saveConfirmModalOpen, setSaveConfirmModalOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [dialogFlows, setDialogFlows] = useState<DialogFlow[]>([
         {
             id: "1",
@@ -111,9 +117,71 @@ export default function ChatBot() {
     };
 
     const handleSaveDialogFlow = () => {
-        // Here you can implement the logic to save the dialog flows
-        console.log("Dialog Flows:", dialogFlows);
-        alert("Dialog flows saved successfully!");
+        // Validate that at least one flow is complete and there's at least one flow
+        if (dialogFlows.length === 0) {
+            showError("Please add at least one dialog step before saving.");
+            return;
+        }
+
+        const incompleteFlows = dialogFlows.filter(flow => !isStepComplete(flow));
+        if (incompleteFlows.length > 0) {
+            showError("Please complete all dialog steps before saving. Check that agent responses are filled and client options are properly configured.");
+            return;
+        }
+
+        // Open confirmation dialog
+        setSaveConfirmModalOpen(true);
+    };
+
+    const handleConfirmSave = async () => {
+        try {
+            setIsSaving(true);
+            const userName = sessionStorage.getItem("dd_full_name") || "User";
+            const currentDate = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // First, create the chatbot
+            const chatbotData = {
+                name: `Dialog Flow Chatbot - ${currentDate}`,
+                isActive: true,
+                createdBy: userName
+            };
+
+            const chatbotResponse = await createChatbot(chatbotData, DD_TOKEN);
+            console.log("Chatbot created:", chatbotResponse);
+
+            // Then, create commands for each dialog flow
+            for (let i = 0; i < dialogFlows.length; i++) {
+                const flow = dialogFlows[i];
+                
+                const commandData = {
+                    chatId: "00000000-0000-0000-0000-000000000000", // Placeholder GUID - you may need to get actual chat ID
+                    index: i + 1,
+                    message: flow.clientType === "options" 
+                        ? flow.clientOptions.map(opt => opt.text).filter(text => text.trim() !== "")
+                        : [], // Empty for message type
+                    reply: [flow.agentResponse],
+                    type: flow.clientType === "options" ? 0 : 1, // 0 = Selection, 1 = Enter (based on CommandType enum)
+                    keywords: flow.agentResponse.split(" ").slice(0, 3).join(", ").toLowerCase() // Generate keywords from response
+                };
+
+                await createChatbotCommands(commandData, DD_TOKEN);
+            }
+
+            showSuccess("Dialog flow saved successfully! Chatbot has been created with all commands.");
+            setSaveConfirmModalOpen(false);
+        } catch (error: any) {
+            console.error("Failed to save dialog flow:", error);
+            const errorMessage = error?.response?.data?.message || error?.message || "Failed to save dialog flow. Please try again.";
+            showError(errorMessage);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -300,6 +368,7 @@ export default function ChatBot() {
                             className="btn btn--success"
                             onClick={handleSaveDialogFlow}
                         >
+                            <SaveIcon fontSize="small" />
                             Save Dialog Flow
                         </button>
                         <button
@@ -313,6 +382,52 @@ export default function ChatBot() {
                     </div>
                 </div>
             </div>
+
+            {saveConfirmModalOpen && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Confirm save dialog flow">
+                    <button
+                        type="button"
+                        className="ddModal-backdrop"
+                        aria-label="Close"
+                        onClick={() => {
+                            if (!isSaving) {
+                                setSaveConfirmModalOpen(false);
+                            }
+                        }}
+                    />
+
+                    <div className="ddModal-card">
+                        <div className="ddModal-logo" aria-hidden="true">
+                            <SaveIcon style={{ fontSize: 48, color: "#22c55e" }} />
+                        </div>
+
+                        <div className="ddModal-title">Save Dialog Flow</div>
+                        <div className="ddModal-subtitle">
+                            Are you sure you want to save this dialog flow? This will create a new chatbot with <strong>{dialogFlows.length} dialog step{dialogFlows.length > 1 ? 's' : ''}</strong>.
+                        </div>
+
+                        <div className="ddModal-actions">
+                            <button
+                                type="button"
+                                className="ddModal-btn ddModal-btn--ghost"
+                                onClick={() => setSaveConfirmModalOpen(false)}
+                                disabled={isSaving}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn--success"
+                                onClick={handleConfirmSave}
+                                disabled={isSaving}
+                            >
+                                <SaveIcon fontSize="small" />
+                                {isSaving ? 'Saving...' : 'Save Dialog Flow'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {infoOpen && (
                 <div className="ddModal" role="dialog" aria-modal="true" aria-label="Chatbot integration guide">

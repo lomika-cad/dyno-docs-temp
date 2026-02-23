@@ -11,6 +11,12 @@ public class CreateChatbotCommandDto
     public CommandType Type { get; set; }
     public string Keywords { get; set; } = string.Empty;
 }
+public class CreateChatbotDto
+{
+    public string Name { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public string CreatedBy { get; set; } = string.Empty;
+}
 
 public class UpdateChatbotCommandDto
 {

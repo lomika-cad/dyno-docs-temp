@@ -138,36 +138,6 @@ public class RegisterAgencyCommandHandler : IRequestHandler<RegisterAgencyComman
         // Save changes
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Create Chat for the tenant
-        try
-        {
-            // Create Chat entity (1:1 with Tenant)
-            var chat = await _chatService.CreateChatAsync(tenant.Id, $"{tenant.AgencyName} Chat");
-            
-            // Create ChatUser for the agency admin
-            var chatUser = new ChatUser
-            {
-                Id = Guid.NewGuid(),
-                TenantId = tenant.Id,
-                Email = user.Email,
-                Name = user.FullName,
-                Role = UserRole.Admin, // Agency owner is Admin in chat
-                IsBotOn = false, // Admins don't start with bot
-                IsOnline = false,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "system"
-            };
-
-            _chatContext.ChatUsers.Add(chatUser);
-            await _chatContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            // Log error but don't fail registration if chat creation fails
-            // In production, you might want to implement retry logic or notifications
-            Console.WriteLine($"Failed to create chat for tenant {tenant.Id}: {ex.Message}");
-        }
-
         var result = Result.Success("Agency registered successfully.");
         result.SetData(tenant.Id);
         return result;
