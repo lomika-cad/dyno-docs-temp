@@ -8,7 +8,6 @@ namespace ChatApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class ChatBotController : ControllerBase
 {
     private readonly IChatBotEngine _chatBotEngine;
@@ -23,6 +22,7 @@ public class ChatBotController : ControllerBase
     }
     
     [HttpPost("create-bot")]
+    [Authorize]
     public async Task<Guid> CreateBot([FromBody] CreateChatbotDto dto)
     {
         try
@@ -59,6 +59,8 @@ public class ChatBotController : ControllerBase
     }
 
     /// <summary>Get all bot commands for a specific chat, ordered by Index.</summary>
+    ///
+    [AllowAnonymous]
     [HttpGet("commands/{chatId}")]
     public async Task<IActionResult> GetBotCommands(Guid chatId)
     {
@@ -78,6 +80,7 @@ public class ChatBotController : ControllerBase
 
     /// <summary>Add a new bot command to a chat manually.</summary>
     [HttpPost("commands")]
+    [Authorize]
     public async Task<IActionResult> AddBotCommand([FromBody] CreateChatbotCommandDto dto)
     {
         try
@@ -97,6 +100,7 @@ public class ChatBotController : ControllerBase
 
     /// <summary>Update an existing bot command (partial — only provided fields are changed).</summary>
     [HttpPut("commands/{commandId}")]
+    [Authorize]
     public async Task<IActionResult> UpdateBotCommand(Guid commandId, [FromBody] UpdateChatbotCommandDto dto)
     {
         try
@@ -119,6 +123,7 @@ public class ChatBotController : ControllerBase
 
     /// <summary>Delete a bot command.</summary>
     [HttpDelete("commands/{commandId}")]
+    [Authorize]
     public async Task<IActionResult> DeleteBotCommand(Guid commandId)
     {
         try
