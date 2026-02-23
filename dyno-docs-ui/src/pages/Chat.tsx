@@ -1,5 +1,7 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { getChatbotCommands, getChatbotName } from "../services/chatbot-api";
+import { checkClient, registerClient } from "../services/chat-api";
+import { showError, showSuccess } from "../components/Toast";
 import { useEffect, useState, useRef } from "react";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import SendIcon from "@mui/icons-material/Send";
@@ -25,12 +27,17 @@ interface Command {
 
 export default function Chat() {
     const location = useLocation();
+    const { tenantId, chatId } = useParams<{ tenantId: string; chatId: string }>();
     const [botName, setBotName] = useState("Chatbot");
     const [commands, setCommands] = useState<Command[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState("");
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [currentCommandIndex, setCurrentCommandIndex] = useState(0);
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(true);
+    const [email, setEmail] = useState("");
+    const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
+    const [isClientReady, setIsClientReady] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -42,8 +49,9 @@ export default function Chat() {
     }, [messages]);
 
     const handleGetCommands = async () => {
-        const botId = location.pathname.split("/").pop();
+        const botId = chatId || location.pathname.split("/").pop();
         try {
+            setIsLoading(true);
             const res = await getChatbotCommands(botId || "", "");
             if (res && Array.isArray(res)) {
                 setCommands(res.sort((a, b) => a.index - b.index));
@@ -71,7 +79,7 @@ export default function Chat() {
     };
 
     const handleGetBotName = async () => {
-        const botId = location.pathname.split("/").pop();
+        const botId = chatId || location.pathname.split("/").pop();
         try {
             const res = await getChatbotName(botId || "", "");
             setBotName(res.botName || "Chatbot");
@@ -81,9 +89,74 @@ export default function Chat() {
     };
 
     useEffect(() => {
+        if (!isClientReady) return;
+
         handleGetCommands();
         handleGetBotName();
-    }, [location.pathname]);
+    }, [location.pathname, isClientReady]);
+
+    const handleEmailSubmit = async () => {
+        const trimmedEmail = email.trim();
+        if (!trimmedEmail) {
+            showError("Please enter your email.");
+            return;
+        }
+
+        // Basic email format check
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(trimmedEmail)) {
+            showError("Please enter a valid email address.");
+            return;
+        }
+
+        setIsEmailSubmitting(true);
+        try {
+            try {
+                const res = await checkClient(trimmedEmail);
+
+                if (res?.chatUser) {
+                    showSuccess("Welcome back! Let's continue your chat.");
+                } else {
+                    showSuccess("Welcome back!");
+                }
+
+                setIsClientReady(true);
+                setIsEmailModalOpen(false);
+                return;
+            } catch (error: any) {
+                const status = error?.response?.status;
+
+                if (status !== 404) {
+                    showError("Failed to verify email. Please try again.");
+                    return;
+                }
+            }
+
+            // 2) If not found (404), register a new client
+            if (!tenantId) {
+                showError("Missing tenant information for this chat.");
+                return;
+            }
+
+            const defaultName = trimmedEmail.split("@")[0] || "Guest";
+
+            try {
+                await registerClient({
+                    tenantId,
+                    name: defaultName,
+                    email: trimmedEmail,
+                });
+
+                showSuccess("You're registered. Let's start chatting!");
+                setIsClientReady(true);
+                setIsEmailModalOpen(false);
+            } catch (error) {
+                showError("Failed to register. Please try again.");
+            }
+        } finally {
+            setIsEmailSubmitting(false);
+        }
+    };
 
     const handleSendMessage = (messageText?: string) => {
         const textToSend = messageText || inputText.trim();
@@ -136,19 +209,16 @@ export default function Chat() {
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="chatPage">
-                <div className="chatPage-loading">
-                    <CircularProgress size={48} sx={{ color: "var(--color-primary)" }} />
-                    <p>Loading chat...</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="chatPage">
+            {isLoading && (
+                <div className="chatPage-loadingOverlay">
+                    <div className="chatPage-loading">
+                        <CircularProgress size={48} sx={{ color: "var(--color-primary)" }} />
+                        <p>Loading chat...</p>
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <div className="chatPage-header">
                 <div className="chatPage-headerBot">
@@ -221,6 +291,55 @@ export default function Chat() {
                     </button>
                 </div>
             </div>
+
+            {isEmailModalOpen && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="Enter your email to start chat">
+                    <button
+                        type="button"
+                        className="ddModal-backdrop"
+                        onClick={() => {}}
+                        aria-hidden="true"
+                    />
+                    <div className="ddModal-card">
+                        <div className="ddModal-title">Continue your chat</div>
+                        <div className="ddModal-subtitle">
+                            Enter your email so we can recognize you and keep your conversation.
+                        </div>
+                        <div style={{ marginTop: 16 }}>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        void handleEmailSubmit();
+                                    }
+                                }}
+                                placeholder="you@example.com"
+                                style={{
+                                    width: "100%",
+                                    padding: "10px 12px",
+                                    borderRadius: 10,
+                                    border: "1px solid var(--color-border)",
+                                    fontSize: 14,
+                                    outline: "none",
+                                }}
+                            />
+                        </div>
+                        <div className="ddModal-actions" style={{ gridTemplateColumns: "1fr" }}>
+                            <button
+                                className="ddModal-btn ddModal-btn--primary"
+                                type="button"
+                                onClick={() => void handleEmailSubmit()}
+                                disabled={isEmailSubmitting}
+                            >
+                                {isEmailSubmitting ? "Please wait..." : "Continue"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

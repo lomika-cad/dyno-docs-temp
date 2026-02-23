@@ -21,9 +21,9 @@ export const registerClient = async (data: any) => {
     }
 }
 
-export const checkClient = async (body: any) => {
+export const checkClient = async (email: string) => {
     try {
-        const response = await axios.post(`${API_URL}/check-client`, body);
+        const response = await axios.post(`${API_URL}/check-client?email=${encodeURIComponent(email)}`);
         return response.data;
     } catch (error) {       
         throw error;

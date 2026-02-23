@@ -99,7 +99,7 @@ public class ChatController : ControllerBase
     
     [HttpPost("check-client")]
     [AllowAnonymous]
-    public async Task<IActionResult> CheckClientExists([FromBody] string email)
+    public async Task<IActionResult> CheckClientExists([FromQuery] string email)
     {
         try
         {
