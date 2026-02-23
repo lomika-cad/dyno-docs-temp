@@ -1,6 +1,6 @@
 import { useLocation, useParams } from "react-router-dom";
 import { getChatbotCommands, getChatbotName } from "../services/chatbot-api";
-import { checkClient, registerClient, sendMessage } from "../services/chat-api";
+import { checkClient, registerClient, sendMessage, getMessages } from "../services/chat-api";
 import { showError, showSuccess } from "../components/Toast";
 import { useEffect, useState, useRef } from "react";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
@@ -236,15 +236,35 @@ export default function Chat() {
         // Append both user and bot messages in order
         setMessages(prev => [...prev, userMessage, botMessage]);
 
-        // Move to next command step and update options/input mode
-        const nextCommand = commands.find(cmd => cmd.index === activeCommand.index + 1);
-        if (nextCommand) {
-            setCurrentCommandIndex(nextCommand.index);
-            setCurrentInputType(nextCommand.type);
-            setCurrentOptions(nextCommand.type === 1 ? nextCommand.message : []);
-        } else {
-            setCurrentInputType(null);
-            setCurrentOptions([]);
+        // After sending, reload messages from server to determine the latest step
+        try {
+            const history = await getMessages(activeChatId);
+            const historyMessages = Array.isArray(history?.messages) ? history.messages : [];
+
+            if (historyMessages.length > 0 && commands.length > 0) {
+                const lastWithIndex = [...historyMessages]
+                    .reverse()
+                    .find((m: any) => m.conversationIndex !== null && m.conversationIndex !== undefined);
+
+                const lastIndex =
+                    typeof lastWithIndex?.conversationIndex === "number"
+                        ? lastWithIndex.conversationIndex
+                        : null;
+
+                const nextIndex = lastIndex !== null ? lastIndex + 1 : 1;
+                const nextCommand = commands.find(cmd => cmd.index === nextIndex);
+
+                if (nextCommand) {
+                    setCurrentCommandIndex(nextCommand.index);
+                    setCurrentInputType(nextCommand.type);
+                    setCurrentOptions(nextCommand.type === 1 ? nextCommand.message : []);
+                } else {
+                    setCurrentInputType(null);
+                    setCurrentOptions([]);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load chat history", error);
         }
     };
 
