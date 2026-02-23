@@ -9,7 +9,6 @@ namespace ChatApp.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class ChatController : ControllerBase
 {
     private readonly ChatBotDbContext _context;
