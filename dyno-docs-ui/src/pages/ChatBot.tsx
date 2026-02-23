@@ -13,6 +13,7 @@ import { showError, showSuccess } from "../components/Toast";
 import { createChatbot, createChatbotCommands } from "../services/chatbot-api";
 import "../styles/agencyData.css";
 import "../styles/chatBot.css";
+import { CircularProgress } from "@mui/material";
 
 interface DialogOption {
     id: string;
@@ -68,7 +69,7 @@ export default function ChatBot() {
     };
 
     const updateDialogFlow = (id: string, updates: Partial<DialogFlow>) => {
-        setDialogFlows(dialogFlows.map(flow => 
+        setDialogFlows(dialogFlows.map(flow =>
             flow.id === id ? { ...flow, ...updates } : flow
         ));
     };
@@ -105,7 +106,7 @@ export default function ChatBot() {
         const flow = dialogFlows.find(f => f.id === flowId);
         if (flow) {
             updateDialogFlow(flowId, {
-                clientOptions: flow.clientOptions.map(opt => 
+                clientOptions: flow.clientOptions.map(opt =>
                     opt.id === optionId ? { ...opt, text } : opt
                 )
             });
@@ -115,7 +116,7 @@ export default function ChatBot() {
         const flow = dialogFlows.find(f => f.id === flowId);
         if (flow) {
             updateDialogFlow(flowId, {
-                agentOptions: flow.agentOptions.map((opt, index) => 
+                agentOptions: flow.agentOptions.map((opt, index) =>
                     index === optionIndex ? { ...opt, text } : opt
                 )
             });
@@ -124,17 +125,17 @@ export default function ChatBot() {
 
     const isStepComplete = (flow: DialogFlow): boolean => {
         if (flow.clientType === "options") {
-            return flow.clientOptions.length > 0 && 
-                   flow.clientOptions.every(option => option.text.trim() !== "") &&
-                   flow.agentOptions.length > 0 &&
-                   flow.agentOptions.every(option => option.text.trim() !== "");
+            return flow.clientOptions.length > 0 &&
+                flow.clientOptions.every(option => option.text.trim() !== "") &&
+                flow.agentOptions.length > 0 &&
+                flow.agentOptions.every(option => option.text.trim() !== "");
         }
         return flow.agentResponse.trim() !== "";
     };
 
     const toggleLock = (flowId: string) => {
-        updateDialogFlow(flowId, { 
-            isLocked: !dialogFlows.find(f => f.id === flowId)?.isLocked 
+        updateDialogFlow(flowId, {
+            isLocked: !dialogFlows.find(f => f.id === flowId)?.isLocked
         });
     };
 
@@ -161,7 +162,7 @@ export default function ChatBot() {
             showError("Please enter a chatbot name.");
             return;
         }
-        
+
         // Close name modal and open confirmation modal
         setNameInputModalOpen(false);
         setSaveConfirmModalOpen(true);
@@ -181,20 +182,23 @@ export default function ChatBot() {
 
             const chatbotResponse = await createChatbot(chatbotData, DD_TOKEN);
 
+            // Extract ChatId from the response
+            const chatId = chatbotResponse;
+
             // Then, create commands for each dialog flow
             for (let i = 0; i < dialogFlows.length; i++) {
                 const flow = dialogFlows[i];
-                
+
                 const commandData = {
-                    chatId: "00000000-0000-0000-0000-000000000000", // Placeholder GUID - you may need to get actual chat ID
+                    chatId: chatId, // Use the actual ChatId from createChatbot response
                     index: i + 1,
-                    message: flow.clientType === "options" 
+                    message: flow.clientType === "options"
                         ? flow.clientOptions.map(opt => opt.text).filter(text => text.trim() !== "")
                         : [], // Empty for message type
                     reply: flow.clientType === "options"
                         ? flow.agentOptions.map(opt => opt.text).filter(text => text.trim() !== "")
                         : [flow.agentResponse],
-                    type: flow.clientType === "options" ? 0 : 1, // 0 = Selection, 1 = Enter (based on CommandType enum)
+                    type: flow.clientType === "options" ? 1 : 2, // 1 = Options/Selection, 2 = Message/Enter
                     keywords: flow.clientType === "options"
                         ? flow.agentOptions.map(opt => opt.text).join(", ").toLowerCase()
                         : flow.agentResponse.split(" ").slice(0, 3).join(", ").toLowerCase() // Generate keywords from response
@@ -302,7 +306,7 @@ export default function ChatBot() {
                                                     const newType = e.target.value as "message" | "options";
                                                     if (newType === "options") {
                                                         // When switching to options, create initial agent options to match client options
-                                                        const initialAgentOptions = flow.clientOptions.length > 0 
+                                                        const initialAgentOptions = flow.clientOptions.length > 0
                                                             ? flow.clientOptions.map((_, index) => ({
                                                                 id: `${flow.id}_agent_${index}_${Date.now()}`,
                                                                 text: ""
@@ -355,7 +359,7 @@ export default function ChatBot() {
                                                         Add Option
                                                     </button>
                                                 </div>
-                                                
+
                                                 <div className="chatbot-options-list">
                                                     {flow.clientOptions.map((option) => (
                                                         <div key={option.id} className="chatbot-option-item">
@@ -412,7 +416,7 @@ export default function ChatBot() {
                                                 <div className="chatbot-options-header">
                                                     <label className="formField-label">Agent Response Options</label>
                                                 </div>
-                                                
+
                                                 <div className="chatbot-options-list">
                                                     {flow.agentOptions.map((option, index) => (
                                                         <div key={index} className="chatbot-option-item">
@@ -562,6 +566,12 @@ export default function ChatBot() {
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {isSaving && (
+                <div className="globalLoader" role="status" aria-live="polite">
+                    <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
                 </div>
             )}
 
