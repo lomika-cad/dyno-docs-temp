@@ -75,15 +75,23 @@ export default function Chat() {
                 const firstCommand = sortedCommands.find(cmd => cmd.index === 1);
                 if (firstCommand && messages.length === 0) {
                     setCurrentCommandIndex(firstCommand.index);
-                    setCurrentInputType(firstCommand.type);
-                    setCurrentOptions(firstCommand.type === 1 ? firstCommand.message : []);
+                    // Check if message array is empty or has values
+                    if (firstCommand.message && firstCommand.message.length > 0) {
+                        setCurrentInputType(1);
+                        setCurrentOptions(firstCommand.message);
+                    } else {
+                        setCurrentInputType(2);
+                        setCurrentOptions([]);
+                    }
                 }
+                return sortedCommands;
             }
         } catch (error) {
             console.error("Error loading commands:", error);
         } finally {
             setIsLoading(false);
         }
+        return [];
     };
 
     const handleGetBotName = async () => {
@@ -96,7 +104,7 @@ export default function Chat() {
         }
     };
 
-    const handleGetMessages = async (activeChatId: string) => {
+    const handleGetMessages = async (activeChatId: string, commandsList: Command[]) => {
         try {
             const res = await getMessages(activeChatId);
             const historyMessages = Array.isArray(res?.messages) ? res.messages : [];
@@ -112,25 +120,30 @@ export default function Chat() {
             setMessages(parsedMessages);
 
             // Determine next command index based on the last conversationIndex
-            if (historyMessages.length > 0 && commands.length > 0) {
-                const lastWithIndex = [...historyMessages]
-                    .reverse()
-                    .find((m: any) => m.conversationIndex !== null && m.conversationIndex !== undefined);
+            if (commandsList.length > 0) {
+                const lastIndex = historyMessages.length > 0
+                    ? [...historyMessages]
+                        .reverse()
+                        .find((m: any) => m.conversationIndex !== null && m.conversationIndex !== undefined)
+                        ?.conversationIndex
+                    : null;
 
-                const lastIndex =
-                    typeof lastWithIndex?.conversationIndex === "number"
-                        ? lastWithIndex.conversationIndex
-                        : null;
-
-                const nextIndex = lastIndex !== null ? lastIndex + 1 : 1;
-                const nextCommand = commands.find(cmd => cmd.index === nextIndex);
+                const nextIndex = typeof lastIndex === "number" ? lastIndex + 1 : 1;
+                const nextCommand = commandsList.find(cmd => cmd.index === nextIndex);
 
                 if (nextCommand) {
                     setCurrentCommandIndex(nextCommand.index);
-                    setCurrentInputType(nextCommand.type);
-                    setCurrentOptions(nextCommand.type === 1 ? nextCommand.message : []);
+                    // Check if message array is empty (type 2 - text input) or has values (type 1 - options)
+                    if (nextCommand.message && nextCommand.message.length > 0) {
+                        setCurrentInputType(1); // Has options
+                        setCurrentOptions(nextCommand.message);
+                    } else {
+                        setCurrentInputType(2); // Text input
+                        setCurrentOptions([]);
+                    }
                 } else {
-                    setCurrentInputType(null);
+                    // No more commands - enable text field
+                    setCurrentInputType(2);
                     setCurrentOptions([]);
                 }
             }
@@ -143,11 +156,11 @@ export default function Chat() {
         if (!isClientReady) return;
 
         const loadChatData = async () => {
-            await handleGetCommands();
+            const commandsData = await handleGetCommands();
             await handleGetBotName();
             const storedChatId = sessionStorage.getItem("dd_public_chat_user_id");
-            if (storedChatId) {
-                await handleGetMessages(storedChatId);
+            if (storedChatId && commandsData) {
+                await handleGetMessages(storedChatId, commandsData);
             }
         };
 
@@ -180,7 +193,6 @@ export default function Chat() {
                     sessionStorage.setItem("dd_public_chat_tenant_id", res.chatUser.tenantId ?? String(tenantId));
                     sessionStorage.setItem("dd_public_chat_id", location.pathname.split("/").pop() || "");
                     sessionStorage.setItem("dd_public_chat_token", res.token);
-                    handleGetMessages(res.chatUser.id);
                 } else {
                     showSuccess("Welcome back!");
                 }
@@ -231,7 +243,7 @@ export default function Chat() {
         }
     };
 
-    const handleSendMessage = async (messageText?: string, type?: any) => {
+    const handleSendMessage = async (messageText?: string, type?: any, botReplyText?: string) => {
         const textToSend = messageText || inputText.trim();
         if (!textToSend) return;
 
@@ -270,16 +282,15 @@ export default function Chat() {
             console.error("Failed to send message to server", error);
         }
 
-        // Determine bot reply for the current step
-        const getBotReplyForCommand = (command: Command, userText: string): string => {
-            if (command.type === 1) {
-                const idx = command.message.findIndex(m => m === userText);
-                return command.reply[idx >= 0 ? idx : 0] || "Thank you for your response.";
+        // Determine bot reply - use the passed botReplyText if provided (from option selection)
+        const botText = botReplyText || (() => {
+            if (activeCommand.message && activeCommand.message.length > 0) {
+                const idx = activeCommand.message.findIndex(m => m === textToSend);
+                return activeCommand.reply[idx >= 0 ? idx : 0] || "Thank you for your response.";
             }
-            return command.reply[0] || "Thank you for your response.";
-        };
-
-        const botText = getBotReplyForCommand(activeCommand, textToSend);
+            return activeCommand.reply[0] || "Thank you for your response.";
+        })();
+        
         const botMessage: Message = {
             id: (Date.now() + 1).toString(),
             text: botText,
@@ -306,28 +317,33 @@ export default function Chat() {
 
         // After sending, reload messages from server to determine the latest step
         try {
-            const history = await getMessages(activeChatId);
+            const history = await getMessages(sessionStorage.getItem("dd_public_chat_user_id") || "");
             const historyMessages = Array.isArray(history?.messages) ? history.messages : [];
 
-            if (historyMessages.length > 0 && commands.length > 0) {
-                const lastWithIndex = [...historyMessages]
-                    .reverse()
-                    .find((m: any) => m.conversationIndex !== null && m.conversationIndex !== undefined);
+            if (commands.length > 0) {
+                const lastIndex = historyMessages.length > 0
+                    ? [...historyMessages]
+                        .reverse()
+                        .find((m: any) => m.conversationIndex !== null && m.conversationIndex !== undefined)
+                        ?.conversationIndex
+                    : null;
 
-                const lastIndex =
-                    typeof lastWithIndex?.conversationIndex === "number"
-                        ? lastWithIndex.conversationIndex
-                        : null;
-
-                const nextIndex = lastIndex !== null ? lastIndex + 1 : 1;
+                const nextIndex = typeof lastIndex === "number" ? lastIndex + 1 : 1;
                 const nextCommand = commands.find(cmd => cmd.index === nextIndex);
 
                 if (nextCommand) {
                     setCurrentCommandIndex(nextCommand.index);
-                    setCurrentInputType(nextCommand.type);
-                    setCurrentOptions(nextCommand.type === 1 ? nextCommand.message : []);
+                    // Check if message array is empty (type 2 - text input) or has values (type 1 - options)
+                    if (nextCommand.message && nextCommand.message.length > 0) {
+                        setCurrentInputType(1); // Has options
+                        setCurrentOptions(nextCommand.message);
+                    } else {
+                        setCurrentInputType(2); // Text input
+                        setCurrentOptions([]);
+                    }
                 } else {
-                    setCurrentInputType(null);
+                    // No more commands - enable text field
+                    setCurrentInputType(2);
                     setCurrentOptions([]);
                 }
             }
@@ -337,7 +353,17 @@ export default function Chat() {
     };
 
     const handleOptionClick = (option: string) => {
-        handleSendMessage(option, 2);
+        // When user clicks an option, we need to find the index in the message array
+        // and send both the user's choice and the bot's corresponding reply
+        const activeCommand = commands.find(cmd => cmd.index === currentCommandIndex);
+        if (!activeCommand) return;
+        
+        const optionIndex = activeCommand.message.findIndex(m => m === option);
+        const botReply = optionIndex >= 0 && activeCommand.reply[optionIndex] 
+            ? activeCommand.reply[optionIndex] 
+            : activeCommand.reply[0] || "Thank you for your response.";
+        
+        handleSendMessage(option, 2, botReply);
     };
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
