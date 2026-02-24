@@ -254,8 +254,32 @@ export default function Chat() {
         }
 
         const activeCommand = commands.find(cmd => cmd.index === currentCommandIndex);
+        
+        // If no active command, still allow user to send message but don't auto-reply
         if (!activeCommand) {
-            showError("Chat flow is not ready. Please try again later.");
+            // Add user message only
+            const userMessage: Message = {
+                id: Date.now().toString(),
+                text: textToSend,
+                sender: "user",
+                timestamp: new Date()
+            };
+            setInputText("");
+            setMessages(prev => [...prev, userMessage]);
+
+            // Send to backend
+            try {
+                await sendMessage({
+                    chatId: activeChatId,
+                    tenantId: sessionStorage.getItem("dd_public_chat_tenant_id") || "",
+                    chatUserId: sessionStorage.getItem("dd_public_chat_user_id") || "",
+                    message: textToSend,
+                    senderType: type,
+                    conversationIndex: null,
+                });
+            } catch (error) {
+                console.error("Failed to send message to server", error);
+            }
             return;
         }
 
@@ -342,7 +366,8 @@ export default function Chat() {
                         setCurrentOptions([]);
                     }
                 } else {
-                    // No more commands - enable text field
+                    // No more commands - enable text field and clear command index
+                    setCurrentCommandIndex(-1);
                     setCurrentInputType(2);
                     setCurrentOptions([]);
                 }
