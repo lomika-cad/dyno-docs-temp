@@ -68,11 +68,12 @@ export default function Chat() {
             setIsLoading(true);
             const res = await getChatbotCommands(botId || "", "");
             if (res && Array.isArray(res)) {
-                setCommands(res.sort((a, b) => a.index - b.index));
+                const sortedCommands = res.sort((a, b) => a.index - b.index);
+                setCommands(sortedCommands);
                 
-                // Initialize first command state (no messages yet; user starts the flow)
-                const firstCommand = res.find(cmd => cmd.index === 1);
-                if (firstCommand) {
+                // Initialize first command state only if no messages exist yet
+                const firstCommand = sortedCommands.find(cmd => cmd.index === 1);
+                if (firstCommand && messages.length === 0) {
                     setCurrentCommandIndex(firstCommand.index);
                     setCurrentInputType(firstCommand.type);
                     setCurrentOptions(firstCommand.type === 1 ? firstCommand.message : []);
@@ -98,17 +99,59 @@ export default function Chat() {
     const handleGetMessages = async (activeChatId: string) => {
         try {
             const res = await getMessages(activeChatId);
+            const historyMessages = Array.isArray(res?.messages) ? res.messages : [];
+
+            // Parse and display existing messages
+            const parsedMessages: Message[] = historyMessages.map((m: any) => ({
+                id: m.id || Date.now().toString(),
+                text: m.message || "",
+                sender: m.senderType === 2 ? "user" : "bot", // 2 = user (right), 1 = bot (left)
+                timestamp: m.createdAt ? new Date(m.createdAt) : new Date(),
+            }));
+
+            setMessages(parsedMessages);
+
+            // Determine next command index based on the last conversationIndex
+            if (historyMessages.length > 0 && commands.length > 0) {
+                const lastWithIndex = [...historyMessages]
+                    .reverse()
+                    .find((m: any) => m.conversationIndex !== null && m.conversationIndex !== undefined);
+
+                const lastIndex =
+                    typeof lastWithIndex?.conversationIndex === "number"
+                        ? lastWithIndex.conversationIndex
+                        : null;
+
+                const nextIndex = lastIndex !== null ? lastIndex + 1 : 1;
+                const nextCommand = commands.find(cmd => cmd.index === nextIndex);
+
+                if (nextCommand) {
+                    setCurrentCommandIndex(nextCommand.index);
+                    setCurrentInputType(nextCommand.type);
+                    setCurrentOptions(nextCommand.type === 1 ? nextCommand.message : []);
+                } else {
+                    setCurrentInputType(null);
+                    setCurrentOptions([]);
+                }
+            }
         } catch (error) {
-            
+            console.error("Failed to load messages", error);
         }
     }
 
     useEffect(() => {
         if (!isClientReady) return;
 
-        handleGetCommands();
-        handleGetBotName();
-        handleGetMessages(sessionStorage.getItem("dd_public_chat_user_id") || "");
+        const loadChatData = async () => {
+            await handleGetCommands();
+            await handleGetBotName();
+            const storedChatId = sessionStorage.getItem("dd_public_chat_user_id");
+            if (storedChatId) {
+                await handleGetMessages(storedChatId);
+            }
+        };
+
+        loadChatData();
     }, [location.pathname, isClientReady]);
 
     const handleEmailSubmit = async () => {
@@ -188,7 +231,7 @@ export default function Chat() {
         }
     };
 
-    const handleSendMessage = async (messageText?: string) => {
+    const handleSendMessage = async (messageText?: string, type?: any) => {
         const textToSend = messageText || inputText.trim();
         if (!textToSend) return;
 
@@ -220,6 +263,7 @@ export default function Chat() {
                 tenantId: sessionStorage.getItem("dd_public_chat_tenant_id") || "",
                 chatUserId : sessionStorage.getItem("dd_public_chat_user_id") || "",
                 message: textToSend,
+                senderType : type,
                 conversationIndex: currentCommandIndex || null,
             });
         } catch (error) {
@@ -245,6 +289,20 @@ export default function Chat() {
 
         // Append both user and bot messages in order
         setMessages(prev => [...prev, userMessage, botMessage]);
+
+        // Send bot response to backend as well
+        try {
+            await sendMessage({
+                chatId: activeChatId,
+                tenantId: sessionStorage.getItem("dd_public_chat_tenant_id") || "",
+                chatUserId: sessionStorage.getItem("dd_public_chat_user_id") || "",
+                message: botText,
+                senderType: 1,
+                conversationIndex: currentCommandIndex || null,
+            });
+        } catch (error) {
+            console.error("Failed to send bot response to server", error);
+        }
 
         // After sending, reload messages from server to determine the latest step
         try {
@@ -279,13 +337,13 @@ export default function Chat() {
     };
 
     const handleOptionClick = (option: string) => {
-        handleSendMessage(option);
+        handleSendMessage(option, 2);
     };
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            handleSendMessage();
+            handleSendMessage(undefined, 2);
         }
     };
 
@@ -366,7 +424,7 @@ export default function Chat() {
                     />
                     <button
                         className="chatPage-sendBtn"
-                        onClick={() => handleSendMessage()}
+                        onClick={() => handleSendMessage(undefined, 2)}
                         disabled={currentInputType === 1 || !inputText.trim()}
                         aria-label="Send message"
                     >

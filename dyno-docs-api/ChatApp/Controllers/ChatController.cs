@@ -227,7 +227,7 @@ public class ChatController : ControllerBase
                 ChatId = request.ChatId,
                 ChatUserId = request.ChatUserId,
                 Message = request.Message,
-                SenderType = senderType,
+                SenderType = request.SenderType,
                 ConversationIndex = request.ConversationIndex,
                 OrderSequence = (lastMessage?.OrderSequence ?? 0) + 1,
                 IsRead = false,
@@ -343,6 +343,8 @@ public class SendMessageRequest
     public Guid TenantId { get; set; }
     public string Message { get; set; }
     public int? ConversationIndex { get; set; }
+    
+    public SenderType SenderType { get; set; }
 }
 
 public class RegisterClientRequest
