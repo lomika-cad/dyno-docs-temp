@@ -13,6 +13,7 @@ import { showError, showSuccess } from "../components/Toast";
 import { createChatbot, createChatbotCommands, getChatbotCommands, deleteChatbotCommand } from "../services/chatbot-api";
 import "../styles/agencyData.css";
 import "../styles/chatBot.css";
+import Link from '@mui/icons-material/Link';
 import { CircularProgress } from "@mui/material";
 
 interface DialogOption {
@@ -33,6 +34,7 @@ interface DialogFlow {
 export default function ChatBot() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
     const DD_CHAT_USER_ID = sessionStorage.getItem("dd_chat_user_id") || "";
+    const DD_TENANT_ID = sessionStorage.getItem("dd_tenant_id") || "";
     const [infoOpen, setInfoOpen] = useState(false);
     const [nameInputModalOpen, setNameInputModalOpen] = useState(false);
     const [saveConfirmModalOpen, setSaveConfirmModalOpen] = useState(false);
@@ -331,19 +333,40 @@ export default function ChatBot() {
         }
     };
 
+    const handleCopyUrl = () => {
+        if (!DD_TENANT_ID || !DD_CHAT_USER_ID) {
+            showError("Unable to generate URL. Missing tenant or chat information.");
+            return;
+        }
+
+        const chatUrl = `/chat/${DD_TENANT_ID}/${DD_CHAT_USER_ID}`;
+        
+        navigator.clipboard.writeText(window.location.origin + chatUrl)
+            .then(() => {
+                showSuccess("Chat URL copied to clipboard!");
+            })
+            .catch((err) => {
+                console.error("Failed to copy URL:", err);
+                showError("Failed to copy URL to clipboard.");
+            });
+    };
+
     return (
         <Navbar>
             <div className="agency">
                 <div className="agency-header">
                     <h2 className="agency-title">Chatbot Integration</h2>
-                    <button
-                        type="button"
-                        className="infoBtn"
-                        aria-label="Chatbot integration steps"
-                        onClick={() => setInfoOpen(true)}
-                    >
-                        <InfoOutlinedIcon fontSize="small" />
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        
+                        <button
+                            type="button"
+                            className="infoBtn"
+                            aria-label="Chatbot integration steps"
+                            onClick={() => setInfoOpen(true)}
+                        >
+                            <InfoOutlinedIcon fontSize="small" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Dialog Flow Builder */}
@@ -352,6 +375,19 @@ export default function ChatBot() {
                         <div className="chatbot-section-title">
                             <SmartToyIcon className="chatbot-icon" />
                             Dialog Flow Builder
+
+                            {DD_CHAT_USER_ID && (
+                            <button
+                                type="button"
+                                className="infoBtn"
+                                aria-label="Copy chat URL"
+                                title="Copy chat URL"
+                                onClick={handleCopyUrl}
+                                style={{ color: 'black' }}
+                            >
+                                <Link fontSize="small" />
+                            </button>
+                        )}
                         </div>
                         <button
                             type="button"
