@@ -95,11 +95,20 @@ export default function Chat() {
         }
     };
 
+    const handleGetMessages = async (activeChatId: string) => {
+        try {
+            const res = await getMessages(activeChatId);
+        } catch (error) {
+            
+        }
+    }
+
     useEffect(() => {
         if (!isClientReady) return;
 
         handleGetCommands();
         handleGetBotName();
+        handleGetMessages(sessionStorage.getItem("dd_public_chat_user_id") || "");
     }, [location.pathname, isClientReady]);
 
     const handleEmailSubmit = async () => {
@@ -128,6 +137,7 @@ export default function Chat() {
                     sessionStorage.setItem("dd_public_chat_tenant_id", res.chatUser.tenantId ?? String(tenantId));
                     sessionStorage.setItem("dd_public_chat_id", location.pathname.split("/").pop() || "");
                     sessionStorage.setItem("dd_public_chat_token", res.token);
+                    handleGetMessages(res.chatUser.id);
                 } else {
                     showSuccess("Welcome back!");
                 }
