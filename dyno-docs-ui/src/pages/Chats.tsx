@@ -7,7 +7,7 @@ import SmartToyIcon from "@mui/icons-material/SmartToy";
 import PersonIcon from "@mui/icons-material/Person";
 import CircularProgress from "@mui/material/CircularProgress";
 import Navbar from "../layouts/Navbar";
-import { getAvailableChats } from "../services/agent-api";
+import { getAvailableChats, readMessages } from "../services/agent-api";
 import { getMessages, sendMessage } from "../services/chat-api";
 import { showError, showSuccess } from "../components/Toast";
 import "../styles/chats.css";
@@ -249,6 +249,19 @@ export default function Chats() {
                 };
             });
             setMessages(transformedMessages);
+
+            // Mark messages as read
+            try {
+                await readMessages(chatUserId, DD_TOKEN);
+                // Update the unread count in the chat list
+                setChats(prevChats => 
+                    prevChats.map(chat => 
+                        chat.id === chatUserId ? { ...chat, unreadCount: 0 } : chat
+                    )
+                );
+            } catch (readError) {
+                console.error("Failed to mark messages as read:", readError);
+            }
         } catch (error: any) {
             console.error("Failed to load messages:", error);
             setMockMessages();

@@ -98,7 +98,7 @@ public class AgentController : ControllerBase
         }
     }
     
-    [HttpPost("read-messages/{chatId}")]
+    [HttpPut("read-messages/{chatId}")]
     public async Task<IActionResult> MarkMessagesAsRead(Guid chatId)
     {
         try
@@ -106,7 +106,7 @@ public class AgentController : ControllerBase
             var currentUserId = _currentUserService.UserId;
 
             var messagesToMark = await _context.ChatMessages
-                .Where(m => m.ChatId == chatId && m.ChatUserId == currentUserId && !m.IsRead)
+                .Where(m =>  m.ChatUserId == chatId && !m.IsRead)
                 .ToListAsync();
 
             if (!messagesToMark.Any())

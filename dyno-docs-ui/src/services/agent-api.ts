@@ -18,14 +18,14 @@ export const getAvailableChats = async (token: string) => {
 
 export const readMessages = async (chatId: string, token: string) => {
   try {
-    const response = await axios.post(
-      `${API_URL}/read-messages`,
-      { chatId },
+    const response = await axios.put(
+      `${API_URL}/read-messages/${chatId}`,
+      {},
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      },
+      }
     );
     return response.data;
   } catch (error) {
