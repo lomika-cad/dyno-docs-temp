@@ -137,9 +137,6 @@ public class ChatBotEngine : IChatBotEngine
                 Type = CommandType.Selection
             };
     }
-
-    
-
     
     public async Task<bool> CreateBotCommandsForChatAsync(Guid chatId, Guid tenantId)
     {
