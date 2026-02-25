@@ -885,7 +885,7 @@ export default function Chats() {
                         </div>
 
                         <div className="ddModal-title" style={{ fontSize: '24px', marginBottom: '12px' }}>
-                            AI Thinking...
+                            Thinking...
                         </div>
                         <div className="ddModal-subtitle" style={{ marginBottom: '30px' }}>
                             Analyzing your conversation and generating a comprehensive summary
