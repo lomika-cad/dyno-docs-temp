@@ -404,7 +404,7 @@ export default function Chats() {
                                             </div>
                                             <p className="chatItem-preview">{chat.lastMessage}</p>
                                         </div>
-                                        {chat.unreadCount && chat.unreadCount > 0 && (
+                                        {(chat.unreadCount ?? 0) > 0 && (
                                             <span className="chatItem-badge">{chat.unreadCount}</span>
                                         )}
                                     </div>
