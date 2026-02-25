@@ -5,6 +5,7 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import PersonIcon from "@mui/icons-material/Person";
 import CircularProgress from "@mui/material/CircularProgress";
+import CloseIcon from "@mui/icons-material/Close";
 import Navbar from "../layouts/Navbar";
 import { checkBotStatus, getAvailableChats, readMessages } from "../services/agent-api";
 import { getMessages, sendMessage } from "../services/chat-api";
@@ -122,10 +123,7 @@ export default function Chats() {
             console.log("Transformed Chats:", transformedChats);
             setChats(transformedChats);
 
-            // Auto-select first chat if available
-            if (transformedChats.length > 0) {
-                setSelectedChat(transformedChats[0]);
-            }
+            // Don't auto-select any chat - let user choose
         } catch (error: any) {
             console.error("Failed to load chats:", error);
             showError("Failed to load chats. Please try again.");
@@ -371,18 +369,29 @@ export default function Chats() {
                         {selectedChat ? (
                             <>
                                 <div className="chatsPage-chatHeader">
-                                    <div>
+                                    <div className="chatHeader-info">
+                                        <span className="chatHeader-name">{selectedChat.name}</span>
                                     </div>
 
-                                    <button
-                                        type="button"
-                                        className="exportBtn"
-                                        onClick={handleExportPDF}
-                                        aria-label="Export to PDF"
-                                    >
-                                        <PictureAsPdfIcon fontSize="small" />
-                                        Export To PDF
-                                    </button>
+                                    <div className="chatHeader-actions">
+                                        <button
+                                            type="button"
+                                            className="exportBtn"
+                                            onClick={handleExportPDF}
+                                            aria-label="Export to PDF"
+                                        >
+                                            <PictureAsPdfIcon fontSize="small" />
+                                            Export To PDF
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="closeBtn"
+                                            onClick={() => setSelectedChat(null)}
+                                            aria-label="Close chat"
+                                        >
+                                            <CloseIcon fontSize="small" />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="chatsPage-messagesArea">

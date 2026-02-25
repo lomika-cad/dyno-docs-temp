@@ -108,6 +108,50 @@
     transform: translateY(0);
 }
 
+/* Close Button */
+.closeBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.closeBtn:active {
+    transform: translateY(0);
+}
+
+.chatHeader-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.chatHeader-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.chatHeader-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
 /* Main Content Layout */
 .chatsPage-content {
     display: flex;
