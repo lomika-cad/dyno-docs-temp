@@ -745,15 +745,19 @@ export default function ChatBot() {
                     />
 
                     <div className="ddModal-card">
+                        <div className="ddModal-title">Dialog Flow Builder Guide</div>
                         <div className="ddModal-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
-                            High-level steps for enabling the chatbot experience:
+                            Build intelligent chatbot conversations with multi-step dialog flows:
                         </div>
                         <div className="ddModal-content">
                             <ol>
-                                <li>Generate your chatbot credentials from DynoDocs and copy the provided script snippet.</li>
-                                <li>Paste the snippet into your website or CRM portal where you want the chat icon to appear.</li>
-                                <li>Configure tenant-specific responses, handoff rules, and branding settings inside DynoDocs.</li>
-                                <li>Test the bot, then monitor conversations and usage analytics from the dashboard.</li>
+                                <li><strong>Create Dialog Steps:</strong> Use the "Add Dialog Step" button to create conversation flows. Each step represents an interaction between the client and chatbot.</li>
+                                <li><strong>Choose Input Type:</strong> Select "Message" for text responses or "Options" for multiple-choice interactions where clients select from predefined buttons.</li>
+                                <li><strong>Configure Client Side:</strong> Define what the client will input - either free text messages or selectable options with custom labels.</li>
+                                <li><strong>Set Agent Responses:</strong> Configure how the chatbot responds. For message type, provide a text response. For options type, create multiple response options.</li>
+                                <li><strong>Lock Steps:</strong> Use the lock icon to prevent accidental edits to completed dialog steps while working on others.</li>
+                                <li><strong>Save & Deploy:</strong> Click "Save Dialog Flow" to deploy your chatbot. Existing chatbots can be updated by modifying steps and saving again.</li>
+                                <li><strong>Share Chat URL:</strong> After saving, use the link icon to copy the chat URL and integrate it into your website or share with clients.</li>
                             </ol>
                         </div>
                     </div>
