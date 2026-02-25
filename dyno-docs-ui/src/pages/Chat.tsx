@@ -129,23 +129,34 @@ export default function Chat() {
                         ?.conversationIndex
                     : null;
 
-                const nextIndex = typeof lastIndex === "number" ? lastIndex + 1 : 1;
-                const nextCommand = commandsList.find(cmd => cmd.index === nextIndex);
-
-                if (nextCommand) {
-                    setCurrentCommandIndex(nextCommand.index);
-                    // Check if message array is empty (type 2 - text input) or has values (type 1 - options)
-                    if (nextCommand.message && nextCommand.message.length > 0) {
-                        setCurrentInputType(1); // Has options
-                        setCurrentOptions(nextCommand.message);
-                    } else {
-                        setCurrentInputType(2); // Text input
-                        setCurrentOptions([]);
-                    }
-                } else {
-                    // No more commands - enable text field
+                // Get the maximum command index to know when dialog is complete
+                const maxCommandIndex = Math.max(...commandsList.map(cmd => cmd.index));
+                
+                // If lastIndex is >= max command index, dialog is complete
+                if (typeof lastIndex === "number" && lastIndex >= maxCommandIndex) {
+                    setCurrentCommandIndex(-1);
                     setCurrentInputType(2);
                     setCurrentOptions([]);
+                } else {
+                    const nextIndex = typeof lastIndex === "number" ? lastIndex + 1 : 1;
+                    const nextCommand = commandsList.find(cmd => cmd.index === nextIndex);
+
+                    if (nextCommand) {
+                        setCurrentCommandIndex(nextCommand.index);
+                        // Check if message array is empty (type 2 - text input) or has values (type 1 - options)
+                        if (nextCommand.message && nextCommand.message.length > 0) {
+                            setCurrentInputType(1); // Has options
+                            setCurrentOptions(nextCommand.message);
+                        } else {
+                            setCurrentInputType(2); // Text input
+                            setCurrentOptions([]);
+                        }
+                    } else {
+                        // No more commands - enable text field
+                        setCurrentCommandIndex(-1);
+                        setCurrentInputType(2);
+                        setCurrentOptions([]);
+                    }
                 }
             }
         } catch (error) {
@@ -224,21 +235,33 @@ export default function Chat() {
                                 ?.conversationIndex
                             : null;
 
-                        const nextIndex = typeof lastIndex === "number" ? lastIndex + 1 : 1;
-                        const nextCommand = commands.find(cmd => cmd.index === nextIndex);
+                        // Get the maximum command index to know when dialog is complete
+                        const maxCommandIndex = Math.max(...commands.map(cmd => cmd.index));
+                        
+                        // If lastIndex is >= max command index, dialog is complete
+                        if (typeof lastIndex === "number" && lastIndex >= maxCommandIndex) {
+                            setCurrentCommandIndex(-1);
+                            setCurrentInputType(2);
+                            setCurrentOptions([]);
+                        } else {
+                            const nextIndex = typeof lastIndex === "number" ? lastIndex + 1 : 1;
+                            const nextCommand = commands.find(cmd => cmd.index === nextIndex);
 
-                        if (nextCommand) {
-                            setCurrentCommandIndex(nextCommand.index);
-                            if (nextCommand.message && nextCommand.message.length > 0) {
-                                setCurrentInputType(1);
-                                setCurrentOptions(nextCommand.message);
+                            if (nextCommand) {
+                                setCurrentCommandIndex(nextCommand.index);
+                                if (nextCommand.message && nextCommand.message.length > 0) {
+                                    setCurrentInputType(1);
+                                    setCurrentOptions(nextCommand.message);
+                                } else {
+                                    setCurrentInputType(2);
+                                    setCurrentOptions([]);
+                                }
                             } else {
+                                // No next command found - dialog complete
+                                setCurrentCommandIndex(-1);
                                 setCurrentInputType(2);
                                 setCurrentOptions([]);
                             }
-                        } else {
-                            setCurrentInputType(2);
-                            setCurrentOptions([]);
                         }
                     }
                 } catch (error) {
@@ -453,24 +476,34 @@ export default function Chat() {
                         ?.conversationIndex
                     : null;
 
-                const nextIndex = typeof lastIndex === "number" ? lastIndex + 1 : 1;
-                const nextCommand = commands.find(cmd => cmd.index === nextIndex);
-
-                if (nextCommand) {
-                    setCurrentCommandIndex(nextCommand.index);
-                    // Check if message array is empty (type 2 - text input) or has values (type 1 - options)
-                    if (nextCommand.message && nextCommand.message.length > 0) {
-                        setCurrentInputType(1); // Has options
-                        setCurrentOptions(nextCommand.message);
-                    } else {
-                        setCurrentInputType(2); // Text input
-                        setCurrentOptions([]);
-                    }
-                } else {
-                    // No more commands - enable text field and clear command index
+                // Get the maximum command index to know when dialog is complete
+                const maxCommandIndex = Math.max(...commands.map(cmd => cmd.index));
+                
+                // If lastIndex is >= max command index, dialog is complete - don't send bot reply
+                if (typeof lastIndex === "number" && lastIndex >= maxCommandIndex) {
                     setCurrentCommandIndex(-1);
                     setCurrentInputType(2);
                     setCurrentOptions([]);
+                } else {
+                    const nextIndex = typeof lastIndex === "number" ? lastIndex + 1 : 1;
+                    const nextCommand = commands.find(cmd => cmd.index === nextIndex);
+
+                    if (nextCommand) {
+                        setCurrentCommandIndex(nextCommand.index);
+                        // Check if message array is empty (type 2 - text input) or has values (type 1 - options)
+                        if (nextCommand.message && nextCommand.message.length > 0) {
+                            setCurrentInputType(1); // Has options
+                            setCurrentOptions(nextCommand.message);
+                        } else {
+                            setCurrentInputType(2); // Text input
+                            setCurrentOptions([]);
+                        }
+                    } else {
+                        // No more commands - enable text field and clear command index
+                        setCurrentCommandIndex(-1);
+                        setCurrentInputType(2);
+                        setCurrentOptions([]);
+                    }
                 }
             }
         } catch (error) {

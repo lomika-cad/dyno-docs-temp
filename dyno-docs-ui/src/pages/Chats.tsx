@@ -194,6 +194,50 @@ export default function Chats() {
         }
     };
 
+    const silentLoadMessages = async (chatUserId: string) => {
+        try {
+            const response = await getMessages(chatUserId);
+            let messagesList = [];
+            if (response.messages && Array.isArray(response.messages)) {
+                messagesList = response.messages;
+            } else if (Array.isArray(response)) {
+                messagesList = response;
+            }
+
+            const transformedMessages: Message[] = messagesList.map((msg: any) => {
+                const isClientMessage = msg.senderType === 2;
+                
+                return {
+                    id: msg.id || msg.messageId,
+                    sender: isClientMessage ? "bot" : "user",
+                    text: msg.message || msg.text || msg.content,
+                    timestamp: msg.timestamp || msg.createdAt || msg.createdDate || new Date().toISOString()
+                };
+            });
+            setMessages(transformedMessages);
+
+            // Scroll to bottom after messages are loaded
+            setTimeout(() => {
+                scrollToBottom();
+            }, 100);
+
+            // Mark messages as read
+            try {
+                await readMessages(chatUserId, DD_TOKEN);
+                // Update the unread count in the chat list
+                setChats(prevChats => 
+                    prevChats.map(chat => 
+                        chat.id === chatUserId ? { ...chat, unreadCount: 0 } : chat
+                    )
+                );
+            } catch (readError) {
+                console.error("Failed to mark messages as read:", readError);
+            }
+        } catch (error: any) {
+            console.error("Failed to silently load messages:", error);
+        }
+    };
+
     const handleSendMessage = async () => {
         if (!messageInput.trim() || !selectedChat || isSendingMessage) return;
 
@@ -208,6 +252,9 @@ export default function Chats() {
         setMessages(prev => [...prev, newMessage]);
         const messageToBeSent = messageInput;
         setMessageInput("");
+        
+        // Immediately scroll to show the new message
+        setTimeout(() => scrollToBottom(), 50);
 
         try {
             setIsSendingMessage(true);
@@ -224,14 +271,12 @@ export default function Chats() {
 
             console.log("Send message response:", response);
 
-            // Reload messages to get the latest including bot response
+            // Silently reload messages to get the latest including bot response
             setTimeout(() => {
-                loadMessages(selectedChat.id);
+                silentLoadMessages(selectedChat.id);
                 // Check bot status after message is sent and response is received
                 checkAndSetBotStatus(selectedChat.id);
-            }, 500);
-
-            showSuccess("Message sent successfully!");
+            }, 300);
         } catch (error: any) {
             console.error("Failed to send message:", error);
             showError("Failed to send message. Please try again.");
