@@ -24,10 +24,15 @@ interface ChatItem {
 
 interface Message {
     id: string;
-    sender: "bot" | "user";
+    sender: "bot" | "user"; // "bot" = left side (gray), "user" = right side (orange)
     text: string;
     timestamp: string;
 }
+
+// API senderType mapping:
+// 1 = Bot (shown on right/orange)
+// 2 = Client (shown on left/gray)  
+// 3 = Agent (shown on right/orange)
 
 export default function Chats() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
@@ -239,11 +244,15 @@ export default function Chats() {
 
             // Transform the response to match our Message interface
             const transformedMessages: Message[] = messagesList.map((msg: any) => {
-                const isBot = msg.senderType === "Bot" || msg.isFromBot || msg.role === "bot" || msg.sender === "bot";
+                // senderType: 1 = Bot, 2 = Client, 3 = Agent
+                // User wants senderType = 2 (Client) on left side (gray)
+                // Bot and Agent responses should be on right side (orange)
+                // In our UI: "bot" class = left side (gray), "user" class = right side (orange)
+                const isClientMessage = msg.senderType === 2;
                 
                 return {
                     id: msg.id || msg.messageId,
-                    sender: isBot ? "bot" : "user",
+                    sender: isClientMessage ? "bot" : "user", // Client=left(gray), Bot/Agent=right(orange)
                     text: msg.message || msg.text || msg.content,
                     timestamp: msg.timestamp || msg.createdAt || msg.createdDate || new Date().toISOString()
                 };
