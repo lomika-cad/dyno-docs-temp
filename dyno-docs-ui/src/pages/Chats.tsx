@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import SendIcon from "@mui/icons-material/Send";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
@@ -43,6 +43,7 @@ export default function Chats() {
     const [isSendingMessage, setIsSendingMessage] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [botStatus, setBotStatus] = useState(false);
+    const isRefreshingRef = useRef(false); // Prevent concurrent refreshes
 
     useEffect(() => {
         loadChats();
@@ -297,6 +298,116 @@ export default function Chats() {
             handleCheckBotStatus();
         }
     }, [selectedChat]);
+
+    // Safe refresh function that runs on every mouse click
+    const safeRefreshData = useCallback(async () => {
+        // Prevent concurrent refreshes
+        if (isRefreshingRef.current) {
+            return;
+        }
+
+        try {
+            isRefreshingRef.current = true;
+
+            // Refresh clients list
+            try {
+                const response = await getAvailableChats(DD_TOKEN);
+                const transformedChats: ChatItem[] = [];
+                
+                if (Array.isArray(response)) {
+                    for (const chat of response) {
+                        if (chat.clientUsers && Array.isArray(chat.clientUsers)) {
+                            for (const clientUser of chat.clientUsers) {
+                                try {
+                                    const messagesResponse = await getMessages(clientUser.id);
+                                    const messagesList = messagesResponse.messages || messagesResponse || [];
+                                    
+                                    const lastMessage = messagesList.length > 0 
+                                        ? messagesList[messagesList.length - 1] 
+                                        : null;
+
+                                    transformedChats.push({
+                                        id: clientUser.id,
+                                        chatId: chat.id,
+                                        name: clientUser.name || "Anonymous User",
+                                        email: clientUser.email || "",
+                                        lastMessage: lastMessage 
+                                            ? (lastMessage.message || lastMessage.text || "No messages yet")
+                                            : "No messages yet",
+                                        lastMessageDate: formatDate(
+                                            lastMessage?.createdAt || lastMessage?.timestamp || chat.createdAt || new Date().toISOString()
+                                        ),
+                                        unreadCount: clientUser.unreadMessageCount || 0
+                                    });
+                                } catch (msgError) {
+                                    // Silently handle message fetch errors
+                                    transformedChats.push({
+                                        id: clientUser.id,
+                                        chatId: chat.id,
+                                        name: clientUser.name || "Anonymous User",
+                                        email: clientUser.email || "",
+                                        lastMessage: "No messages yet",
+                                        lastMessageDate: formatDate(chat.createdAt || new Date().toISOString()),
+                                        unreadCount: clientUser.unreadMessageCount || 0
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                setChats(transformedChats);
+            } catch (chatsError) {
+                console.error("Silent refresh - failed to load chats:", chatsError);
+            }
+
+            // Refresh messages for selected chat
+            if (selectedChat) {
+                try {
+                    const response = await getMessages(selectedChat.id);
+                    let messagesList = [];
+                    if (response.messages && Array.isArray(response.messages)) {
+                        messagesList = response.messages;
+                    } else if (Array.isArray(response)) {
+                        messagesList = response;
+                    }
+
+                    const transformedMessages: Message[] = messagesList.map((msg: any) => {
+                        const isClientMessage = msg.senderType === 2;
+                        
+                        return {
+                            id: msg.id || msg.messageId,
+                            sender: isClientMessage ? "bot" : "user",
+                            text: msg.message || msg.text || msg.content,
+                            timestamp: msg.timestamp || msg.createdAt || msg.createdDate || new Date().toISOString()
+                        };
+                    });
+                    setMessages(transformedMessages);
+                } catch (messagesError) {
+                    console.error("Silent refresh - failed to load messages:", messagesError);
+                }
+            }
+        } catch (error) {
+            // Silently catch any other errors
+            console.error("Silent refresh error:", error);
+        } finally {
+            isRefreshingRef.current = false;
+        }
+    }, [selectedChat, DD_TOKEN]);
+
+    // Add click event listener
+    useEffect(() => {
+        const handleClick = () => {
+            safeRefreshData();
+        };
+
+        // Add event listener to document
+        document.addEventListener('click', handleClick);
+
+        // Cleanup
+        return () => {
+            document.removeEventListener('click', handleClick);
+        };
+    }, [safeRefreshData]);
 
     return (
         <Navbar>
