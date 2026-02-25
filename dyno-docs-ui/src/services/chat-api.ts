@@ -38,3 +38,16 @@ export const sendMessage = async (data: any) => {
         throw error;
     }
 }
+
+export const getChatUsers = async (token: string) => {
+    try {
+        const response = await axios.get(`${API_URL}/users`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}

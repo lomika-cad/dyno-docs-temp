@@ -384,6 +384,24 @@
     background: white;
 }
 
+.chatsPage-warningMessage {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    color: #92400e;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.chatsPage-warningMessage svg {
+    color: #f59e0b;
+}
+
 .chatsPage-inputWrapper {
     display: flex;
     align-items: center;
@@ -433,6 +451,15 @@
 
 .chatsPage-input::placeholder {
     color: #9ca3af;
+}
+
+.chatsPage-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.chatsPage-input:disabled::placeholder {
+    color: #d1d5db;
 }
 
 .chatsPage-sendBtn {

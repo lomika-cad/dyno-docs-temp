@@ -14,12 +14,14 @@ import "../styles/chats.css";
 import { InfoOutline } from "@mui/icons-material";
 
 interface ChatItem {
-    id: string;
+    id: string; // Client user ID
+    chatId: string; // Actual chat ID (like dd_public_chat_id)
     name: string;
     email: string;
     lastMessage: string;
     lastMessageDate: string;
     unreadCount?: number;
+    isBotOn?: boolean;
 }
 
 interface Message {
@@ -36,6 +38,8 @@ interface Message {
 
 export default function Chats() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
+    const DD_TENANT_ID = sessionStorage.getItem("dd_tenant_id") || "";
+    const DD_USER_ID = sessionStorage.getItem("dd_user_id") || "";
     const [chats, setChats] = useState<ChatItem[]>([]);
     const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -53,6 +57,7 @@ export default function Chats() {
     useEffect(() => {
         if (selectedChat) {
             loadMessages(selectedChat.id);
+            checkAndSetBotStatus(selectedChat.id);
         }
     }, [selectedChat]);
 
@@ -92,6 +97,7 @@ export default function Chats() {
 
                                 transformedChats.push({
                                     id: clientUser.id,
+                                    chatId: chat.id, // Store the parent chat ID
                                     name: clientUser.name || "Anonymous User",
                                     email: clientUser.email || "",
                                     lastMessage: lastMessage 
@@ -107,6 +113,7 @@ export default function Chats() {
                                 // Add chat item without last message info
                                 transformedChats.push({
                                     id: clientUser.id,
+                                    chatId: chat.id, // Store the parent chat ID
                                     name: clientUser.name || "Anonymous User",
                                     email: clientUser.email || "",
                                     lastMessage: "No messages yet",
@@ -140,6 +147,7 @@ export default function Chats() {
         const mockChats: ChatItem[] = [
             {
                 id: "1",
+                chatId: "mock-chat-id-1",
                 name: "John Traveler",
                 email: "john@example.com",
                 lastMessage: "Can you generate a report for Galle Fort?",
@@ -148,6 +156,7 @@ export default function Chats() {
             },
             {
                 id: "2",
+                chatId: "mock-chat-id-2",
                 name: "Sarah Explorer",
                 email: "sarah@example.com",
                 lastMessage: "I need travel details for Anuradhapura tomorrow.",
@@ -155,6 +164,7 @@ export default function Chats() {
             },
             {
                 id: "3",
+                chatId: "mock-chat-id-3",
                 name: "Mike Adventure",
                 email: "mike@example.com",
                 lastMessage: "Show me the top attractions in Nuwara Eliya.",
@@ -162,6 +172,7 @@ export default function Chats() {
             },
             {
                 id: "4",
+                chatId: "mock-chat-id-4",
                 name: "Emma Tourist",
                 email: "emma@example.com",
                 lastMessage: "Perfect! Thanks for the info",
@@ -169,6 +180,7 @@ export default function Chats() {
             },
             {
                 id: "5",
+                chatId: "mock-chat-id-5",
                 name: "David Wanderer",
                 email: "david@example.com",
                 lastMessage: "Find hotels near Sigiriya Rock...",
@@ -271,6 +283,19 @@ export default function Chats() {
         }
     };
 
+    const checkAndSetBotStatus = async (chatUserId: string) => {
+        try {
+            const response = await checkBotStatus(chatUserId, DD_TOKEN);
+            console.log("Bot Status Response:", response);
+            // Response is expected to be { isBotOn: true/false }
+            setBotStatus(response.isBotOn || false);
+        } catch (error: any) {
+            console.error("Failed to check bot status:", error);
+            // Default to false (allow messaging) if check fails
+            setBotStatus(false);
+        }
+    };
+
     const handleSendMessage = async () => {
         if (!messageInput.trim() || !selectedChat || isSendingMessage) return;
 
@@ -289,11 +314,14 @@ export default function Chats() {
         try {
             setIsSendingMessage(true);
 
-            // Send message using the client user ID as chatId
+            // Send message using the correct request body structure
             const response = await sendMessage({
-                chatId: selectedChat.id, // This is the chatUserId from clientUsers
+                chatId: selectedChat.chatId, // Actual chat ID (like dd_public_chat_id in Chat.tsx)
+                tenantId: DD_TENANT_ID,
+                chatUserId: selectedChat.id, // Client user ID we're messaging
                 message: messageToBeSent,
-                conversationIndex: 1
+                senderType: 3, // 3 = Agent
+                conversationIndex: null
             });
 
             console.log("Send message response:", response);
@@ -301,6 +329,8 @@ export default function Chats() {
             // Reload messages to get the latest including bot response
             setTimeout(() => {
                 loadMessages(selectedChat.id);
+                // Check bot status after message is sent and response is received
+                checkAndSetBotStatus(selectedChat.id);
             }, 500);
 
             showSuccess("Message sent successfully!");
@@ -488,21 +518,27 @@ export default function Chats() {
                                 </div>
 
                                 <div className="chatsPage-inputArea">
+                                    {botStatus && (
+                                        <div className="chatsPage-warningMessage">
+                                            <InfoOutline fontSize="small" />
+                                            <span>Cannot send message because bot dialog flow is still not over</span>
+                                        </div>
+                                    )}
                                     <div className="chatsPage-inputWrapper">
                                         <input
                                             type="text"
                                             className="chatsPage-input"
-                                            placeholder="Type your message ..."
+                                            placeholder={botStatus ? "Waiting for dialog flow to complete..." : "Type your message ..."}
                                             value={messageInput}
                                             onChange={(e) => setMessageInput(e.target.value)}
                                             onKeyPress={handleKeyPress}
-                                            disabled={isSendingMessage}
+                                            disabled={isSendingMessage || botStatus}
                                         />
                                         <button
                                             type="button"
                                             className="chatsPage-sendBtn"
                                             onClick={handleSendMessage}
-                                            disabled={!messageInput.trim() || isSendingMessage}
+                                            disabled={!messageInput.trim() || isSendingMessage || botStatus}
                                             aria-label="Send message"
                                         >
                                             <SendIcon />
