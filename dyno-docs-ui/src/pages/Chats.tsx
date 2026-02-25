@@ -231,10 +231,6 @@ export default function Chats() {
         try {
             setIsLoadingMessages(true);
             const response = await getMessages(chatUserId);
-
-            console.log("Messages Response:", response);
-
-            // Handle paginated response structure
             let messagesList = [];
             if (response.messages && Array.isArray(response.messages)) {
                 messagesList = response.messages;
@@ -242,27 +238,19 @@ export default function Chats() {
                 messagesList = response;
             }
 
-            // Transform the response to match our Message interface
             const transformedMessages: Message[] = messagesList.map((msg: any) => {
-                // senderType: 1 = Bot, 2 = Client, 3 = Agent
-                // User wants senderType = 2 (Client) on left side (gray)
-                // Bot and Agent responses should be on right side (orange)
-                // In our UI: "bot" class = left side (gray), "user" class = right side (orange)
                 const isClientMessage = msg.senderType === 2;
                 
                 return {
                     id: msg.id || msg.messageId,
-                    sender: isClientMessage ? "bot" : "user", // Client=left(gray), Bot/Agent=right(orange)
+                    sender: isClientMessage ? "bot" : "user",
                     text: msg.message || msg.text || msg.content,
                     timestamp: msg.timestamp || msg.createdAt || msg.createdDate || new Date().toISOString()
                 };
             });
-
-            console.log("Transformed Messages:", transformedMessages);
             setMessages(transformedMessages);
         } catch (error: any) {
             console.error("Failed to load messages:", error);
-            // Show mock messages for demonstration
             setMockMessages();
         } finally {
             setIsLoadingMessages(false);
