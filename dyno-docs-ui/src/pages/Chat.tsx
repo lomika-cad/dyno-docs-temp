@@ -2,7 +2,7 @@ import { useLocation, useParams } from "react-router-dom";
 import { getChatbotCommands, getChatbotName } from "../services/chatbot-api";
 import { checkClient, registerClient, sendMessage, getMessages } from "../services/chat-api";
 import { showError, showSuccess } from "../components/Toast";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import SendIcon from "@mui/icons-material/Send";
 import { CircularProgress } from "@mui/material";
@@ -41,6 +41,7 @@ export default function Chat() {
     const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
     const [isClientReady, setIsClientReady] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const isRefreshingRef = useRef(false); // Prevent concurrent refreshes
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -166,6 +167,106 @@ export default function Chat() {
 
         loadChatData();
     }, [location.pathname, isClientReady]);
+
+    // Safe refresh function that runs on every mouse click
+    const safeRefreshData = useCallback(async () => {
+        // Prevent concurrent refreshes
+        if (isRefreshingRef.current || !isClientReady) {
+            return;
+        }
+
+        try {
+            isRefreshingRef.current = true;
+
+            // Refresh commands
+            try {
+                const botId = chatId || location.pathname.split("/").pop();
+                const res = await getChatbotCommands(botId || "", "");
+                if (res && Array.isArray(res)) {
+                    const sortedCommands = res.sort((a, b) => a.index - b.index);
+                    setCommands(sortedCommands);
+                }
+            } catch (error) {
+                console.error("Silent refresh - failed to load commands:", error);
+            }
+
+            // Refresh bot name
+            try {
+                const botId = chatId || location.pathname.split("/").pop();
+                const res = await getChatbotName(botId || "", "");
+                setBotName(res.botName || "Chatbot");
+            } catch (error) {
+                console.error("Silent refresh - failed to load bot name:", error);
+            }
+
+            // Refresh messages
+            const storedChatUserId = sessionStorage.getItem("dd_public_chat_user_id");
+            if (storedChatUserId) {
+                try {
+                    const res = await getMessages(storedChatUserId);
+                    const historyMessages = Array.isArray(res?.messages) ? res.messages : [];
+
+                    const parsedMessages: Message[] = historyMessages.map((m: any) => ({
+                        id: m.id || Date.now().toString(),
+                        text: m.message || "",
+                        sender: m.senderType === 2 ? "user" : "bot",
+                        timestamp: m.createdAt ? new Date(m.createdAt) : new Date(),
+                    }));
+
+                    setMessages(parsedMessages);
+
+                    // Update command state based on conversation index
+                    if (commands.length > 0) {
+                        const lastIndex = historyMessages.length > 0
+                            ? [...historyMessages]
+                                .reverse()
+                                .find((m: any) => m.conversationIndex !== null && m.conversationIndex !== undefined)
+                                ?.conversationIndex
+                            : null;
+
+                        const nextIndex = typeof lastIndex === "number" ? lastIndex + 1 : 1;
+                        const nextCommand = commands.find(cmd => cmd.index === nextIndex);
+
+                        if (nextCommand) {
+                            setCurrentCommandIndex(nextCommand.index);
+                            if (nextCommand.message && nextCommand.message.length > 0) {
+                                setCurrentInputType(1);
+                                setCurrentOptions(nextCommand.message);
+                            } else {
+                                setCurrentInputType(2);
+                                setCurrentOptions([]);
+                            }
+                        } else {
+                            setCurrentInputType(2);
+                            setCurrentOptions([]);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Silent refresh - failed to load messages:", error);
+                }
+            }
+        } catch (error) {
+            // Silently catch any other errors
+            console.error("Silent refresh error:", error);
+        } finally {
+            isRefreshingRef.current = false;
+        }
+    }, [isClientReady, chatId, location.pathname, commands]);
+
+    // Add click event listener
+    useEffect(() => {
+        const handleClick = () => {
+            safeRefreshData();
+        };
+
+        // Add event listener to document
+        document.addEventListener('click', handleClick);
+
+        // Cleanup
+        return () => {
+            document.removeEventListener('click', handleClick);
+        };
+    }, [safeRefreshData]);
 
     const handleEmailSubmit = async () => {
         const trimmedEmail = email.trim();
