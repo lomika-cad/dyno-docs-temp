@@ -743,10 +743,10 @@ export default function Chats() {
                                             style={{
                                                 background: 'white',
                                                 border: '2px solid transparent',
-                                                backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #e744fd 0%, #0ccd36 25%, #e4d60d 50%, #4facfe 75%, #00f2fe 100%)',
+                                                backgroundImage: 'linear-gradient(white, white), linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
                                                 backgroundOrigin: 'border-box',
                                                 backgroundClip: 'padding-box, border-box',
-                                                color: '#667eea',
+                                                color: '#a855f7',
                                                 fontWeight: '600',
                                                 padding: '8px 16px',
                                                 borderRadius: '8px',
@@ -766,8 +766,20 @@ export default function Chats() {
                                                 e.currentTarget.style.boxShadow = 'none';
                                             }}
                                         >
-                                            <SmartToyIcon fontSize="small" />
-                                            Summarize Chat
+                                            <SmartToyIcon fontSize="small" style={{ 
+                                                background: 'linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent',
+                                                backgroundClip: 'text'
+                                            }} />
+                                            <span style={{
+                                                background: 'linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent',
+                                                backgroundClip: 'text'
+                                            }}>
+                                                Summarize Chat
+                                            </span>
                                         </button>
                                         <button
                                             type="button"
