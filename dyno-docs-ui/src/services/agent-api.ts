@@ -32,3 +32,16 @@ export const readMessages = async (chatId: string, token: string) => {
     throw error;
   }
 };
+
+export const checkBotStatus = async (chatId: string, token: string) => {
+    try {
+        const response = await axios.get(`${API_URL}/bot-status?chatUserId=${chatId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}

@@ -7,7 +7,7 @@ import SmartToyIcon from "@mui/icons-material/SmartToy";
 import PersonIcon from "@mui/icons-material/Person";
 import CircularProgress from "@mui/material/CircularProgress";
 import Navbar from "../layouts/Navbar";
-import { getAvailableChats, readMessages } from "../services/agent-api";
+import { checkBotStatus, getAvailableChats, readMessages } from "../services/agent-api";
 import { getMessages, sendMessage } from "../services/chat-api";
 import { showError, showSuccess } from "../components/Toast";
 import "../styles/chats.css";
@@ -44,6 +44,7 @@ export default function Chats() {
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [isSendingMessage, setIsSendingMessage] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [botStatus, setBotStatus] = useState(false);
 
     useEffect(() => {
         loadChats();
@@ -350,6 +351,26 @@ export default function Chats() {
         }
     };
 
+    const handleCheckBotStatus = async () => {
+        try {
+            const res = await checkBotStatus(selectedChat?.id || "", DD_TOKEN);
+            console.log("Bot status response:", res.message);
+            if(res.message === "Bot is Off") {
+                setBotStatus(false);
+            } else {
+                setBotStatus(true);
+            }
+        } catch (error) {
+            
+        }
+    }
+
+    useEffect(() => {
+        if (selectedChat) {
+            handleCheckBotStatus();
+        }
+    }, [selectedChat]);
+
     return (
         <Navbar>
             <div className="chatsPage">
@@ -392,7 +413,10 @@ export default function Chats() {
                                     <div
                                         key={chat.id}
                                         className={`chatItem ${selectedChat?.id === chat.id ? "active" : ""}`}
-                                        onClick={() => setSelectedChat(chat)}
+                                        onClick={() => {
+                                            setSelectedChat(chat)
+                                            handleCheckBotStatus();
+                                        }}
                                     >
                                         <div className="chatItem-avatar">
                                             <PersonIcon />
