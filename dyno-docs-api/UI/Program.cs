@@ -28,6 +28,8 @@ builder.Services
 // Controllers
 builder.Services.AddControllers();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
