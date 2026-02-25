@@ -9,6 +9,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import Navbar from "../layouts/Navbar";
 import { checkBotStatus, getAvailableChats, readMessages } from "../services/agent-api";
 import { getMessages, sendMessage } from "../services/chat-api";
+import { summarizeChat } from "../services/ai-api";
+import type { ChatMessage } from "../services/ai-api";
 import { showError, showSuccess } from "../components/Toast";
 import "../styles/chats.css";
 import { InfoOutline } from "@mui/icons-material";
@@ -44,6 +46,7 @@ export default function Chats() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [botStatus, setBotStatus] = useState(false);
     const isRefreshingRef = useRef(false); // Prevent concurrent refreshes
+    const [isAiThinking, setIsAiThinking] = useState(false);
 
     useEffect(() => {
         loadChats();
@@ -70,10 +73,10 @@ export default function Chats() {
             const response = await getAvailableChats(DD_TOKEN);
 
             console.log("API Response:", response);
-            
+
             // Transform the response to flatten clientUsers into individual chat items
             const transformedChats: ChatItem[] = [];
-            
+
             if (Array.isArray(response)) {
                 // Flatten all client users from all chats
                 for (const chat of response) {
@@ -85,9 +88,9 @@ export default function Chats() {
                                 // Fetch messages for this client to get the last message
                                 const messagesResponse = await getMessages(clientUser.id);
                                 const messagesList = messagesResponse.messages || messagesResponse || [];
-                                
-                                const lastMessage = messagesList.length > 0 
-                                    ? messagesList[messagesList.length - 1] 
+
+                                const lastMessage = messagesList.length > 0
+                                    ? messagesList[messagesList.length - 1]
                                     : null;
 
                                 transformedChats.push({
@@ -95,7 +98,7 @@ export default function Chats() {
                                     chatId: chat.id, // Store the parent chat ID
                                     name: clientUser.name || "Anonymous User",
                                     email: clientUser.email || "",
-                                    lastMessage: lastMessage 
+                                    lastMessage: lastMessage
                                         ? (lastMessage.message || lastMessage.text || "No messages yet")
                                         : "No messages yet",
                                     lastMessageDate: formatDate(
@@ -146,7 +149,7 @@ export default function Chats() {
 
             const transformedMessages: Message[] = messagesList.map((msg: any) => {
                 const isClientMessage = msg.senderType === 2;
-                
+
                 return {
                     id: msg.id || msg.messageId,
                     sender: isClientMessage ? "bot" : "user",
@@ -165,8 +168,8 @@ export default function Chats() {
             try {
                 await readMessages(chatUserId, DD_TOKEN);
                 // Update the unread count in the chat list
-                setChats(prevChats => 
-                    prevChats.map(chat => 
+                setChats(prevChats =>
+                    prevChats.map(chat =>
                         chat.id === chatUserId ? { ...chat, unreadCount: 0 } : chat
                     )
                 );
@@ -206,7 +209,7 @@ export default function Chats() {
 
             const transformedMessages: Message[] = messagesList.map((msg: any) => {
                 const isClientMessage = msg.senderType === 2;
-                
+
                 return {
                     id: msg.id || msg.messageId,
                     sender: isClientMessage ? "bot" : "user",
@@ -225,8 +228,8 @@ export default function Chats() {
             try {
                 await readMessages(chatUserId, DD_TOKEN);
                 // Update the unread count in the chat list
-                setChats(prevChats => 
-                    prevChats.map(chat => 
+                setChats(prevChats =>
+                    prevChats.map(chat =>
                         chat.id === chatUserId ? { ...chat, unreadCount: 0 } : chat
                     )
                 );
@@ -252,7 +255,7 @@ export default function Chats() {
         setMessages(prev => [...prev, newMessage]);
         const messageToBeSent = messageInput;
         setMessageInput("");
-        
+
         // Immediately scroll to show the new message
         setTimeout(() => scrollToBottom(), 50);
 
@@ -295,8 +298,210 @@ export default function Chats() {
         }
     };
 
-    const handleExportPDF = () => {
-        showSuccess("PDF export functionality will be implemented soon!");
+    const handleExportPDF = async () => {
+        if (!selectedChat || messages.length === 0) {
+            showError("No messages to export.");
+            return;
+        }
+
+        try {
+            // Show AI thinking modal
+            setIsAiThinking(true);
+
+            // Convert messages to ChatMessage format for AI API
+            const chatMessages: ChatMessage[] = messages.map(msg => ({
+                role: msg.sender === "bot" ? "assistant" : "user",
+                content: msg.text
+            }));
+
+            // Call AI service to get summary
+            const summaryResponse = await summarizeChat(chatMessages, DD_TOKEN);
+
+            // Generate PDF content
+            const pdfContent = generatePDFContent(
+                selectedChat.name,
+                selectedChat.email,
+                messages,
+                summaryResponse.summary
+            );
+
+            // Wait 3 seconds before downloading
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Close modal
+            setIsAiThinking(false);
+
+            // Create and download PDF
+            downloadPDF(pdfContent, `chat-${selectedChat.name}-${new Date().toISOString().split('T')[0]}.pdf`);
+
+            showSuccess("PDF exported successfully!");
+        } catch (error: any) {
+            console.error("Error exporting PDF:", error);
+            setIsAiThinking(false);
+            showError(error?.response?.data?.message || "Failed to export PDF. Please try again.");
+        }
+    };
+
+    const generatePDFContent = (
+        clientName: string,
+        clientEmail: string,
+        messages: Message[],
+        summary: string
+    ): string => {
+        const date = new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+
+        let html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Chat Report - ${clientName}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            color: #333;
+        }
+        .header {
+            border-bottom: 3px solid #ff6b00;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #ff6b00;
+            margin: 0 0 10px 0;
+        }
+        .header .info {
+            color: #666;
+            font-size: 14px;
+        }
+        .summary-section {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff6b00;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-section h2 {
+            color: #ff6b00;
+            margin-top: 0;
+        }
+        .summary-section pre {
+            white-space: pre-wrap;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .messages-section h2 {
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .message.bot {
+            background-color: #f5f5f5;
+            border-left: 4px solid #999;
+        }
+        .message.user {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff6b00;
+        }
+        .message-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .message-sender {
+            color: #ff6b00;
+        }
+        .message-time {
+            color: #999;
+            font-size: 12px;
+        }
+        .message-content {
+            line-height: 1.6;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Chat Conversation Report</h1>
+        <div class="info">
+            <strong>Client:</strong> ${clientName}<br>
+            <strong>Email:</strong> ${clientEmail}<br>
+            <strong>Date:</strong> ${date}<br>
+            <strong>Total Messages:</strong> ${messages.length}
+        </div>
+    </div>
+
+    <div class="summary-section">
+        <h2>📋 Conversation Summary</h2>
+        <pre>${summary}</pre>
+    </div>
+
+    <div class="messages-section">
+        <h2>💬 Full Conversation</h2>
+`;
+
+        messages.forEach(msg => {
+            const time = new Date(msg.timestamp).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+            const senderLabel = msg.sender === "bot" ? "Agent" : "Client";
+
+            html += `
+        <div class="message ${msg.sender}">
+            <div class="message-header">
+                <span class="message-sender">${senderLabel}</span>
+                <span class="message-time">${time}</span>
+            </div>
+            <div class="message-content">${msg.text}</div>
+        </div>
+`;
+        });
+
+        html += `
+    </div>
+
+    <div class="footer">
+        <p>Generated by DynoDocs Chat System on ${date}</p>
+    </div>
+</body>
+</html>
+`;
+
+        return html;
+    };
+
+    const downloadPDF = (htmlContent: string, filename: string) => {
+        // Create a Blob from HTML content
+        const blob = new Blob([htmlContent], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+
+        // Create temporary link and trigger download
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename.replace('.pdf', '.html');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     const formatDate = (dateString: string): string => {
@@ -328,13 +533,13 @@ export default function Chats() {
         try {
             const res = await checkBotStatus(selectedChat?.id || "", DD_TOKEN);
             console.log("Bot status response:", res.message);
-            if(res.message === "Bot is Off") {
+            if (res.message === "Bot is Off") {
                 setBotStatus(false);
             } else {
                 setBotStatus(true);
             }
         } catch (error) {
-            
+
         }
     }
 
@@ -358,7 +563,7 @@ export default function Chats() {
             try {
                 const response = await getAvailableChats(DD_TOKEN);
                 const transformedChats: ChatItem[] = [];
-                
+
                 if (Array.isArray(response)) {
                     for (const chat of response) {
                         if (chat.clientUsers && Array.isArray(chat.clientUsers)) {
@@ -366,9 +571,9 @@ export default function Chats() {
                                 try {
                                     const messagesResponse = await getMessages(clientUser.id);
                                     const messagesList = messagesResponse.messages || messagesResponse || [];
-                                    
-                                    const lastMessage = messagesList.length > 0 
-                                        ? messagesList[messagesList.length - 1] 
+
+                                    const lastMessage = messagesList.length > 0
+                                        ? messagesList[messagesList.length - 1]
                                         : null;
 
                                     transformedChats.push({
@@ -376,7 +581,7 @@ export default function Chats() {
                                         chatId: chat.id,
                                         name: clientUser.name || "Anonymous User",
                                         email: clientUser.email || "",
-                                        lastMessage: lastMessage 
+                                        lastMessage: lastMessage
                                             ? (lastMessage.message || lastMessage.text || "No messages yet")
                                             : "No messages yet",
                                         lastMessageDate: formatDate(
@@ -418,7 +623,7 @@ export default function Chats() {
 
                     const transformedMessages: Message[] = messagesList.map((msg: any) => {
                         const isClientMessage = msg.senderType === 2;
-                        
+
                         return {
                             id: msg.id || msg.messageId,
                             sender: isClientMessage ? "bot" : "user",
@@ -532,12 +737,37 @@ export default function Chats() {
                                     <div className="chatHeader-actions">
                                         <button
                                             type="button"
-                                            className="exportBtn"
+                                            className="aiSummarizeBtn"
                                             onClick={handleExportPDF}
-                                            aria-label="Export to PDF"
+                                            aria-label="Summarize Chat"
+                                            style={{
+                                                background: 'white',
+                                                border: '2px solid transparent',
+                                                backgroundImage: 'linear-gradient(white, white), linear-gradient(135deg, #e744fd 0%, #0ccd36 25%, #e4d60d 50%, #4facfe 75%, #00f2fe 100%)',
+                                                backgroundOrigin: 'border-box',
+                                                backgroundClip: 'padding-box, border-box',
+                                                color: '#667eea',
+                                                fontWeight: '600',
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.3s ease',
+                                                fontSize: '14px'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = 'none';
+                                            }}
                                         >
-                                            <PictureAsPdfIcon fontSize="small" />
-                                            Export To PDF
+                                            <SmartToyIcon fontSize="small" />
+                                            Summarize Chat
                                         </button>
                                         <button
                                             type="button"
@@ -622,6 +852,47 @@ export default function Chats() {
                     </div>
                 </div>
             </div>
+
+            {/* AI Thinking Modal */}
+            {isAiThinking && (
+                <div className="ddModal" role="dialog" aria-modal="true" aria-label="AI Processing">
+                    <div className="ddModal-backdrop" style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }} />
+
+                    <div className="ddModal-card" style={{ maxWidth: '400px' }}>
+                        <div className="ddModal-logo" aria-hidden="true" style={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 20px'
+                        }}>
+                            <SmartToyIcon style={{ fontSize: 48, color: 'white' }} />
+                        </div>
+
+                        <div className="ddModal-title" style={{ fontSize: '24px', marginBottom: '12px' }}>
+                            AI Thinking...
+                        </div>
+                        <div className="ddModal-subtitle" style={{ marginBottom: '30px' }}>
+                            Analyzing your conversation and generating a comprehensive summary
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <CircularProgress
+                                size={40}
+                                sx={{
+                                    color: '#667eea',
+                                    '& .MuiCircularProgress-circle': {
+                                        strokeLinecap: 'round'
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </Navbar>
     );
 }
