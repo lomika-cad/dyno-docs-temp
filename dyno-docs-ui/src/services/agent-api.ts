@@ -25,7 +25,7 @@ export const readMessages = async (chatId: string, token: string) => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
     return response.data;
   } catch (error) {
@@ -34,14 +34,30 @@ export const readMessages = async (chatId: string, token: string) => {
 };
 
 export const checkBotStatus = async (chatId: string, token: string) => {
-    try {
-        const response = await axios.get(`${API_URL}/bot-status?chatUserId=${chatId}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
-}
+  try {
+    const response = await axios.get(
+      `${API_URL}/bot-status?chatUserId=${chatId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getUnreadChatCount = async (token: string) => {
+  try {
+    const response = await axios.get(`${API_URL}/unread-chat-count`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

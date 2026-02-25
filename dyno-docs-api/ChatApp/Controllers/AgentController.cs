@@ -206,4 +206,25 @@ public class AgentController : ControllerBase
             return StatusCode(500, new { message = "Failed to get bot status", error = ex.Message });
         }
     }
+
+    [HttpGet("unread-chat-count")]
+    public async Task<IActionResult> GetUnreadChatCount()
+    {
+        try
+        {
+            var currentUserId = _currentUserService.UserId;
+
+            var unreadChatCount = await _context.Chats
+                .Where(c => c.TenantId == _tenantService.TenantId)
+                .Include(c => c.Messages.Where(m => m.TenantId == _tenantService.TenantId && !m.IsRead))
+                .Where(c => c.Messages.Any(m => m.TenantId == _tenantService.TenantId && !m.IsRead))
+                .CountAsync();
+
+            return Ok(new { unreadChatCount });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to get unread chat count", error = ex.Message });
+        }
+    }
 }

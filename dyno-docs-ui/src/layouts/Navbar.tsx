@@ -26,6 +26,7 @@ import { showError, showSuccess } from "../components/Toast";
 import CardPayment from "../components/CardPayment";
 import useIdleTimer from "../hooks/IdleTimer";
 import TimeoutImg from "../assets/waste.png";
+import { getUnreadChatCount } from "../services/agent-api";
 
 export type NavbarItem = {
     label: string;
@@ -159,6 +160,19 @@ function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
     );
 
     const token = sessionStorage.getItem("dd_token") || "";
+
+    const handleGetUnreadChatCount = async () => {
+        try {
+            const res = await getUnreadChatCount(token);
+            console.log("Unread chat count:", res.count);
+        } catch (error) {
+            
+        }
+    }
+
+    useEffect(() => {
+        handleGetUnreadChatCount();
+    }, []);
 
     const handleUpdatePlan = async (planId: string) => {
         const body = {
@@ -387,6 +401,7 @@ export default function Navbar({ children, items }: NavbarProps) {
     const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
     const [pricingOpen, setPricingOpen] = useState(false);
     const [idleModalOpen, setIdleModalOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
     const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo>(() => ({
         plan: sessionStorage.getItem("dd_subscription_plan") || "Free",
         expiry: sessionStorage.getItem("dd_subscription_expiry"),
@@ -499,6 +514,34 @@ export default function Navbar({ children, items }: NavbarProps) {
             handleLogout();
         }
     }, [token]);
+
+    const handleGetUnreadChatCount = useCallback(async () => {
+        try {
+            const res = await getUnreadChatCount(token);
+            console.log("Unread chat count:", res.count);
+            setUnreadCount(res.unreadChatCount || 0);
+        } catch (error) {
+            // Silently handle errors to avoid disrupting user experience
+            console.error("Failed to fetch unread chat count:", error);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        // Fetch unread count on component mount
+        handleGetUnreadChatCount();
+    }, [handleGetUnreadChatCount]);
+
+    useEffect(() => {
+        const handleGlobalClick = () => {
+            handleGetUnreadChatCount();
+        };
+
+        window.addEventListener("click", handleGlobalClick);
+
+        return () => {
+            window.removeEventListener("click", handleGlobalClick);
+        };
+    }, [handleGetUnreadChatCount]);
 
     const handleLogout = () => {
         sessionStorage.clear();
@@ -615,7 +658,25 @@ export default function Navbar({ children, items }: NavbarProps) {
                             }}
                         >
                             {item.icon}
-                            <span className="sidebar-label">{item.label}</span>
+                            <span className="sidebar-label">
+                                {item.label}
+                                {item.to === "/chats" && unreadCount > 0 && (
+                                    <span
+                                        style={{
+                                            display: "inline-block",
+                                            width: "8px",
+                                            height: "8px",
+                                            borderRadius: "50%",
+                                            backgroundColor: "#ff6b00",
+                                            marginLeft: "16px",
+                                            verticalAlign: "middle",
+                                            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                                            boxShadow: "0 0 0 0 rgba(255, 107, 0, 0.7)",
+                                        }}
+                                        aria-label={`${unreadCount} unread messages`}
+                                    />
+                                )}
+                            </span>
                         </NavLink>
                     ))}
                 </nav>
