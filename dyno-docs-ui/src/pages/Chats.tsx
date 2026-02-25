@@ -136,108 +136,9 @@ export default function Chats() {
         } catch (error: any) {
             console.error("Failed to load chats:", error);
             showError("Failed to load chats. Please try again.");
-            // Set mock data for demonstration
-            setMockChats();
         } finally {
             setIsLoadingChats(false);
         }
-    };
-
-    const setMockChats = () => {
-        const mockChats: ChatItem[] = [
-            {
-                id: "1",
-                chatId: "mock-chat-id-1",
-                name: "John Traveler",
-                email: "john@example.com",
-                lastMessage: "Can you generate a report for Galle Fort?",
-                lastMessageDate: "01/12/25",
-                unreadCount: 1
-            },
-            {
-                id: "2",
-                chatId: "mock-chat-id-2",
-                name: "Sarah Explorer",
-                email: "sarah@example.com",
-                lastMessage: "I need travel details for Anuradhapura tomorrow.",
-                lastMessageDate: "30/11/25",
-            },
-            {
-                id: "3",
-                chatId: "mock-chat-id-3",
-                name: "Mike Adventure",
-                email: "mike@example.com",
-                lastMessage: "Show me the top attractions in Nuwara Eliya.",
-                lastMessageDate: "27/11/25",
-            },
-            {
-                id: "4",
-                chatId: "mock-chat-id-4",
-                name: "Emma Tourist",
-                email: "emma@example.com",
-                lastMessage: "Perfect! Thanks for the info",
-                lastMessageDate: "23/11/25",
-            },
-            {
-                id: "5",
-                chatId: "mock-chat-id-5",
-                name: "David Wanderer",
-                email: "david@example.com",
-                lastMessage: "Find hotels near Sigiriya Rock...",
-                lastMessageDate: "21/11/25",
-            }
-        ];
-        setChats(mockChats);
-        setSelectedChat(mockChats[0]);
-        setMockMessages();
-    };
-
-    const setMockMessages = () => {
-        const mockMessages: Message[] = [
-            {
-                id: "1",
-                sender: "user",
-                text: "Hi! I'm planning a quick trip to Ella.",
-                timestamp: new Date().toISOString()
-            },
-            {
-                id: "2",
-                sender: "bot",
-                text: "Hello! That sounds exciting 🌄\nHow can I help you today?",
-                timestamp: new Date().toISOString()
-            },
-            {
-                id: "3",
-                sender: "user",
-                text: "Can you suggest must-see attractions in Ella?",
-                timestamp: new Date().toISOString()
-            },
-            {
-                id: "4",
-                sender: "bot",
-                text: "Of course! Ella has some amazing places to explore. Would you like nature spots, scenic viewpoints, or adventure activities?",
-                timestamp: new Date().toISOString()
-            },
-            {
-                id: "5",
-                sender: "user",
-                text: "Nature spots would be nice!",
-                timestamp: new Date().toISOString()
-            },
-            {
-                id: "6",
-                sender: "bot",
-                text: "Great choice! Here are some beautiful nature attractions in Ella:\n\n• Nine Arch Bridge\n• Little Adam's Peak\n• Ravana Falls\n• Ella Rock (for hiking)",
-                timestamp: new Date().toISOString()
-            },
-            {
-                id: "7",
-                sender: "user",
-                text: "Perfect! Thanks for the info 👍",
-                timestamp: new Date().toISOString()
-            }
-        ];
-        setMessages(mockMessages);
     };
 
     const loadMessages = async (chatUserId: string) => {
@@ -263,6 +164,11 @@ export default function Chats() {
             });
             setMessages(transformedMessages);
 
+            // Scroll to bottom after messages are loaded
+            setTimeout(() => {
+                scrollToBottom();
+            }, 100);
+
             // Mark messages as read
             try {
                 await readMessages(chatUserId, DD_TOKEN);
@@ -277,7 +183,7 @@ export default function Chats() {
             }
         } catch (error: any) {
             console.error("Failed to load messages:", error);
-            setMockMessages();
+            showError("Failed to load messages. Please try again.");
         } finally {
             setIsLoadingMessages(false);
         }
