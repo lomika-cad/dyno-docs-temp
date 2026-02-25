@@ -357,6 +357,21 @@
     border-bottom-right-radius: 4px;
 }
 
+.message-time {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+    padding: 0 0.25rem;
+}
+
+.message--bot .message-time {
+    text-align: left;
+}
+
+.message--user .message-time {
+    text-align: right;
+}
+
 .message-emoji {
     display: inline-block;
     font-size: 1.125rem;

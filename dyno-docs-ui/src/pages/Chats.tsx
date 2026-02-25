@@ -99,7 +99,7 @@ export default function Chats() {
                                     lastMessageDate: formatDate(
                                         lastMessage?.createdAt || lastMessage?.timestamp || chat.createdAt || new Date().toISOString()
                                     ),
-                                    unreadCount: 0
+                                    unreadCount: clientUser.unreadMessageCount || 0
                                 });
                             } catch (msgError) {
                                 console.warn(`Failed to fetch messages for client ${clientUser.id}:`, msgError);
@@ -110,7 +110,7 @@ export default function Chats() {
                                     email: clientUser.email || "",
                                     lastMessage: "No messages yet",
                                     lastMessageDate: formatDate(chat.createdAt || new Date().toISOString()),
-                                    unreadCount: 0
+                                    unreadCount: clientUser.unreadMessageCount || 0
                                 });
                             }
                         }
@@ -439,6 +439,9 @@ export default function Chats() {
                                                                 {i < message.text.split("\n").length - 1 && <br />}
                                                             </span>
                                                         ))}
+                                                    </div>
+                                                    <div className="message-time">
+                                                        {formatMessageTime(message.timestamp)}
                                                     </div>
                                                 </div>
                                             ))}
