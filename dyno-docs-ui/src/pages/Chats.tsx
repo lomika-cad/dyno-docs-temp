@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import SendIcon from "@mui/icons-material/Send";
-import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import PersonIcon from "@mui/icons-material/Person";
@@ -31,15 +30,9 @@ interface Message {
     timestamp: string;
 }
 
-// API senderType mapping:
-// 1 = Bot (shown on right/orange)
-// 2 = Client (shown on left/gray)  
-// 3 = Agent (shown on right/orange)
-
 export default function Chats() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
     const DD_TENANT_ID = sessionStorage.getItem("dd_tenant_id") || "";
-    const DD_USER_ID = sessionStorage.getItem("dd_user_id") || "";
     const [chats, setChats] = useState<ChatItem[]>([]);
     const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
