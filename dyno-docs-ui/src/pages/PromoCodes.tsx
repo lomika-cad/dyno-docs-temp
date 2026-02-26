@@ -235,17 +235,17 @@ export default function PromoCodes() {
                 {/* Add Promo Code Form */}
                 <section className="panel">
                     <div className="panel-body">
-                        <div className="promoForm">
-                            <div className="promoForm-fields">
-                                <div className="promoForm-field">
-                                    <label htmlFor="code" className="promoForm-label">
+                        <div className="formGroup">
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "20px" }}>
+                                <div className="formField">
+                                    <label htmlFor="code" className="formField-label">
                                         Promo Code
                                     </label>
                                     <input
                                         id="code"
                                         type="text"
                                         name="code"
-                                        className="promoForm-input"
+                                        className="formField-input"
                                         placeholder="Enter promo code"
                                         value={formData.code}
                                         onChange={handleInputChange}
@@ -253,10 +253,10 @@ export default function PromoCodes() {
                                     />
                                 </div>
 
-                                <div className="promoForm-field">
+                                <div className="formField">
                                     <label
                                         htmlFor="discountPercentage"
-                                        className="promoForm-label"
+                                        className="formField-label"
                                     >
                                         Discount %
                                     </label>
@@ -264,7 +264,7 @@ export default function PromoCodes() {
                                         id="discountPercentage"
                                         type="number"
                                         name="discountPercentage"
-                                        className="promoForm-input"
+                                        className="formField-input"
                                         placeholder="Enter percentage"
                                         min={1}
                                         max={100}
@@ -274,58 +274,58 @@ export default function PromoCodes() {
                                     />
                                 </div>
 
-                                <div className="promoForm-field">
-                                    <label htmlFor="validFrom" className="promoForm-label">
+                                <div className="formField">
+                                    <label htmlFor="validFrom" className="formField-label">
                                         Valid From
                                     </label>
                                     <input
                                         id="validFrom"
                                         type="date"
                                         name="validFrom"
-                                        className="promoForm-input"
+                                        className="formField-input"
                                         value={formData.validFrom}
                                         onChange={handleInputChange}
                                         disabled={isSubmitting}
                                     />
                                 </div>
 
-                                <div className="promoForm-field">
-                                    <label htmlFor="validTo" className="promoForm-label">
+                                <div className="formField">
+                                    <label htmlFor="validTo" className="formField-label">
                                         Valid To
                                     </label>
                                     <input
                                         id="validTo"
                                         type="date"
                                         name="validTo"
-                                        className="promoForm-input"
+                                        className="formField-input"
                                         value={formData.validTo}
                                         onChange={handleInputChange}
                                         disabled={isSubmitting}
                                     />
                                 </div>
 
-                                <div className="promoForm-field promoForm-field--status">
-                                    <div className="radioGroup">
-                                        <span className="promoForm-label">Status</span>
-                                        <div className="radioGroup-options">
-                                            <label className="radioGroup-option">
+                                <div style={{ display: "flex", flexDirection: "column", gap: "8px", gridColumn: "1 / -1" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                        <span className="formField-label">Status</span>
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
+                                            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px" }}>
                                                 <input
                                                     type="radio"
                                                     name="isActive"
                                                     value="true"
-                                                    className="radioGroup-input"
+                                                    style={{ cursor: "pointer", width: "18px", height: "18px" }}
                                                     checked={formData.isActive === true}
                                                     onChange={() => handleStatusChange(true)}
                                                     disabled={isSubmitting}
                                                 />
                                                 Active
                                             </label>
-                                            <label className="radioGroup-option">
+                                            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px" }}>
                                                 <input
                                                     type="radio"
                                                     name="isActive"
                                                     value="false"
-                                                    className="radioGroup-input"
+                                                    style={{ cursor: "pointer", width: "18px", height: "18px" }}
                                                     checked={formData.isActive === false}
                                                     onChange={() => handleStatusChange(false)}
                                                     disabled={isSubmitting}
@@ -337,10 +337,10 @@ export default function PromoCodes() {
                                 </div>
                             </div>
 
-                            <div className="promoForm-actions">
+                            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "20px" }}>
                                 <button
                                     type="button"
-                                    className="btn btn--ghost"
+                                    className="btn btn--secondary"
                                     onClick={handleClear}
                                     disabled={isSubmitting}
                                 >

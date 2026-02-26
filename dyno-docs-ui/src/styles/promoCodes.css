@@ -218,3 +218,41 @@
         min-width: 200px;
     }
 }
+
+/* ================================
+   Form Grid Responsive
+   ================================ */
+
+/* Mobile - Single column */
+@media (max-width: 768px) {
+    [style*="gridTemplateColumns: repeat(2"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+
+/* Small Mobile - Compact spacing */
+@media (max-width: 480px) {
+    [style*="gridTemplateColumns"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .formField {
+        gap: 6px;
+    }
+    
+    .formField-input,
+    .formField-textarea {
+        padding: 9px 11px;
+        font-size: 13px;
+    }
+    
+    .btn {
+        width: 100%;
+        padding: 9px 11px;
+        font-size: 12px;
+    }
+}
