@@ -262,7 +262,7 @@ export default function ChatBot() {
                 // Then, create all new commands
                 for (let i = 0; i < dialogFlows.length; i++) {
                     const flow = dialogFlows[i];
-                    
+
                     const commandData = {
                         chatId: DD_CHAT_USER_ID,
                         index: i + 1,
@@ -340,7 +340,7 @@ export default function ChatBot() {
         }
 
         const chatUrl = `/chat/${DD_TENANT_ID}/${DD_CHAT_USER_ID}`;
-        
+
         navigator.clipboard.writeText(window.location.origin + chatUrl)
             .then(() => {
                 showSuccess("Chat URL copied to clipboard!");
@@ -373,29 +373,31 @@ export default function ChatBot() {
                         <div className="chatbot-section-title">
                             <SmartToyIcon className="chatbot-icon" />
                             Dialog Flow Builder
+                        </div>
 
+                        <div style={{display: "flex", gap: "15px"}}>
                             {DD_CHAT_USER_ID && (
+                                <button
+                                    type="button"
+                                    className="infoBtn"
+                                    aria-label="Copy chat URL"
+                                    title="Copy the chat URL to share with clients"
+                                    onClick={handleCopyUrl}
+                                >
+                                    <Link fontSize="small" />
+                                </button>
+                            )}
                             <button
                                 type="button"
-                                className="infoBtn"
-                                aria-label="Copy chat URL"
-                                title="Copy the chat URL to share with clients"
-                                onClick={handleCopyUrl}
-                                style={{ color: 'var(--color-primary)' }}
+                                className="btn btn--orange"
+                                onClick={addDialogFlow}
+                                aria-label="Add a new dialog step to the flow"
                             >
-                                <Link fontSize="small" />
+                                <AddIcon fontSize="small" />
+                                Add Dialog Step
                             </button>
-                        )}
                         </div>
-                        <button
-                            type="button"
-                            className="btn btn--orange"
-                            onClick={addDialogFlow}
-                            aria-label="Add a new dialog step to the flow"
-                        >
-                            <AddIcon fontSize="small" />
-                            Add Dialog Step
-                        </button>
+
                     </div>
 
                     <div className="chatbot-flows" role="list" aria-label="Dialog flow steps">
@@ -406,200 +408,200 @@ export default function ChatBot() {
                             </div>
                         ) : (
                             dialogFlows.map((flow, index) => (
-                                <div 
-                                    key={flow.id} 
+                                <div
+                                    key={flow.id}
                                     className={`chatbot-flow-card ${flow.isLocked ? 'chatbot-flow-card--locked' : ''}`}
                                     role="listitem"
                                     aria-label={`Dialog step ${index + 1}${flow.isLocked ? ', locked' : ''}${isStepComplete(flow) ? ', completed' : ''}`}
                                 >
-                                <div className="chatbot-flow-header">
-                                    <div className="chatbot-flow-status">
-                                        <span className="chatbot-flow-number">Step {index + 1}</span>
-                                        {isStepComplete(flow) && (
-                                            <CheckCircleIcon className="chatbot-done-icon" />
-                                        )}
-                                    </div>
-                                    <div className="chatbot-flow-actions">
-                                        <button
-                                            type="button"
-                                            className={`chatbot-lock-btn ${flow.isLocked ? 'chatbot-lock-btn--locked' : ''}`}
-                                            onClick={() => toggleLock(flow.id)}
-                                            aria-label={flow.isLocked ? "Unlock step" : "Lock step"}
-                                            title={flow.isLocked ? "Unlock step" : "Lock step"}
-                                        >
-                                            {flow.isLocked ? (
-                                                <LockIcon fontSize="small" />
-                                            ) : (
-                                                <LockOpenIcon fontSize="small" />
+                                    <div className="chatbot-flow-header">
+                                        <div className="chatbot-flow-status">
+                                            <span className="chatbot-flow-number">Step {index + 1}</span>
+                                            {isStepComplete(flow) && (
+                                                <CheckCircleIcon className="chatbot-done-icon" />
                                             )}
-                                        </button>
-                                        {dialogFlows.length > 1 && (
+                                        </div>
+                                        <div className="chatbot-flow-actions">
                                             <button
                                                 type="button"
-                                                className="chatbot-remove-btn"
-                                                onClick={() => removeDialogFlow(flow.id)}
-                                                aria-label="Remove dialog step"
-                                                disabled={flow.isLocked}
+                                                className={`chatbot-lock-btn ${flow.isLocked ? 'chatbot-lock-btn--locked' : ''}`}
+                                                onClick={() => toggleLock(flow.id)}
+                                                aria-label={flow.isLocked ? "Unlock step" : "Lock step"}
+                                                title={flow.isLocked ? "Unlock step" : "Lock step"}
                                             >
-                                                <DeleteOutlineIcon fontSize="small" />
+                                                {flow.isLocked ? (
+                                                    <LockIcon fontSize="small" />
+                                                ) : (
+                                                    <LockOpenIcon fontSize="small" />
+                                                )}
                                             </button>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="chatbot-flow-content">
-                                    {/* Client Side (Left) */}
-                                    <div className="chatbot-side chatbot-side--client">
-                                        <div className="chatbot-side-header">
-                                            <PersonIcon className="chatbot-side-icon" />
-                                            <span className="chatbot-side-title">Client Message</span>
-                                        </div>
-
-                                        <div className="formField">
-                                            <label className="formField-label">Message Type</label>
-                                            <select
-                                                className="formField-input"
-                                                value={flow.clientType}
-                                                disabled={flow.isLocked}
-                                                onChange={(e) => {
-                                                    const newType = e.target.value as "message" | "options";
-                                                    if (newType === "options") {
-                                                        // When switching to options, create initial agent options to match client options
-                                                        const initialAgentOptions = flow.clientOptions.length > 0
-                                                            ? flow.clientOptions.map((_, index) => ({
-                                                                id: `${flow.id}_agent_${index}_${Date.now()}`,
-                                                                text: ""
-                                                            }))
-                                                            : [];
-                                                        updateDialogFlow(flow.id, {
-                                                            clientType: newType,
-                                                            agentOptions: initialAgentOptions,
-                                                            agentResponse: "" // Clear single response when switching to options
-                                                        });
-                                                    } else {
-                                                        // When switching to message, clear options
-                                                        updateDialogFlow(flow.id, {
-                                                            clientType: newType,
-                                                            clientOptions: [],
-                                                            agentOptions: []
-                                                        });
-                                                    }
-                                                }}
-                                            >
-                                                <option value="message">Type a Message</option>
-                                                <option value="options">Options</option>
-                                            </select>
-                                        </div>
-
-                                        {flow.clientType === "message" ? (
-                                            <div className="formField">
-                                                <label className="formField-label">Message Preview</label>
-                                                <textarea
-                                                    className="formField-textarea chatbot-textarea--disabled"
-                                                    placeholder="Keep it empty, client will type here..."
-                                                    disabled
-                                                    rows={3}
-                                                />
-                                                <p className="chatbot-hint">
-                                                    This field is for display only - clients will type their messages here.
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <div className="formField">
-                                                <div className="chatbot-options-header">
-                                                    <label className="formField-label">Client Options</label>
-                                                    <button
-                                                        type="button"
-                                                        className="chatbot-add-option-btn"
-                                                        disabled={flow.isLocked}
-                                                        onClick={() => addClientOption(flow.id)}
-                                                    >
-                                                        <AddIcon fontSize="small" />
-                                                        Add Option
-                                                    </button>
-                                                </div>
-
-                                                <div className="chatbot-options-list">
-                                                    {flow.clientOptions.map((option) => (
-                                                        <div key={option.id} className="chatbot-option-item">
-                                                            <input
-                                                                type="text"
-                                                                className="formField-input"
-                                                                placeholder="Enter option text"
-                                                                value={option.text}
-                                                                disabled={flow.isLocked}
-                                                                onChange={(e) => updateClientOption(flow.id, option.id, e.target.value)}
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                className="chatbot-remove-option-btn"
-                                                                disabled={flow.isLocked}
-                                                                onClick={() => removeClientOption(flow.id, option.id)}
-                                                                aria-label="Remove option"
-                                                            >
-                                                                <DeleteOutlineIcon fontSize="small" />
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                    {flow.clientOptions.length === 0 && (
-                                                        <p className="chatbot-empty-options">
-                                                            Click "Add Option" to create selectable options for clients.
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Agent Side (Right) */}
-                                    <div className="chatbot-side chatbot-side--agent">
-                                        <div className="chatbot-side-header">
-                                            <SmartToyIcon className="chatbot-side-icon" />
-                                            <span className="chatbot-side-title">Agent Response</span>
-                                        </div>
-
-                                        {flow.clientType === "message" ? (
-                                            <div className="formField">
-                                                <label className="formField-label">Response Message</label>
-                                                <textarea
-                                                    className="formField-textarea"
-                                                    placeholder="Enter agent's response message..."
-                                                    value={flow.agentResponse}
+                                            {dialogFlows.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    className="chatbot-remove-btn"
+                                                    onClick={() => removeDialogFlow(flow.id)}
+                                                    aria-label="Remove dialog step"
                                                     disabled={flow.isLocked}
-                                                    onChange={(e) => updateDialogFlow(flow.id, { agentResponse: e.target.value })}
-                                                    rows={4}
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="formField">
-                                                <div className="chatbot-options-header">
-                                                    <label className="formField-label">Agent Response Options</label>
-                                                </div>
+                                                >
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
 
-                                                <div className="chatbot-options-list">
-                                                    {flow.agentOptions.map((option, index) => (
-                                                        <div key={index} className="chatbot-option-item">
-                                                            <input
-                                                                type="text"
-                                                                className="formField-input"
-                                                                placeholder={`Response for option ${index + 1}`}
-                                                                value={option.text}
-                                                                disabled={flow.isLocked}
-                                                                onChange={(e) => updateAgentOption(flow.id, index, e.target.value)}
-                                                            />
-                                                        </div>
-                                                    ))}
-                                                    {flow.agentOptions.length === 0 && (
-                                                        <p className="chatbot-empty-options">
-                                                            Add client options to create corresponding agent responses.
-                                                        </p>
-                                                    )}
-                                                </div>
+                                    <div className="chatbot-flow-content">
+                                        {/* Client Side (Left) */}
+                                        <div className="chatbot-side chatbot-side--client">
+                                            <div className="chatbot-side-header">
+                                                <PersonIcon className="chatbot-side-icon" />
+                                                <span className="chatbot-side-title">Client Message</span>
                                             </div>
-                                        )}
+
+                                            <div className="formField">
+                                                <label className="formField-label">Message Type</label>
+                                                <select
+                                                    className="formField-input"
+                                                    value={flow.clientType}
+                                                    disabled={flow.isLocked}
+                                                    onChange={(e) => {
+                                                        const newType = e.target.value as "message" | "options";
+                                                        if (newType === "options") {
+                                                            // When switching to options, create initial agent options to match client options
+                                                            const initialAgentOptions = flow.clientOptions.length > 0
+                                                                ? flow.clientOptions.map((_, index) => ({
+                                                                    id: `${flow.id}_agent_${index}_${Date.now()}`,
+                                                                    text: ""
+                                                                }))
+                                                                : [];
+                                                            updateDialogFlow(flow.id, {
+                                                                clientType: newType,
+                                                                agentOptions: initialAgentOptions,
+                                                                agentResponse: "" // Clear single response when switching to options
+                                                            });
+                                                        } else {
+                                                            // When switching to message, clear options
+                                                            updateDialogFlow(flow.id, {
+                                                                clientType: newType,
+                                                                clientOptions: [],
+                                                                agentOptions: []
+                                                            });
+                                                        }
+                                                    }}
+                                                >
+                                                    <option value="message">Type a Message</option>
+                                                    <option value="options">Options</option>
+                                                </select>
+                                            </div>
+
+                                            {flow.clientType === "message" ? (
+                                                <div className="formField">
+                                                    <label className="formField-label">Message Preview</label>
+                                                    <textarea
+                                                        className="formField-textarea chatbot-textarea--disabled"
+                                                        placeholder="Keep it empty, client will type here..."
+                                                        disabled
+                                                        rows={3}
+                                                    />
+                                                    <p className="chatbot-hint">
+                                                        This field is for display only - clients will type their messages here.
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="formField">
+                                                    <div className="chatbot-options-header">
+                                                        <label className="formField-label">Client Options</label>
+                                                        <button
+                                                            type="button"
+                                                            className="chatbot-add-option-btn"
+                                                            disabled={flow.isLocked}
+                                                            onClick={() => addClientOption(flow.id)}
+                                                        >
+                                                            <AddIcon fontSize="small" />
+                                                            Add Option
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="chatbot-options-list">
+                                                        {flow.clientOptions.map((option) => (
+                                                            <div key={option.id} className="chatbot-option-item">
+                                                                <input
+                                                                    type="text"
+                                                                    className="formField-input"
+                                                                    placeholder="Enter option text"
+                                                                    value={option.text}
+                                                                    disabled={flow.isLocked}
+                                                                    onChange={(e) => updateClientOption(flow.id, option.id, e.target.value)}
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    className="chatbot-remove-option-btn"
+                                                                    disabled={flow.isLocked}
+                                                                    onClick={() => removeClientOption(flow.id, option.id)}
+                                                                    aria-label="Remove option"
+                                                                >
+                                                                    <DeleteOutlineIcon fontSize="small" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                        {flow.clientOptions.length === 0 && (
+                                                            <p className="chatbot-empty-options">
+                                                                Click "Add Option" to create selectable options for clients.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Agent Side (Right) */}
+                                        <div className="chatbot-side chatbot-side--agent">
+                                            <div className="chatbot-side-header">
+                                                <SmartToyIcon className="chatbot-side-icon" />
+                                                <span className="chatbot-side-title">Agent Response</span>
+                                            </div>
+
+                                            {flow.clientType === "message" ? (
+                                                <div className="formField">
+                                                    <label className="formField-label">Response Message</label>
+                                                    <textarea
+                                                        className="formField-textarea"
+                                                        placeholder="Enter agent's response message..."
+                                                        value={flow.agentResponse}
+                                                        disabled={flow.isLocked}
+                                                        onChange={(e) => updateDialogFlow(flow.id, { agentResponse: e.target.value })}
+                                                        rows={4}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="formField">
+                                                    <div className="chatbot-options-header">
+                                                        <label className="formField-label">Agent Response Options</label>
+                                                    </div>
+
+                                                    <div className="chatbot-options-list">
+                                                        {flow.agentOptions.map((option, index) => (
+                                                            <div key={index} className="chatbot-option-item">
+                                                                <input
+                                                                    type="text"
+                                                                    className="formField-input"
+                                                                    placeholder={`Response for option ${index + 1}`}
+                                                                    value={option.text}
+                                                                    disabled={flow.isLocked}
+                                                                    onChange={(e) => updateAgentOption(flow.id, index, e.target.value)}
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                        {flow.agentOptions.length === 0 && (
+                                                            <p className="chatbot-empty-options">
+                                                                Add client options to create corresponding agent responses.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
                             ))
                         )}
                     </div>

@@ -21,7 +21,7 @@
 
 .infoBtn {
   border: none;
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  background: white;
   cursor: pointer;
   width: 40px;
   height: 40px;
@@ -31,8 +31,6 @@
   border-radius: 10px;
   color: var(--color-primary);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(255, 123, 46, 0.1);
   font-size: 18px;
   flex-shrink: 0;
   min-width: 40px;
@@ -40,15 +38,9 @@
 }
 
 .infoBtn:hover {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%);
-  color: var(--color-text-white);
+  color: black;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 123, 46, 0.25);
-}
-
-.infoBtn:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  box-shadow: 0 4px 12px rgba(27, 27, 27, 0.25);
 }
 
 .globalLoader {
