@@ -526,6 +526,7 @@ export default function CustomerProfile() {
                     />
 
                     <div className="ddModal-card">
+                        <div className="ddModal-title">Customer Profiles Guide</div>
                         <div className="ddModal-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
                             Recommended steps for managing traveler records:
                         </div>

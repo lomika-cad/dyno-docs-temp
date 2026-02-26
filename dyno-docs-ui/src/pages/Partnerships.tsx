@@ -691,6 +691,7 @@ export default function Partnerships() {
                     />
 
                     <div className="ddModal-card">
+                        <div className="ddModal-title">Partnerships Guide</div>
                         <div className="ddModal-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
                             Follow these steps to add and manage partner records:
                         </div>

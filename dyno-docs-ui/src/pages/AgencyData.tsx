@@ -616,6 +616,7 @@ export default function AgencyData() {
                     />
 
                     <div className="ddModal-card">
+                        <div className="ddModal-title">Agency Data Guide</div>
                         <div className="ddModal-subtitle" style={{ textAlign: 'left', marginTop: 8 }}>
                             Follow these steps to add and manage agency data:
                         </div>

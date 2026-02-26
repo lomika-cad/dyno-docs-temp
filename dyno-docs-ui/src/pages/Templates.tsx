@@ -924,6 +924,7 @@ export default function Templates() {
             />
 
             <div className="ddModal-card">
+              <div className="ddModal-title">Template Marketplace Guide</div>
               <div className="ddModal-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
                 How to explore and assign templates:
               </div>

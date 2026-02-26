@@ -496,6 +496,7 @@ export default function PromoCodes() {
                     />
 
                     <div className="ddModal-card">
+                        <div className="ddModal-title">Promo Codes Guide</div>
                         <div className="ddModal-subtitle" style={{ textAlign: "left", marginTop: 8 }}>
                             Quick tips for creating and managing promo codes:
                         </div>

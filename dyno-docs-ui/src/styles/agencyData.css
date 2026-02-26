@@ -411,9 +411,9 @@
 .ddModal-content {
   margin: 20px 0;
   padding: 16px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #f3f4f6 100%);
+  /* background: linear-gradient(135deg, #f8f9fa 0%, #f3f4f6 100%); */
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  /* border: 1px solid rgba(0, 0, 0, 0.05); */
 }
 
 .ddModal-otpBox {
