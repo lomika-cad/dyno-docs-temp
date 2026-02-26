@@ -21,6 +21,7 @@ import Terms from "./pages/Terms"
 import ChatBot from "./pages/ChatBot"
 import Chat from "./pages/Chat"
 import Chats from "./pages/Chats"
+import ReportGeneration from "./pages/ReportGeneration"
 
 function App() {
   useEffect(() => {
@@ -45,6 +46,7 @@ function App() {
         <Route path="/chatbot" element={<ChatBot />} />
         <Route path="/chats" element={<Chats />} />
         <Route path="/chat/:tenantId/:chatId" element={<Chat />} />
+        <Route path="/report-generation" element={<ReportGeneration />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/promo-codes" element={<PromoCodes />} />
         <Route path="/customer-profiles" element={<CustomerProfile />} />

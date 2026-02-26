@@ -919,3 +919,167 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Report Generation Page Responsive Styles */
+@media (max-width: 1024px) {
+  .formGroup {
+    gap: var(--spacing-3);
+  }
+  
+  [style*="gridTemplateColumns: repeat(2"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .agency {
+    gap: 20px;
+  }
+  
+  .agency-title {
+    font-size: 20px;
+  }
+  
+  [style*="padding: 32px"] {
+    padding: 20px !important;
+  }
+  
+  [style*="display: flex"][style*="justify-content: space-between"] {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .formField {
+    gap: 6px;
+  }
+  
+  .formField-label {
+    font-size: 12px;
+  }
+  
+  .formField-input,
+  .formField-textarea {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  [style*="gridTemplateColumns: repeat(4"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  [style*="gridTemplateColumns: repeat(auto-fill"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .agency-header {
+    gap: 8px;
+  }
+  
+  .agency-title {
+    font-size: 18px;
+  }
+  
+  [style*="padding: 32px"],
+  [style*="padding: 20px"] {
+    padding: 16px !important;
+  }
+  
+  [style*="display: flex"][style*="gap"][style*="alignItems: center"] {
+    gap: 8px;
+  }
+  
+  [style*="display: grid"][style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .formField-input,
+  .formField-textarea {
+    padding: 9px 11px;
+    font-size: 13px;
+  }
+  
+  .btn {
+    padding: 9px 11px;
+    font-size: 12px;
+    width: 100%;
+  }
+  
+  .btn--secondary {
+    min-height: 40px;
+  }
+  
+  [style*="display: flex"][style*="justifyContent: flex-end"] {
+    flex-direction: column;
+  }
+  
+  [style*="gridTemplateColumns: repeat(auto-fill"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .ddModal-card {
+    padding: 24px 16px 0;
+  }
+  
+  .ddModal-title {
+    font-size: 18px;
+  }
+  
+  .ddModal-subtitle {
+    font-size: 13px;
+  }
+  
+  .ddModal-content {
+    margin: 16px 0;
+    padding: 12px;
+    font-size: 12px;
+  }
+}
+
+/* Utility Classes for Report Generation */
+.reportGen-stepIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.reportGen-stepIndicator-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reportGen-stepIndicator-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reportGen-stepIndicator-label {
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.reportGen-formPanel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 123, 46, 0.1);
+  padding: 32px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
