@@ -371,7 +371,6 @@ export default function ChatBot() {
                 <section className="chatbot-builder" role="region" aria-label="Chatbot dialog flow builder">
                     <div className="chatbot-builder-header">
                         <div className="chatbot-section-title">
-                            <SmartToyIcon className="chatbot-icon" />
                             Dialog Flow Builder
                         </div>
 
