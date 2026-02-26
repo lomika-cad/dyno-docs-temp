@@ -355,22 +355,20 @@ export default function ChatBot() {
         <Navbar>
             <div className="agency">
                 <div className="agency-header">
-                    <h2 className="agency-title">Chatbot Integration</h2>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        
-                        <button
-                            type="button"
-                            className="infoBtn"
-                            aria-label="Chatbot integration steps"
-                            onClick={() => setInfoOpen(true)}
-                        >
-                            <InfoOutlinedIcon fontSize="small" />
-                        </button>
-                    </div>
+                    <h1 className="agency-title">Chatbot Integration</h1>
+                    <button
+                        type="button"
+                        className="infoBtn"
+                        aria-label="Chatbot integration steps"
+                        title="Learn how to use the dialog flow builder"
+                        onClick={() => setInfoOpen(true)}
+                    >
+                        <InfoOutlinedIcon fontSize="small" />
+                    </button>
                 </div>
 
                 {/* Dialog Flow Builder */}
-                <div className="chatbot-builder">
+                <section className="chatbot-builder" role="region" aria-label="Chatbot dialog flow builder">
                     <div className="chatbot-builder-header">
                         <div className="chatbot-section-title">
                             <SmartToyIcon className="chatbot-icon" />
@@ -381,9 +379,9 @@ export default function ChatBot() {
                                 type="button"
                                 className="infoBtn"
                                 aria-label="Copy chat URL"
-                                title="Copy chat URL"
+                                title="Copy the chat URL to share with clients"
                                 onClick={handleCopyUrl}
-                                style={{ color: 'black' }}
+                                style={{ color: 'var(--color-primary)' }}
                             >
                                 <Link fontSize="small" />
                             </button>
@@ -393,21 +391,27 @@ export default function ChatBot() {
                             type="button"
                             className="btn btn--orange"
                             onClick={addDialogFlow}
+                            aria-label="Add a new dialog step to the flow"
                         >
                             <AddIcon fontSize="small" />
                             Add Dialog Step
                         </button>
                     </div>
 
-                    <div className="chatbot-flows">
+                    <div className="chatbot-flows" role="list" aria-label="Dialog flow steps">
                         {isLoading ? (
-                            <div className="chatbot-loading" style={{ textAlign: 'center', padding: '40px' }}>
-                                <CircularProgress size={40} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
-                                <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>Loading existing commands...</p>
+                            <div className="chatbot-loading" role="status" aria-label="Loading dialog flows">
+                                <CircularProgress size={48} sx={{ color: 'var(--color-primary)' }} />
+                                <p>Loading existing commands...</p>
                             </div>
                         ) : (
                             dialogFlows.map((flow, index) => (
-                                <div key={flow.id} className={`chatbot-flow-card ${flow.isLocked ? 'chatbot-flow-card--locked' : ''}`}>
+                                <div 
+                                    key={flow.id} 
+                                    className={`chatbot-flow-card ${flow.isLocked ? 'chatbot-flow-card--locked' : ''}`}
+                                    role="listitem"
+                                    aria-label={`Dialog step ${index + 1}${flow.isLocked ? ', locked' : ''}${isStepComplete(flow) ? ', completed' : ''}`}
+                                >
                                 <div className="chatbot-flow-header">
                                     <div className="chatbot-flow-status">
                                         <span className="chatbot-flow-number">Step {index + 1}</span>
@@ -605,6 +609,7 @@ export default function ChatBot() {
                             type="button"
                             className="btn btn--success"
                             onClick={handleSaveDialogFlow}
+                            aria-label="Save the dialog flow configuration"
                         >
                             <SaveIcon fontSize="small" />
                             Save Dialog Flow
@@ -613,12 +618,13 @@ export default function ChatBot() {
                             type="button"
                             className="btn btn--orange"
                             onClick={addDialogFlow}
+                            aria-label="Add another dialog step"
                         >
                             <AddIcon fontSize="small" />
                             Add Another Step
                         </button>
                     </div>
-                </div>
+                </section>
             </div>
 
             {nameInputModalOpen && (
