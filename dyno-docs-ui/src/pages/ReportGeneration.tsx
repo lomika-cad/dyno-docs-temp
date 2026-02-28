@@ -34,11 +34,22 @@ export default function ReportGeneration() {
         numberOfPassengers: "",
         daysAndNights: "",
         selectedRoute: "",
-        selectedDay: "",
         selectedRoutes: [] as string[],
-        visitingPlaces: [] as string[],
-        selectedHotel: "",
-        remarks: "",
+        dayCards: [
+            {
+                id: 1,
+                selectedDay: "",
+                visitingPlaces: [] as string[],
+                selectedHotel: "",
+                remarks: ""
+            }
+        ] as Array<{
+            id: number;
+            selectedDay: string;
+            visitingPlaces: string[];
+            selectedHotel: string;
+            remarks: string;
+        }>,
         selectedTemplate: "",
     });
 
@@ -97,15 +108,6 @@ export default function ReportGeneration() {
         }));
     };
 
-    const handleLocationToggle = (location: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            visitingPlaces: prev.visitingPlaces.includes(location)
-                ? prev.visitingPlaces.filter((l) => l !== location)
-                : [...prev.visitingPlaces, location],
-        }));
-    };
-
     const handleRouteToggle = (route: string) => {
         setFormData((prev) => ({
             ...prev,
@@ -113,6 +115,57 @@ export default function ReportGeneration() {
                 ? prev.selectedRoutes.filter((r) => r !== route)
                 : [...prev.selectedRoutes, route],
         }));
+    };
+
+    const handleDayCardChange = (cardId: number, field: string, value: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            dayCards: prev.dayCards.map((card) =>
+                card.id === cardId ? { ...card, [field]: value } : card
+            ),
+        }));
+    };
+
+    const handleDayCardLocationToggle = (cardId: number, location: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            dayCards: prev.dayCards.map((card) =>
+                card.id === cardId
+                    ? {
+                          ...card,
+                          visitingPlaces: card.visitingPlaces.includes(location)
+                              ? card.visitingPlaces.filter((l) => l !== location)
+                              : [...card.visitingPlaces, location],
+                      }
+                    : card
+            ),
+        }));
+    };
+
+    const addDayCard = () => {
+        const newId = Math.max(...formData.dayCards.map((card) => card.id)) + 1;
+        setFormData((prev) => ({
+            ...prev,
+            dayCards: [
+                ...prev.dayCards,
+                {
+                    id: newId,
+                    selectedDay: "",
+                    visitingPlaces: [],
+                    selectedHotel: "",
+                    remarks: "",
+                },
+            ],
+        }));
+    };
+
+    const removeDayCard = (cardId: number) => {
+        if (formData.dayCards.length > 1) {
+            setFormData((prev) => ({
+                ...prev,
+                dayCards: prev.dayCards.filter((card) => card.id !== cardId),
+            }));
+        }
     };
 
     const handleTemplateSelect = (templateId: number) => {
@@ -136,9 +189,11 @@ export default function ReportGeneration() {
             case 2:
                 return (
                     formData.selectedRoutes.length > 0 &&
-                    formData.selectedDay.trim() !== "" &&
-                    formData.visitingPlaces.length > 0 &&
-                    formData.selectedHotel.trim() !== ""
+                    formData.dayCards.every(card => 
+                        card.selectedDay.trim() !== "" &&
+                        card.visitingPlaces.length > 0 &&
+                        card.selectedHotel.trim() !== ""
+                    )
                 );
             case 3:
                 return formData.selectedTemplate.trim() !== "";
@@ -179,11 +234,16 @@ export default function ReportGeneration() {
                 numberOfPassengers: "",
                 daysAndNights: "",
                 selectedRoute: "",
-                selectedDay: "",
                 selectedRoutes: [],
-                visitingPlaces: [],
-                selectedHotel: "",
-                remarks: "",
+                dayCards: [
+                    {
+                        id: 1,
+                        selectedDay: "",
+                        visitingPlaces: [],
+                        selectedHotel: "",
+                        remarks: ""
+                    }
+                ],
                 selectedTemplate: "",
             });
             setCurrentStep(1);
@@ -208,11 +268,16 @@ export default function ReportGeneration() {
                 numberOfPassengers: "",
                 daysAndNights: "",
                 selectedRoute: "",
-                selectedDay: "",
                 selectedRoutes: [],
-                visitingPlaces: [],
-                selectedHotel: "",
-                remarks: "",
+                dayCards: [
+                    {
+                        id: 1,
+                        selectedDay: "",
+                        visitingPlaces: [],
+                        selectedHotel: "",
+                        remarks: ""
+                    }
+                ],
                 selectedTemplate: "",
             });
             setCurrentStep(1);
@@ -547,110 +612,220 @@ export default function ReportGeneration() {
                                     )}
                                 </div>
 
-                                {/* Day Selection */}
-                                <div className="formField">
-                                    <label className="formField-label">
-                                        Day
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="selectedDay"
-                                        className="formField-input"
-                                        value={formData.selectedDay}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-
-                                {/* Visiting Places */}
-                                <div className="formField">
-                                    <label className="formField-label">
-                                        Visiting Places
-                                    </label>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            flexWrap: "wrap",
-                                            gap: "12px",
-                                        }}
-                                    >
-                                        {locationCheckpoints.map((location) => (
-                                            <label
-                                                key={location}
-                                                style={{
+                                {/* Day Cards */}
+                                <div style={{ marginTop: "24px" }}>
+                                    <div style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        marginBottom: "16px"
+                                    }}>
+                                        <h4 style={{
+                                            margin: 0,
+                                            fontSize: "16px",
+                                            fontWeight: "600",
+                                            color: "var(--color-text-black)"
+                                        }}>Trip Days</h4>
+                                        <button
+                                            type="button"
+                                            onClick={addDayCard}
+                                            style={{
+                                                background: "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)",
+                                                color: "white",
+                                                border: "none",
+                                                borderRadius: "6px",
+                                                padding: "8px 16px",
+                                                fontSize: "12px",
+                                                fontWeight: "600",
+                                                cursor: "pointer",
+                                                transition: "all 0.2s",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "6px"
+                                            }}
+                                        >
+                                            + Add Day
+                                        </button>
+                                    </div>
+                                    
+                                    {formData.dayCards.map((dayCard, index) => (
+                                        <div
+                                            key={dayCard.id}
+                                            style={{
+                                                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)",
+                                                border: "1px solid rgba(255, 123, 46, 0.15)",
+                                                borderRadius: "12px",
+                                                padding: "20px",
+                                                marginBottom: "16px",
+                                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                                                position: "relative"
+                                            }}
+                                        >
+                                            {/* Card Header */}
+                                            <div style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "space-between",
+                                                marginBottom: "16px",
+                                                paddingBottom: "12px",
+                                                borderBottom: "1px solid rgba(255, 123, 46, 0.1)"
+                                            }}>
+                                                <div style={{
                                                     display: "flex",
                                                     alignItems: "center",
+                                                    gap: "12px"
+                                                }}>
+                                                    <div style={{
+                                                        width: "32px",
+                                                        height: "32px",
+                                                        borderRadius: "50%",
+                                                        background: "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)",
+                                                        color: "white",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        fontSize: "12px",
+                                                        fontWeight: "700"
+                                                    }}>
+                                                        {index + 1}
+                                                    </div>
+                                                    <h5 style={{
+                                                        margin: 0,
+                                                        fontSize: "14px",
+                                                        fontWeight: "600",
+                                                        color: "var(--color-text-black)"
+                                                    }}>Day {index + 1}</h5>
+                                                </div>
+                                                {formData.dayCards.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeDayCard(dayCard.id)}
+                                                        style={{
+                                                            background: "transparent",
+                                                            border: "1px solid #ef4444",
+                                                            color: "#ef4444",
+                                                            borderRadius: "6px",
+                                                            padding: "4px 8px",
+                                                            fontSize: "12px",
+                                                            cursor: "pointer",
+                                                            transition: "all 0.2s"
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = "#ef4444";
+                                                            e.currentTarget.style.color = "white";
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = "transparent";
+                                                            e.currentTarget.style.color = "#ef4444";
+                                                        }}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Card Content */}
+                                            <div style={{
+                                                display: "grid",
+                                                gridTemplateColumns: "1fr 1fr",
+                                                gap: "16px",
+                                                marginBottom: "16px"
+                                            }}>
+                                                {/* Date Selection */}
+                                                <div className="formField">
+                                                    <label className="formField-label" style={{ fontSize: "12px" }}>
+                                                        Date
+                                                    </label>
+                                                    <input
+                                                        type="date"
+                                                        className="formField-input"
+                                                        value={dayCard.selectedDay}
+                                                        onChange={(e) => handleDayCardChange(dayCard.id, 'selectedDay', e.target.value)}
+                                                        style={{ fontSize: "13px" }}
+                                                    />
+                                                </div>
+
+                                                {/* Hotel Selection */}
+                                                <div className="formField">
+                                                    <label className="formField-label" style={{ fontSize: "12px" }}>
+                                                        Night {index + 1} - Select Hotel
+                                                    </label>
+                                                    <select
+                                                        className="formField-input"
+                                                        value={dayCard.selectedHotel}
+                                                        onChange={(e) => handleDayCardChange(dayCard.id, 'selectedHotel', e.target.value)}
+                                                        style={{ cursor: "pointer", fontSize: "13px" }}
+                                                    >
+                                                        <option value="">Select a hotel</option>
+                                                        {hotelOptions.map((hotel) => (
+                                                            <option key={hotel} value={hotel}>
+                                                                {hotel}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            {/* Visiting Places */}
+                                            <div className="formField" style={{ marginBottom: "16px" }}>
+                                                <label className="formField-label" style={{ fontSize: "12px" }}>
+                                                    Visiting Places
+                                                </label>
+                                                <div style={{
+                                                    display: "flex",
+                                                    flexWrap: "wrap",
                                                     gap: "8px",
-                                                    cursor: "pointer",
-                                                    padding: "10px 16px",
-                                                    borderRadius: "8px",
-                                                    background:
-                                                        formData.visitingPlaces.includes(
-                                                            location
-                                                        )
-                                                            ? "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)"
-                                                            : "linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)",
-                                                    color:
-                                                        formData.visitingPlaces.includes(
-                                                            location
-                                                        )
-                                                            ? "white"
-                                                            : "#6b7280",
-                                                    transition: "all 0.2s",
-                                                    fontWeight: "600",
-                                                    fontSize: "13px",
-                                                }}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.visitingPlaces.includes(
-                                                        location
-                                                    )}
-                                                    onChange={() =>
-                                                        handleLocationToggle(
-                                                            location
-                                                        )
-                                                    }
-                                                    style={{ cursor: "pointer" }}
+                                                    marginTop: "8px"
+                                                }}>
+                                                    {locationCheckpoints.map((location) => (
+                                                        <label
+                                                            key={location}
+                                                            style={{
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: "6px",
+                                                                cursor: "pointer",
+                                                                padding: "6px 12px",
+                                                                borderRadius: "6px",
+                                                                background: dayCard.visitingPlaces.includes(location)
+                                                                    ? "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)"
+                                                                    : "linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)",
+                                                                color: dayCard.visitingPlaces.includes(location)
+                                                                    ? "white"
+                                                                    : "#6b7280",
+                                                                transition: "all 0.2s",
+                                                                fontWeight: "500",
+                                                                fontSize: "12px",
+                                                            }}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={dayCard.visitingPlaces.includes(location)}
+                                                                onChange={() => handleDayCardLocationToggle(dayCard.id, location)}
+                                                                style={{ cursor: "pointer", transform: "scale(0.9)" }}
+                                                            />
+                                                            {location}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Remarks */}
+                                            <div className="formField">
+                                                <label className="formField-label" style={{ fontSize: "12px" }}>
+                                                    Remarks
+                                                </label>
+                                                <textarea
+                                                    className="formField-textarea"
+                                                    placeholder="Enter remarks for this day"
+                                                    value={dayCard.remarks}
+                                                    onChange={(e) => handleDayCardChange(dayCard.id, 'remarks', e.target.value)}
+                                                    rows={3}
+                                                    style={{ fontSize: "13px", resize: "vertical" }}
                                                 />
-                                                {location}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Night Hotel Selection */}
-                                <div className="formField">
-                                    <label className="formField-label">
-                                        Night I - Select Hotel
-                                    </label>
-                                    <select
-                                        name="selectedHotel"
-                                        className="formField-input"
-                                        value={formData.selectedHotel}
-                                        onChange={handleInputChange}
-                                        style={{ cursor: "pointer" }}
-                                    >
-                                        <option value="">Select a hotel</option>
-                                        {hotelOptions.map((hotel) => (
-                                            <option key={hotel} value={hotel}>
-                                                {hotel}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Remarks */}
-                                <div className="formField">
-                                    <label className="formField-label">
-                                        Remarks
-                                    </label>
-                                    <textarea
-                                        name="remarks"
-                                        className="formField-textarea"
-                                        placeholder="Enter remarks"
-                                        value={formData.remarks}
-                                        onChange={handleInputChange}
-                                    />
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}
