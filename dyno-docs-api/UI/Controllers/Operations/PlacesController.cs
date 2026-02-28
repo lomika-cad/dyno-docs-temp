@@ -69,6 +69,18 @@ public class PlacesController : ControllerBase
 
         return Ok(place);
     }
+    
+    [HttpGet("{tenantId}/{district}")]
+    [ProducesResponseType(typeof(List<PlaceResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<PlaceResponse>>> GetByDistrict([FromRoute] Guid tenantId, string district, CancellationToken cancellationToken)
+    {
+        var places = await _mediator.Send(new GetPlaceByDistrictQuery()
+        {
+            TenantId = tenantId,
+            District = district
+        }, cancellationToken);
+        return Ok(places);
+    }
 
     /// <summary>
     /// Update a place
