@@ -1,13 +1,29 @@
 import { InfoOutline, NavigateNext, NavigateBefore } from "@mui/icons-material";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import { showSuccess, showError } from "../components/Toast";
 
 export default function ReportGeneration() {
     const [infoOpen, setInfoOpen] = useState(false);
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState(2);
     const [isLoading, setIsLoading] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -27,9 +43,32 @@ export default function ReportGeneration() {
     });
 
     const routeOptions = [
-        "Airport → Kandy → Nuwara Eliya → Bentota → Airport",
-        "Colombo → Sigiriya → Kandy → Tea Plantations",
-        "South Coast Tour: Mirissa → Tangalle → Arugambe",
+        "Airport",
+        "Colombo",
+        "Gampaha",
+        "Kalutara",
+        "Kandy",
+        "Matale",
+        "Nuwara Eliya",
+        "Galle",
+        "Matara",
+        "Hambantota",
+        "Jaffna",
+        "Kilinochchi",
+        "Mannar",
+        "Vavuniya",
+        "Mullaitivu",
+        "Batticaloa",
+        "Ampara",
+        "Trincomalee",
+        "Kurunegala",
+        "Puttalam",
+        "Anuradhapura",
+        "Polonnaruwa",
+        "Badulla",
+        "Moneragala",
+        "Ratnapura",
+        "Kegalle"
     ];
 
     const locationCheckpoints = [
@@ -96,7 +135,7 @@ export default function ReportGeneration() {
                 );
             case 2:
                 return (
-                    formData.selectedRoute.trim() !== "" &&
+                    formData.selectedRoutes.length > 0 &&
                     formData.selectedDay.trim() !== "" &&
                     formData.visitingPlaces.length > 0 &&
                     formData.selectedHotel.trim() !== ""
@@ -370,25 +409,142 @@ export default function ReportGeneration() {
                                     Main Process
                                 </h3>
 
-                                {/* Select Route */}
+                                {/* Multi-Select Route */}
                                 <div className="formField">
                                     <label className="formField-label">
-                                        Select Route
+                                        Select Routes
                                     </label>
-                                    <select
-                                        name="selectedRoute"
-                                        className="formField-input"
-                                        value={formData.selectedRoute}
-                                        onChange={handleInputChange}
-                                        style={{ cursor: "pointer" }}
-                                    >
-                                        <option value="">Select a route</option>
-                                        {routeOptions.map((route) => (
-                                            <option key={route} value={route}>
-                                                {route}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div ref={dropdownRef} style={{ position: "relative" }}>
+                                        <div
+                                            className="formField-input"
+                                            onClick={() => setDropdownOpen(!dropdownOpen)}
+                                            style={{
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                minHeight: "40px"
+                                            }}
+                                        >
+                                            <span style={{ color: formData.selectedRoutes.length === 0 ? "#9ca3af" : "#374151" }}>
+                                                {formData.selectedRoutes.length === 0 
+                                                    ? "Select routes" 
+                                                    : `${formData.selectedRoutes.length} route(s) selected`}
+                                            </span>
+                                            <span style={{ transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
+                                        </div>
+                                        
+                                        {dropdownOpen && (
+                                            <div style={{
+                                                position: "absolute",
+                                                top: "100%",
+                                                left: 0,
+                                                right: 0,
+                                                zIndex: 1000,
+                                                background: "white",
+                                                border: "1px solid #d1d5db",
+                                                borderRadius: "8px",
+                                                maxHeight: "200px",
+                                                overflowY: "auto",
+                                                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                                            }}>
+                                                {routeOptions.map((route) => (
+                                                    <div
+                                                        key={route}
+                                                        onClick={() => handleRouteToggle(route)}
+                                                        style={{
+                                                            padding: "10px 12px",
+                                                            cursor: "pointer",
+                                                            background: formData.selectedRoutes.includes(route) ? "#fef3f2" : "transparent",
+                                                            borderBottom: "1px solid #f3f4f6",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            gap: "8px",
+                                                            fontSize: "14px"
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (!formData.selectedRoutes.includes(route)) {
+                                                                e.currentTarget.style.background = "#f9fafb";
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (!formData.selectedRoutes.includes(route)) {
+                                                                e.currentTarget.style.background = "transparent";
+                                                            }
+                                                        }}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.selectedRoutes.includes(route)}
+                                                            onChange={() => {}} // Handled by parent onClick
+                                                            style={{ pointerEvents: "none" }}
+                                                        />
+                                                        {route}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Selected Routes Display */}
+                                    {formData.selectedRoutes.length > 0 && (
+                                        <div style={{
+                                            marginTop: "12px",
+                                            padding: "12px",
+                                            background: "#f8f9fa",
+                                            borderRadius: "8px",
+                                            border: "1px solid #e9ecef"
+                                        }}>
+                                            <div style={{
+                                                fontSize: "13px",
+                                                color: "#6b7280",
+                                                marginBottom: "8px",
+                                                fontWeight: "600"
+                                            }}>Selected Routes:</div>
+                                            <div style={{
+                                                display: "flex",
+                                                flexWrap: "wrap",
+                                                gap: "8px"
+                                            }}>
+                                                {formData.selectedRoutes.map((route, index) => (
+                                                    <div key={route} style={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: "6px",
+                                                        background: "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)",
+                                                        color: "white",
+                                                        padding: "6px 12px",
+                                                        borderRadius: "20px",
+                                                        fontSize: "12px",
+                                                        fontWeight: "600"
+                                                    }}>
+                                                        {index > 0 && (
+                                                            <span style={{ marginRight: "4px" }}>→</span>
+                                                        )}
+                                                        {route}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRouteToggle(route);
+                                                            }}
+                                                            style={{
+                                                                background: "transparent",
+                                                                border: "none",
+                                                                color: "white",
+                                                                cursor: "pointer",
+                                                                fontSize: "14px",
+                                                                padding: "0",
+                                                                marginLeft: "4px",
+                                                                lineHeight: 1
+                                                            }}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Day Selection */}
@@ -403,55 +559,6 @@ export default function ReportGeneration() {
                                         value={formData.selectedDay}
                                         onChange={handleInputChange}
                                     />
-                                </div>
-
-                                {/* Routes Checkboxes */}
-                                <div className="formField">
-                                    <label className="formField-label">
-                                        Routes
-                                    </label>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            flexWrap: "wrap",
-                                            gap: "12px",
-                                        }}
-                                    >
-                                        {routeOptions.map((route) => (
-                                            <label
-                                                key={route}
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: "8px",
-                                                    cursor: "pointer",
-                                                    padding: "8px 12px",
-                                                    borderRadius: "8px",
-                                                    background:
-                                                        formData.selectedRoutes.includes(
-                                                            route
-                                                        )
-                                                            ? "rgba(255, 123, 46, 0.1)"
-                                                            : "transparent",
-                                                    transition: "all 0.2s",
-                                                }}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.selectedRoutes.includes(
-                                                        route
-                                                    )}
-                                                    onChange={() =>
-                                                        handleRouteToggle(route)
-                                                    }
-                                                    style={{ cursor: "pointer" }}
-                                                />
-                                                <span style={{ fontSize: "13px" }}>
-                                                    {route.substring(0, 20)}...
-                                                </span>
-                                            </label>
-                                        ))}
-                                    </div>
                                 </div>
 
                                 {/* Visiting Places */}
