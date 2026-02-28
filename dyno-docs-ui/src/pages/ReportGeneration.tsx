@@ -134,7 +134,7 @@ export default function ReportGeneration() {
     const handleDayCardLocationToggle = async (cardId: number, location: string) => {
         const isCurrentlySelected = formData.dayCards.find(card => card.id === cardId)?.visitingPlaces.includes(location);
         
-        // Update the form data first
+        // Update the form data
         setFormData((prev) => ({
             ...prev,
             dayCards: prev.dayCards.map((card) =>
@@ -144,6 +144,10 @@ export default function ReportGeneration() {
                           visitingPlaces: card.visitingPlaces.includes(location)
                               ? card.visitingPlaces.filter((l) => l !== location)
                               : [...card.visitingPlaces, location],
+                          // If unselecting a visiting place, also remove all selected places from that district
+                          selectedPlaces: card.visitingPlaces.includes(location)
+                              ? card.selectedPlaces.filter(p => p.district !== location)
+                              : card.selectedPlaces
                       }
                     : card
             ),
