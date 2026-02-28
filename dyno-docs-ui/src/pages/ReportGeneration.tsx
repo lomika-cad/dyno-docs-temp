@@ -629,19 +629,23 @@ export default function ReportGeneration() {
                                         <button
                                             type="button"
                                             onClick={addDayCard}
+                                            disabled={formData.selectedRoutes.length === 0}
                                             style={{
-                                                background: "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)",
-                                                color: "white",
+                                                background: formData.selectedRoutes.length === 0 
+                                                    ? "linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)"
+                                                    : "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)",
+                                                color: formData.selectedRoutes.length === 0 ? "#6b7280" : "white",
                                                 border: "none",
                                                 borderRadius: "6px",
                                                 padding: "8px 16px",
                                                 fontSize: "12px",
                                                 fontWeight: "600",
-                                                cursor: "pointer",
+                                                cursor: formData.selectedRoutes.length === 0 ? "not-allowed" : "pointer",
                                                 transition: "all 0.2s",
                                                 display: "flex",
                                                 alignItems: "center",
-                                                gap: "6px"
+                                                gap: "6px",
+                                                opacity: formData.selectedRoutes.length === 0 ? 0.6 : 1
                                             }}
                                         >
                                             + Add Day
@@ -652,13 +656,19 @@ export default function ReportGeneration() {
                                         <div
                                             key={dayCard.id}
                                             style={{
-                                                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)",
-                                                border: "1px solid rgba(255, 123, 46, 0.15)",
+                                                background: formData.selectedRoutes.length === 0
+                                                    ? "linear-gradient(135deg, rgba(243, 244, 246, 0.9) 0%, rgba(229, 231, 235, 0.9) 100%)"
+                                                    : "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)",
+                                                border: formData.selectedRoutes.length === 0
+                                                    ? "1px solid rgba(209, 213, 219, 0.3)"
+                                                    : "1px solid rgba(255, 123, 46, 0.15)",
                                                 borderRadius: "12px",
                                                 padding: "20px",
                                                 marginBottom: "16px",
                                                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
-                                                position: "relative"
+                                                position: "relative",
+                                                opacity: formData.selectedRoutes.length === 0 ? 0.5 : 1,
+                                                pointerEvents: formData.selectedRoutes.length === 0 ? "none" : "auto"
                                             }}
                                         >
                                             {/* Card Header */}
@@ -771,43 +781,69 @@ export default function ReportGeneration() {
                                                 <label className="formField-label" style={{ fontSize: "12px" }}>
                                                     Visiting Places
                                                 </label>
-                                                <div style={{
-                                                    display: "flex",
-                                                    flexWrap: "wrap",
-                                                    gap: "8px",
-                                                    marginTop: "8px"
-                                                }}>
-                                                    {locationCheckpoints.map((location) => (
-                                                        <label
-                                                            key={location}
-                                                            style={{
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                gap: "6px",
-                                                                cursor: "pointer",
-                                                                padding: "6px 12px",
-                                                                borderRadius: "6px",
-                                                                background: dayCard.visitingPlaces.includes(location)
-                                                                    ? "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)"
-                                                                    : "linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)",
-                                                                color: dayCard.visitingPlaces.includes(location)
-                                                                    ? "white"
-                                                                    : "#6b7280",
-                                                                transition: "all 0.2s",
-                                                                fontWeight: "500",
-                                                                fontSize: "12px",
-                                                            }}
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={dayCard.visitingPlaces.includes(location)}
-                                                                onChange={() => handleDayCardLocationToggle(dayCard.id, location)}
-                                                                style={{ cursor: "pointer", transform: "scale(0.9)" }}
-                                                            />
-                                                            {location}
-                                                        </label>
-                                                    ))}
-                                                </div>
+                                                {formData.selectedRoutes.length === 0 ? (
+                                                    <div style={{
+                                                        padding: "16px",
+                                                        borderRadius: "8px",
+                                                        background: "linear-gradient(135deg, #fef3f2 0%, #fee2e2 100%)",
+                                                        border: "1px solid #fecaca",
+                                                        textAlign: "center",
+                                                        marginTop: "8px"
+                                                    }}>
+                                                        <div style={{
+                                                            fontSize: "24px",
+                                                            marginBottom: "8px"
+                                                        }}>🔒</div>
+                                                        <div style={{
+                                                            fontSize: "12px",
+                                                            color: "#ef4444",
+                                                            fontWeight: "600"
+                                                        }}>Please select routes first</div>
+                                                        <div style={{
+                                                            fontSize: "11px",
+                                                            color: "#dc2626",
+                                                            marginTop: "4px"
+                                                        }}>Routes will appear here as visiting places</div>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{
+                                                        display: "flex",
+                                                        flexWrap: "wrap",
+                                                        gap: "8px",
+                                                        marginTop: "8px"
+                                                    }}>
+                                                        {formData.selectedRoutes.map((location) => (
+                                                            <label
+                                                                key={location}
+                                                                style={{
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    gap: "6px",
+                                                                    cursor: "pointer",
+                                                                    padding: "6px 12px",
+                                                                    borderRadius: "6px",
+                                                                    background: dayCard.visitingPlaces.includes(location)
+                                                                        ? "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)"
+                                                                        : "linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)",
+                                                                    color: dayCard.visitingPlaces.includes(location)
+                                                                        ? "white"
+                                                                        : "#6b7280",
+                                                                    transition: "all 0.2s",
+                                                                    fontWeight: "500",
+                                                                    fontSize: "12px",
+                                                                }}
+                                                            >
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={dayCard.visitingPlaces.includes(location)}
+                                                                    onChange={() => handleDayCardLocationToggle(dayCard.id, location)}
+                                                                    style={{ cursor: "pointer", transform: "scale(0.9)" }}
+                                                                />
+                                                                {location}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Remarks */}
