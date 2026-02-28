@@ -43,6 +43,7 @@ export default function ReportGeneration() {
                 id: 1,
                 selectedDay: "",
                 visitingPlaces: [] as string[],
+                selectedPlaces: [] as Array<{district: string, place: any}>,
                 selectedHotel: "",
                 remarks: ""
             }
@@ -50,6 +51,7 @@ export default function ReportGeneration() {
             id: number;
             selectedDay: string;
             visitingPlaces: string[];
+            selectedPlaces: Array<{district: string, place: any}>;
             selectedHotel: string;
             remarks: string;
         }>,
@@ -153,6 +155,22 @@ export default function ReportGeneration() {
         }
     };
 
+    const handlePlaceToggle = (cardId: number, district: string, place: any) => {
+        setFormData((prev) => ({
+            ...prev,
+            dayCards: prev.dayCards.map((card) =>
+                card.id === cardId
+                    ? {
+                          ...card,
+                          selectedPlaces: card.selectedPlaces.some(p => p.place === place)
+                              ? card.selectedPlaces.filter(p => p.place !== place)
+                              : [...card.selectedPlaces, { district, place }],
+                      }
+                    : card
+            ),
+        }));
+    };
+
     const fetchDistrictData = async (district: string) => {
         const token = sessionStorage.getItem("dd_token");
         const tenantId = sessionStorage.getItem("dd_tenant_id");
@@ -187,6 +205,7 @@ export default function ReportGeneration() {
                     id: newId,
                     selectedDay: "",
                     visitingPlaces: [],
+                    selectedPlaces: [],
                     selectedHotel: "",
                     remarks: "",
                 },
@@ -275,6 +294,7 @@ export default function ReportGeneration() {
                         id: 1,
                         selectedDay: "",
                         visitingPlaces: [],
+                        selectedPlaces: [],
                         selectedHotel: "",
                         remarks: ""
                     }
@@ -309,6 +329,7 @@ export default function ReportGeneration() {
                         id: 1,
                         selectedDay: "",
                         visitingPlaces: [],
+                        selectedPlaces: [],
                         selectedHotel: "",
                         remarks: ""
                     }
@@ -950,24 +971,294 @@ export default function ReportGeneration() {
                                                                         paddingLeft: "12px"
                                                                     }}>
                                                                         {Array.isArray(districtData[place]) && districtData[place].map((item: any, index: number) => (
-                                                                            <div
+                                                                            <label
                                                                                 key={index}
                                                                                 style={{
                                                                                     fontSize: "11px",
-                                                                                    padding: "4px 8px",
-                                                                                    background: "white",
+                                                                                    padding: "6px 8px",
+                                                                                    background: dayCard.selectedPlaces.some(p => p.place === item) ? "#e8f5e8" : "white",
                                                                                     borderRadius: "4px",
-                                                                                    border: "1px solid #e5e7eb",
-                                                                                    color: "#374151"
+                                                                                    border: dayCard.selectedPlaces.some(p => p.place === item) ? "1px solid #4ade80" : "1px solid #e5e7eb",
+                                                                                    color: "#374151",
+                                                                                    cursor: "pointer",
+                                                                                    transition: "all 0.2s",
+                                                                                    display: "flex",
+                                                                                    alignItems: "center",
+                                                                                    gap: "6px",
+                                                                                    userSelect: "none"
+                                                                                }}
+                                                                                onMouseEnter={(e) => {
+                                                                                    if (!dayCard.selectedPlaces.some(p => p.place === item)) {
+                                                                                        e.currentTarget.style.background = "#f3f4f6";
+                                                                                    }
+                                                                                }}
+                                                                                onMouseLeave={(e) => {
+                                                                                    if (!dayCard.selectedPlaces.some(p => p.place === item)) {
+                                                                                        e.currentTarget.style.background = "white";
+                                                                                    }
                                                                                 }}
                                                                             >
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={dayCard.selectedPlaces.some(p => p.place === item)}
+                                                                                    onChange={() => handlePlaceToggle(dayCard.id, place, item)}
+                                                                                    style={{ cursor: "pointer", transform: "scale(0.8)" }}
+                                                                                />
                                                                                 {item.name || item.placeName || `Place ${index + 1}`}
-                                                                            </div>
+                                                                            </label>
                                                                         ))}
                                                                     </div>
                                                                 </div>
                                                             );
                                                         })}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Display selected place details */}
+                                            {dayCard.selectedPlaces.length > 0 && (
+                                                <div className="formField" style={{ marginBottom: "16px" }}>
+                                                    <label className="formField-label" style={{ fontSize: "12px" }}>
+                                                        Selected Places Details ({dayCard.selectedPlaces.length} selected)
+                                                    </label>
+                                                    <div style={{
+                                                        marginTop: "8px",
+                                                        background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
+                                                        borderRadius: "8px",
+                                                        padding: "12px",
+                                                        border: "1px solid #bae6fd",
+                                                        maxHeight: "300px",
+                                                        overflowY: "auto"
+                                                    }}>
+                                                        {dayCard.selectedPlaces.map((selectedPlace, index) => (
+                                                            <div key={index} style={{
+                                                                marginBottom: "12px",
+                                                                padding: "12px",
+                                                                background: "white",
+                                                                borderRadius: "8px",
+                                                                border: "1px solid #e5e7eb",
+                                                                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)"
+                                                            }}>
+                                                                <div style={{
+                                                                    display: "flex",
+                                                                    justifyContent: "space-between",
+                                                                    alignItems: "flex-start",
+                                                                    marginBottom: "8px"
+                                                                }}>
+                                                                    <div>
+                                                                        <div style={{
+                                                                            fontSize: "13px",
+                                                                            fontWeight: "600",
+                                                                            color: "#1f2937",
+                                                                            marginBottom: "2px"
+                                                                        }}>
+                                                                            {selectedPlace.place.name || selectedPlace.place.placeName || "Unknown Place"}
+                                                                        </div>
+                                                                        <div style={{
+                                                                            fontSize: "11px",
+                                                                            color: "#6b7280",
+                                                                            background: "#f3f4f6",
+                                                                            padding: "2px 6px",
+                                                                            borderRadius: "4px",
+                                                                            display: "inline-block"
+                                                                        }}>
+                                                                            📍 {selectedPlace.district}
+                                                                        </div>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => handlePlaceToggle(dayCard.id, selectedPlace.district, selectedPlace.place)}
+                                                                        style={{
+                                                                            background: "transparent",
+                                                                            border: "1px solid #ef4444",
+                                                                            color: "#ef4444",
+                                                                            borderRadius: "4px",
+                                                                            padding: "2px 6px",
+                                                                            fontSize: "10px",
+                                                                            cursor: "pointer"
+                                                                        }}
+                                                                    >
+                                                                        Remove
+                                                                    </button>
+                                                                </div>
+                                                                {/* Display specific fields: description, fun facts and images */}
+                                                                <div style={{ marginTop: "8px" }}>
+                                                                    {/* Description */}
+                                                                    {(selectedPlace.place.description || selectedPlace.place.Description) && (
+                                                                        <div style={{
+                                                                            marginBottom: "12px",
+                                                                            padding: "8px",
+                                                                            background: "#f8f9fa",
+                                                                            borderRadius: "6px",
+                                                                            border: "1px solid #e9ecef"
+                                                                        }}>
+                                                                            <div style={{
+                                                                                fontSize: "11px",
+                                                                                fontWeight: "600",
+                                                                                color: "#495057",
+                                                                                marginBottom: "4px"
+                                                                            }}>
+                                                                                📄 Description
+                                                                            </div>
+                                                                            <div style={{
+                                                                                fontSize: "11px",
+                                                                                color: "#6c757d",
+                                                                                lineHeight: "1.4"
+                                                                            }}>
+                                                                                {selectedPlace.place.description || selectedPlace.place.Description}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Fun Facts */}
+                                                                    {(selectedPlace.place.funFact) && (
+                                                                        <div style={{
+                                                                            marginBottom: "12px",
+                                                                            padding: "8px",
+                                                                            background: "#fff3cd",
+                                                                            borderRadius: "6px",
+                                                                            border: "1px solid #ffeaa7"
+                                                                        }}>
+                                                                            <div style={{
+                                                                                fontSize: "11px",
+                                                                                fontWeight: "600",
+                                                                                color: "#856404",
+                                                                                marginBottom: "4px"
+                                                                            }}>
+                                                                                💡 Fun Facts
+                                                                            </div>
+                                                                            <div style={{
+                                                                                fontSize: "11px",
+                                                                                color: "#856404",
+                                                                                lineHeight: "1.4"
+                                                                            }}>
+                                                                                {selectedPlace.place.funFact}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Images */}
+                                                                    {(() => {
+                                                                        // Check for numbered image URLs (image1Url, image2Url, etc.)
+                                                                        const imageUrls = [];
+                                                                        let imageIndex = 1;
+                                                                        
+                                                                        // Look for image1Url, image2Url, image3Url, etc.
+                                                                        while (selectedPlace.place[`image${imageIndex}Url`]) {
+                                                                            imageUrls.push(selectedPlace.place[`image${imageIndex}Url`]);
+                                                                            imageIndex++;
+                                                                        }
+                                                                        
+                                                                        // Also check for other common image field patterns as fallback
+                                                                        if (imageUrls.length === 0) {
+                                                                            const otherImageFields = selectedPlace.place.images || selectedPlace.place.Images || selectedPlace.place.image || selectedPlace.place.Image;
+                                                                            if (otherImageFields) {
+                                                                                const imageArray = Array.isArray(otherImageFields) ? otherImageFields : [otherImageFields];
+                                                                                imageUrls.push(...imageArray);
+                                                                            }
+                                                                        }
+                                                                        
+                                                                        return imageUrls.length > 0;
+                                                                    })() && (
+                                                                        <div style={{
+                                                                            marginBottom: "8px",
+                                                                            padding: "8px",
+                                                                            background: "#e8f5e8",
+                                                                            borderRadius: "6px",
+                                                                            border: "1px solid #c3e6c3"
+                                                                        }}>
+                                                                            <div style={{
+                                                                                fontSize: "11px",
+                                                                                fontWeight: "600",
+                                                                                color: "#155724",
+                                                                                marginBottom: "6px"
+                                                                            }}>
+                                                                                🖼️ Images
+                                                                            </div>
+                                                                            <div style={{
+                                                                                display: "flex",
+                                                                                flexWrap: "wrap",
+                                                                                gap: "6px"
+                                                                            }}>
+                                                                                {(() => {
+                                                                                    // Collect numbered image URLs
+                                                                                    const imageUrls = [];
+                                                                                    let imageIndex = 1;
+                                                                                    
+                                                                                    while (selectedPlace.place[`image${imageIndex}Url`]) {
+                                                                                        imageUrls.push(selectedPlace.place[`image${imageIndex}Url`]);
+                                                                                        imageIndex++;
+                                                                                    }
+                                                                                    
+                                                                                    // Fallback to other image fields if no numbered URLs found
+                                                                                    if (imageUrls.length === 0) {
+                                                                                        const otherImageFields = selectedPlace.place.images || selectedPlace.place.Images || selectedPlace.place.image || selectedPlace.place.Image;
+                                                                                        if (otherImageFields) {
+                                                                                            const imageArray = Array.isArray(otherImageFields) ? otherImageFields : [otherImageFields];
+                                                                                            imageUrls.push(...imageArray);
+                                                                                        }
+                                                                                    }
+                                                                                    
+                                                                                    return imageUrls.map((imgUrl: any, imgIndex: number) => {
+                                                                                        // Handle base64 images
+                                                                                        const getImageSrc = (url: any) => {
+                                                                                            const urlString = typeof url === 'string' ? url : url.url || url.src || url.path;
+                                                                                            
+                                                                                            // Check if it's already a data URI
+                                                                                            if (urlString && urlString.startsWith('data:')) {
+                                                                                                return urlString;
+                                                                                            }
+                                                                                            
+                                                                                            // Check if it's base64 without data URI prefix
+                                                                                            if (urlString && (urlString.match(/^[A-Za-z0-9+/]*={0,2}$/) && urlString.length > 100)) {
+                                                                                                // Assume it's base64, add data URI prefix (defaulting to jpeg)
+                                                                                                return `data:image/jpeg;base64,${urlString}`;
+                                                                                            }
+                                                                                            
+                                                                                            // Regular URL
+                                                                                            return urlString;
+                                                                                        };
+
+                                                                                        return (
+                                                                                            <div key={imgIndex} style={{
+                                                                                                background: "white",
+                                                                                                borderRadius: "4px",
+                                                                                                overflow: "hidden",
+                                                                                                border: "1px solid #dee2e6",
+                                                                                                maxWidth: "120px"
+                                                                                            }}>
+                                                                                                <img 
+                                                                                                    src={getImageSrc(imgUrl)} 
+                                                                                                    alt={`Place image ${imgIndex + 1}`}
+                                                                                                    style={{
+                                                                                                        width: "100%",
+                                                                                                        height: "80px",
+                                                                                                        objectFit: "cover",
+                                                                                                        display: "block"
+                                                                                                    }}
+                                                                                                    onError={(e) => {
+                                                                                                        e.currentTarget.style.display = 'none';
+                                                                                                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
+                                                                                                    }}
+                                                                                                />
+                                                                                                <div style={{
+                                                                                                    display: "none",
+                                                                                                    padding: "8px",
+                                                                                                    fontSize: "10px",
+                                                                                                    color: "#6c757d",
+                                                                                                    textAlign: "center"
+                                                                                                }}>
+                                                                                                    Image not available
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        );
+                                                                                    });
+                                                                                })()}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
