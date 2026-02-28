@@ -44,6 +44,19 @@ export const getUploadDataSet = async (token: string) => {
     }
 }
 
+export const getDataByDistrict = async (tenantId: string, district: string, token: string) => {
+    try {
+        const response = await axios.get(`${API_URL}/district/${tenantId}/${district}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export const deleteData = async (placeId: string, token: string) => {
     try {
         const response = await axios.delete(`${API_URL}/${placeId}`, {
