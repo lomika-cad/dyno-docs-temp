@@ -903,6 +903,75 @@ export default function ReportGeneration() {
                                                 )}
                                             </div>
 
+                                            {/* Display loaded place data for selected visiting places */}
+                                            {dayCard.visitingPlaces.some(place => districtData[place]) && (
+                                                <div className="formField" style={{ marginBottom: "16px" }}>
+                                                    <label className="formField-label" style={{ fontSize: "12px" }}>
+                                                        Available Places in Selected Districts
+                                                    </label>
+                                                    <div style={{
+                                                        marginTop: "8px",
+                                                        background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
+                                                        borderRadius: "8px",
+                                                        padding: "12px",
+                                                        border: "1px solid #dee2e6",
+                                                        maxHeight: "200px",
+                                                        overflowY: "auto"
+                                                    }}>
+                                                        {dayCard.visitingPlaces.map(place => {
+                                                            if (!districtData[place]) return null;
+                                                            
+                                                            return (
+                                                                <div key={place} style={{ marginBottom: "12px" }}>
+                                                                    <div style={{
+                                                                        fontSize: "13px",
+                                                                        fontWeight: "600",
+                                                                        color: "var(--color-primary)",
+                                                                        marginBottom: "6px",
+                                                                        display: "flex",
+                                                                        alignItems: "center",
+                                                                        gap: "6px"
+                                                                    }}>
+                                                                        📍 {place}
+                                                                        <span style={{
+                                                                            fontSize: "10px",
+                                                                            background: "var(--color-primary)",
+                                                                            color: "white",
+                                                                            padding: "2px 6px",
+                                                                            borderRadius: "10px"
+                                                                        }}>
+                                                                            {Array.isArray(districtData[place]) ? districtData[place].length : 0} places
+                                                                        </span>
+                                                                    </div>
+                                                                    <div style={{
+                                                                        display: "grid",
+                                                                        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                                                                        gap: "6px",
+                                                                        paddingLeft: "12px"
+                                                                    }}>
+                                                                        {Array.isArray(districtData[place]) && districtData[place].map((item: any, index: number) => (
+                                                                            <div
+                                                                                key={index}
+                                                                                style={{
+                                                                                    fontSize: "11px",
+                                                                                    padding: "4px 8px",
+                                                                                    background: "white",
+                                                                                    borderRadius: "4px",
+                                                                                    border: "1px solid #e5e7eb",
+                                                                                    color: "#374151"
+                                                                                }}
+                                                                            >
+                                                                                {item.name || item.placeName || `Place ${index + 1}`}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {/* Remarks */}
                                             <div className="formField">
                                                 <label className="formField-label" style={{ fontSize: "12px" }}>
