@@ -46,7 +46,7 @@ export const getUploadDataSet = async (token: string) => {
 
 export const getDataByDistrict = async (tenantId: string, district: string, token: string) => {
     try {
-        const response = await axios.get(`${API_URL}/district/${tenantId}/${district}`, {
+        const response = await axios.get(`${API_URL}/${tenantId}/${district}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

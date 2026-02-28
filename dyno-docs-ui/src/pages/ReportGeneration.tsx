@@ -3,12 +3,15 @@ import { useState, useEffect, useRef } from "react";
 import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import { showSuccess, showError } from "../components/Toast";
+import { getDataByDistrict } from "../services/agency-data-api";
 
 export default function ReportGeneration() {
     const [infoOpen, setInfoOpen] = useState(false);
     const [currentStep, setCurrentStep] = useState(2);
     const [isLoading, setIsLoading] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [districtData, setDistrictData] = useState<{[key: string]: any}>({});
+    const [loadingDistricts, setLoadingDistricts] = useState<{[key: string]: boolean}>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -126,7 +129,10 @@ export default function ReportGeneration() {
         }));
     };
 
-    const handleDayCardLocationToggle = (cardId: number, location: string) => {
+    const handleDayCardLocationToggle = async (cardId: number, location: string) => {
+        const isCurrentlySelected = formData.dayCards.find(card => card.id === cardId)?.visitingPlaces.includes(location);
+        
+        // Update the form data first
         setFormData((prev) => ({
             ...prev,
             dayCards: prev.dayCards.map((card) =>
@@ -140,6 +146,35 @@ export default function ReportGeneration() {
                     : card
             ),
         }));
+
+        // If selecting (not deselecting) and don't have data for this district, fetch it
+        if (!isCurrentlySelected && !districtData[location]) {
+            await fetchDistrictData(location);
+        }
+    };
+
+    const fetchDistrictData = async (district: string) => {
+        const token = sessionStorage.getItem("dd_token");
+        const tenantId = sessionStorage.getItem("dd_tenant_id");
+
+        if (!token || !tenantId) {
+            showError("Authentication required. Please log in again.");
+            return;
+        }
+
+        setLoadingDistricts(prev => ({ ...prev, [district]: true }));
+
+        try {
+            const response = await getDataByDistrict(tenantId, district, token);
+            setDistrictData(prev => ({
+                ...prev,
+                [district]: response.data
+            }));
+        } catch (error: any) {
+            showError(`Failed to load data for ${district}. ${error.response?.data?.message || error.message}`);
+        } finally {
+            setLoadingDistricts(prev => ({ ...prev, [district]: false }));
+        }
     };
 
     const addDayCard = () => {
@@ -838,8 +873,30 @@ export default function ReportGeneration() {
                                                                     checked={dayCard.visitingPlaces.includes(location)}
                                                                     onChange={() => handleDayCardLocationToggle(dayCard.id, location)}
                                                                     style={{ cursor: "pointer", transform: "scale(0.9)" }}
+                                                                    disabled={loadingDistricts[location]}
                                                                 />
-                                                                {location}
+                                                                {loadingDistricts[location] ? (
+                                                                    <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                                                        <span style={{ fontSize: "10px" }}>⏳</span>
+                                                                        {location}
+                                                                    </span>
+                                                                ) : (
+                                                                    location
+                                                                )}
+                                                                {districtData[location] && (
+                                                                    <span style={{
+                                                                        fontSize: "10px",
+                                                                        background: "rgba(255, 255, 255, 0.3)",
+                                                                        padding: "2px 6px",
+                                                                        borderRadius: "10px",
+                                                                        marginLeft: "4px"
+                                                                    }}>
+                                                                        {Array.isArray(districtData[location]) 
+                                                                            ? `${districtData[location].length} places`
+                                                                            : 'Data loaded'
+                                                                        }
+                                                                    </span>
+                                                                )}
                                                             </label>
                                                         ))}
                                                     </div>
