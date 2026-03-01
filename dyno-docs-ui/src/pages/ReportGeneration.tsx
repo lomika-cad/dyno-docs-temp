@@ -20,6 +20,7 @@ export default function ReportGeneration() {
     const [loadingPartnerships, setLoadingPartnerships] = useState<{[key: string]: boolean}>({});
     const [generatedDescriptions, setGeneratedDescriptions] = useState<{[key: number]: string}>({});
     const [generatingDescriptionFor, setGeneratingDescriptionFor] = useState<number | null>(null);
+    const dayCardRefs = useRef<{[key: number]: HTMLDivElement | null}>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -94,15 +95,6 @@ export default function ReportGeneration() {
         "Ratnapura",
         "Kegalle"
     ];
-
-    const locationCheckpoints = [
-        "Airport",
-        "Kandy",
-        "Nuwara Eliya",
-        "Bentota",
-    ];
-
-    const hotelOptions = ["Hotel 1", "Hotel 2", "Hotel 3"];
 
     const templateOptions = [
         { id: 1, name: "Template 1" },
@@ -310,6 +302,13 @@ export default function ReportGeneration() {
                 },
             ],
         }));
+        // Scroll to new card after render
+        setTimeout(() => {
+            const el = dayCardRefs.current[newId];
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }, 100);
     };
 
     const removeDayCard = (cardId: number) => {
@@ -810,6 +809,7 @@ export default function ReportGeneration() {
                                     {formData.dayCards.map((dayCard, index) => (
                                         <div
                                             key={dayCard.id}
+                                            ref={(el) => { dayCardRefs.current[dayCard.id] = el; }}
                                             style={{
                                                 background: formData.selectedRoutes.length === 0
                                                     ? "linear-gradient(135deg, rgba(243, 244, 246, 0.9) 0%, rgba(229, 231, 235, 0.9) 100%)"
@@ -1789,61 +1789,84 @@ export default function ReportGeneration() {
                                                 paddingTop: "16px",
                                                 borderTop: "1px solid rgba(255, 123, 46, 0.1)"
                                             }}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleGenerateDescription(dayCard, index)}
-                                                    disabled={generatingDescriptionFor === dayCard.id}
-                                                    style={{
-                                                        background: 'white',
-                                                        border: '2px solid transparent',
-                                                        backgroundImage: 'linear-gradient(white, white), linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
-                                                        backgroundOrigin: 'border-box',
-                                                        backgroundClip: 'padding-box, border-box',
-                                                        color: '#a855f7',
-                                                        fontWeight: '600',
-                                                        padding: '8px 16px',
-                                                        borderRadius: '8px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '6px',
-                                                        cursor: generatingDescriptionFor === dayCard.id ? 'not-allowed' : 'pointer',
-                                                        transition: 'all 0.3s ease',
-                                                        fontSize: '13px',
-                                                        opacity: generatingDescriptionFor === dayCard.id ? 0.7 : 1,
-                                                        marginBottom: '12px'
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        if (generatingDescriptionFor !== dayCard.id) {
-                                                            e.currentTarget.style.transform = 'translateY(-2px)';
-                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-                                                        }
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.transform = 'translateY(0)';
-                                                        e.currentTarget.style.boxShadow = 'none';
-                                                    }}
-                                                >
-                                                    {generatingDescriptionFor === dayCard.id ? (
-                                                        <CircularProgress size={14} sx={{ color: '#a855f7' }} />
-                                                    ) : (
-                                                        <SmartToyIcon fontSize="small" style={{
-                                                            background: 'linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
-                                                            WebkitBackgroundClip: 'text',
-                                                            WebkitTextFillColor: 'transparent',
-                                                            backgroundClip: 'text'
-                                                        }} />
-                                                    )}
-                                                    <span style={{
-                                                        background: 'linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
-                                                        WebkitBackgroundClip: 'text',
-                                                        WebkitTextFillColor: 'transparent',
-                                                        backgroundClip: 'text'
-                                                    }}>
-                                                        {generatingDescriptionFor === dayCard.id
-                                                            ? 'Generating...'
-                                                            : `Generate Day ${index + 1} Description`}
-                                                    </span>
-                                                </button>
+                                                {(() => {
+                                                    const isReadyToGenerate =
+                                                        dayCard.selectedDay.trim() !== "" &&
+                                                        dayCard.visitingPlaces.length > 0;
+                                                    const isGenerating = generatingDescriptionFor === dayCard.id;
+                                                    const isDisabled = !isReadyToGenerate || isGenerating;
+                                                    return (
+                                                        <>
+                                                            {!isReadyToGenerate && (
+                                                                <div style={{
+                                                                    fontSize: "11px",
+                                                                    color: "#9ca3af",
+                                                                    marginBottom: "8px",
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    gap: "4px"
+                                                                }}>
+                                                                    ⚠️ Select a date and at least one visiting place to enable AI generation
+                                                                </div>
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleGenerateDescription(dayCard, index)}
+                                                                disabled={isDisabled}
+                                                                style={{
+                                                                    background: isDisabled ? 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)' : 'white',
+                                                                    border: isDisabled ? '2px solid #d1d5db' : '2px solid transparent',
+                                                                    backgroundImage: isDisabled ? 'none' : 'linear-gradient(white, white), linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
+                                                                    backgroundOrigin: 'border-box',
+                                                                    backgroundClip: isDisabled ? 'unset' : 'padding-box, border-box',
+                                                                    color: isDisabled ? '#9ca3af' : '#a855f7',
+                                                                    fontWeight: '600',
+                                                                    padding: '8px 16px',
+                                                                    borderRadius: '8px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '6px',
+                                                                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                                                    transition: 'all 0.3s ease',
+                                                                    fontSize: '13px',
+                                                                    opacity: isDisabled ? 0.6 : 1,
+                                                                    marginBottom: '12px'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    if (!isDisabled) {
+                                                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                                                                    }
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.transform = 'translateY(0)';
+                                                                    e.currentTarget.style.boxShadow = 'none';
+                                                                }}
+                                                            >
+                                                                {isGenerating ? (
+                                                                    <CircularProgress size={14} sx={{ color: '#a855f7' }} />
+                                                                ) : (
+                                                                    <SmartToyIcon fontSize="small" style={isDisabled ? { color: '#9ca3af' } : {
+                                                                        background: 'linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
+                                                                        WebkitBackgroundClip: 'text',
+                                                                        WebkitTextFillColor: 'transparent',
+                                                                        backgroundClip: 'text'
+                                                                    }} />
+                                                                )}
+                                                                <span style={isDisabled ? {} : {
+                                                                    background: 'linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
+                                                                    WebkitBackgroundClip: 'text',
+                                                                    WebkitTextFillColor: 'transparent',
+                                                                    backgroundClip: 'text'
+                                                                }}>
+                                                                    {isGenerating
+                                                                        ? 'Generating...'
+                                                                        : `Generate Day ${index + 1} Description`}
+                                                                </span>
+                                                            </button>
+                                                        </>
+                                                    );
+                                                })()}
 
                                                 {/* Generated Description Output */}
                                                 {generatedDescriptions[dayCard.id] && (
