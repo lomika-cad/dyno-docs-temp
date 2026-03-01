@@ -47,7 +47,7 @@ export default function ReportGeneration() {
                 selectedDay: "",
                 visitingPlaces: [] as string[],
                 selectedPlaces: [] as Array<{district: string, place: any}>,
-                selectedHotels: [] as Array<{district: string, hotel: any}>,
+                selectedHotels: [] as Array<{district: string, hotel: any, type: 'transport' | 'activity' | 'hotel'}>,
                 remarks: ""
             }
         ] as Array<{
@@ -55,7 +55,7 @@ export default function ReportGeneration() {
             selectedDay: string;
             visitingPlaces: string[];
             selectedPlaces: Array<{district: string, place: any}>;
-            selectedHotels: Array<{district: string, hotel: any}>;
+            selectedHotels: Array<{district: string, hotel: any, type: 'transport' | 'activity' | 'hotel'}>;
             remarks: string;
         }>,
         selectedTemplate: "",
@@ -170,16 +170,16 @@ export default function ReportGeneration() {
         }
     };
 
-    const handleHotelToggle = (cardId: number, district: string, hotel: any) => {
+    const handleServiceToggle = (cardId: number, district: string, service: any, serviceType: 'transport' | 'activity' | 'hotel') => {
         setFormData((prev) => ({
             ...prev,
             dayCards: prev.dayCards.map((card) =>
                 card.id === cardId
                     ? {
                           ...card,
-                          selectedHotels: card.selectedHotels.some(h => h.hotel === hotel)
-                              ? card.selectedHotels.filter(h => h.hotel !== hotel)
-                              : [...card.selectedHotels, { district, hotel }],
+                          selectedHotels: card.selectedHotels.some(h => h.hotel === service && h.type === serviceType)
+                              ? card.selectedHotels.filter(h => !(h.hotel === service && h.type === serviceType))
+                              : [...card.selectedHotels, { district, hotel: service, type: serviceType }],
                       }
                     : card
             ),
@@ -351,7 +351,7 @@ export default function ReportGeneration() {
                         selectedDay: "",
                         visitingPlaces: [],
                         selectedPlaces: [],
-                        selectedHotels: [],
+                        selectedHotels: [] as Array<{district: string, hotel: any, type: 'transport' | 'activity'}>,
                         remarks: ""
                     }
                 ],
@@ -1301,10 +1301,10 @@ export default function ReportGeneration() {
 
                                             
 
-                                                {/* Hotel Selection */}
+                                                {/* Partnership Services Selection */}
                                                 <div className="formField">
                                                     <label className="formField-label" style={{ fontSize: "12px" }}>
-                                                        Night {index + 1} - Select Hotels
+                                                        Day {index + 1} - Partnership Services
                                                     </label>
                                                     {dayCard.visitingPlaces.length === 0 ? (
                                                         <div style={{
@@ -1316,142 +1316,207 @@ export default function ReportGeneration() {
                                                             fontSize: "11px",
                                                             color: "#ef4444"
                                                         }}>
-                                                            🏨 Select visiting places first to see available hotels
+                                                            🏨 Select visiting places first to see available services
                                                         </div>
                                                     ) : (
                                                         <div>
                                                             {dayCard.visitingPlaces.map(district => {
-                                                                const hotels = partnershipData[district];
-                                                                if (!hotels || !Array.isArray(hotels)) return null;
+                                                                const partnerships = partnershipData[district];
+                                                                if (!partnerships || !Array.isArray(partnerships)) return null;
+                                                                
+                                                                // Separate partnerships by type
+                                                                const transportServices = partnerships.filter((p: any) => p.partnershipType === 1);
+                                                                const activities = partnerships.filter((p: any) => p.partnershipType === 2);
                                                                 
                                                                 return (
                                                                     <div key={district} style={{
-                                                                        marginBottom: "12px",
-                                                                        padding: "10px",
+                                                                        marginBottom: "16px",
+                                                                        padding: "12px",
                                                                         background: "#f8f9fa",
-                                                                        borderRadius: "6px",
+                                                                        borderRadius: "8px",
                                                                         border: "1px solid #e9ecef"
                                                                     }}>
                                                                         <div style={{
-                                                                            fontSize: "11px",
+                                                                            fontSize: "12px",
                                                                             fontWeight: "600",
                                                                             color: "#495057",
-                                                                            marginBottom: "8px",
+                                                                            marginBottom: "12px",
                                                                             display: "flex",
                                                                             alignItems: "center",
-                                                                            gap: "4px"
+                                                                            gap: "6px"
                                                                         }}>
-                                                                            🏨 Hotels in {district}
+                                                                            📍 Services in {district}
                                                                             {loadingPartnerships[district] && (
                                                                                 <span style={{ fontSize: "10px" }}>⏳ Loading...</span>
                                                                             )}
                                                                         </div>
-                                                                        <div style={{
-                                                                            display: "flex",
-                                                                            flexWrap: "wrap",
-                                                                            gap: "6px"
-                                                                        }}>
-                                                                            {hotels.map((hotel: any, hotelIndex: number) => (
-                                                                                <label
-                                                                                    key={hotelIndex}
-                                                                                    style={{
+                                                                        
+                                                                        {/* Transport Services */}
+                                                                        {transportServices.length > 0 && (
+                                                                            <div style={{ marginBottom: "12px" }}>
+                                                                                <div style={{
+                                                                                    fontSize: "11px",
+                                                                                    fontWeight: "600",
+                                                                                    color: "#0066cc",
+                                                                                    marginBottom: "6px",
+                                                                                    display: "flex",
+                                                                                    alignItems: "center",
+                                                                                    gap: "4px"
+                                                                                }}>
+                                                                                    🚗 Transport Services ({transportServices.length})
+                                                                                </div>
+                                                                                <div style={{
+                                                                                    display: "flex",
+                                                                                    flexWrap: "wrap",
+                                                                                    gap: "6px",
+                                                                                    marginBottom: "8px"
+                                                                                }}>
+                                                                                    {transportServices.map((transport: any, idx: number) => (
+                                                                                        <label
+                                                                                            key={idx}
+                                                                                            style={{
+                                                                                                fontSize: "10px",
+                                                                                                padding: "6px 8px",
+                                                                                                background: dayCard.selectedHotels.some(h => h.hotel === transport && h.type === 'transport') ? "#e0f2fe" : "white",
+                                                                                                borderRadius: "4px",
+                                                                                                border: dayCard.selectedHotels.some(h => h.hotel === transport && h.type === 'transport') ? "1px solid #0ea5e9" : "1px solid #e5e7eb",
+                                                                                                color: "#374151",
+                                                                                                cursor: "pointer",
+                                                                                                transition: "all 0.2s",
+                                                                                                display: "flex",
+                                                                                                alignItems: "center",
+                                                                                                gap: "4px",
+                                                                                                userSelect: "none"
+                                                                                            }}
+                                                                                        >
+                                                                                            <input
+                                                                                                type="checkbox"
+                                                                                                checked={dayCard.selectedHotels.some(h => h.hotel === transport && h.type === 'transport')}
+                                                                                                onChange={() => handleServiceToggle(dayCard.id, district, transport, 'transport')}
+                                                                                                style={{ cursor: "pointer", transform: "scale(0.8)" }}
+                                                                                            />
+                                                                                            🚗 {transport.name || `Transport ${idx + 1}`}
+                                                                                        </label>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        
+                                                                        {/* Activities */}
+                                                                        {activities.length > 0 && (
+                                                                            <div>
+                                                                                <div style={{
+                                                                                    fontSize: "11px",
+                                                                                    fontWeight: "600",
+                                                                                    color: "#dc2626",
+                                                                                    marginBottom: "6px",
+                                                                                    display: "flex",
+                                                                                    alignItems: "center",
+                                                                                    gap: "4px"
+                                                                                }}>
+                                                                                    🎯 Activities ({activities.length})
+                                                                                </div>
+                                                                                <div style={{
+                                                                                    display: "flex",
+                                                                                    flexWrap: "wrap",
+                                                                                    gap: "6px"
+                                                                                }}>
+                                                                                    {activities.map((activity: any, idx: number) => (
+                                                                                        <label
+                                                                                            key={idx}
+                                                                                            style={{
+                                                                                                fontSize: "10px",
+                                                                                                padding: "6px 8px",
+                                                                                                background: dayCard.selectedHotels.some(h => h.hotel === activity && h.type === 'activity') ? "#fef3f2" : "white",
+                                                                                                borderRadius: "4px",
+                                                                                                border: dayCard.selectedHotels.some(h => h.hotel === activity && h.type === 'activity') ? "1px solid #ef4444" : "1px solid #e5e7eb",
+                                                                                                color: "#374151",
+                                                                                                cursor: "pointer",
+                                                                                                transition: "all 0.2s",
+                                                                                                display: "flex",
+                                                                                                alignItems: "center",
+                                                                                                gap: "4px",
+                                                                                                userSelect: "none"
+                                                                                            }}
+                                                                                        >
+                                                                                            <input
+                                                                                                type="checkbox"
+                                                                                                checked={dayCard.selectedHotels.some(h => h.hotel === activity && h.type === 'activity')}
+                                                                                                onChange={() => handleServiceToggle(dayCard.id, district, activity, 'activity')}
+                                                                                                style={{ cursor: "pointer", transform: "scale(0.8)" }}
+                                                                                            />
+                                                                                            🎯 {activity.name || `Activity ${idx + 1}`}
+                                                                                        </label>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        
+                                                                        {/* Select Night Hotel */}
+                                                                        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #e9ecef" }}>
+                                                                            <div style={{
+                                                                                fontSize: "11px",
+                                                                                fontWeight: "600",
+                                                                                color: "#9333ea",
+                                                                                marginBottom: "6px",
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                gap: "4px"
+                                                                            }}>
+                                                                                🏨 Select Night Hotel
+                                                                            </div>
+                                                                            <div style={{
+                                                                                display: "flex",
+                                                                                flexWrap: "wrap",
+                                                                                gap: "6px"
+                                                                            }}>
+                                                                                {partnerships.filter((p: any) => p.partnershipType === 0).length > 0 ? (
+                                                                                    partnerships.filter((p: any) => p.partnershipType === 0).map((hotel: any, idx: number) => (
+                                                                                        <label
+                                                                                            key={idx}
+                                                                                            style={{
+                                                                                                fontSize: "10px",
+                                                                                                padding: "6px 8px",
+                                                                                                background: dayCard.selectedHotels.some(h => h.hotel === hotel && h.type === 'hotel') ? "#f3e8ff" : "white",
+                                                                                                borderRadius: "4px",
+                                                                                                border: dayCard.selectedHotels.some(h => h.hotel === hotel && h.type === 'hotel') ? "1px solid #9333ea" : "1px solid #e5e7eb",
+                                                                                                color: "#374151",
+                                                                                                cursor: "pointer",
+                                                                                                transition: "all 0.2s",
+                                                                                                display: "flex",
+                                                                                                alignItems: "center",
+                                                                                                gap: "4px",
+                                                                                                userSelect: "none"
+                                                                                            }}
+                                                                                        >
+                                                                                            <input
+                                                                                                type="checkbox"
+                                                                                                checked={dayCard.selectedHotels.some(h => h.hotel === hotel && h.type === 'hotel')}
+                                                                                                onChange={() => handleServiceToggle(dayCard.id, district, hotel, 'hotel')}
+                                                                                                style={{ cursor: "pointer", transform: "scale(0.8)" }}
+                                                                                            />
+                                                                                            🏨 {hotel.name || `Hotel ${idx + 1}`}
+                                                                                        </label>
+                                                                                    ))
+                                                                                ) : (
+                                                                                    <div style={{
                                                                                         fontSize: "10px",
-                                                                                        padding: "6px 8px",
-                                                                                        background: dayCard.selectedHotels.some(h => h.hotel === hotel) ? "#e8f5e8" : "white",
-                                                                                        borderRadius: "4px",
-                                                                                        border: dayCard.selectedHotels.some(h => h.hotel === hotel) ? "1px solid #4ade80" : "1px solid #e5e7eb",
-                                                                                        color: "#374151",
-                                                                                        cursor: "pointer",
-                                                                                        transition: "all 0.2s",
-                                                                                        display: "flex",
-                                                                                        alignItems: "center",
-                                                                                        gap: "4px",
-                                                                                        userSelect: "none"
-                                                                                    }}
-                                                                                    onMouseEnter={(e) => {
-                                                                                        if (!dayCard.selectedHotels.some(h => h.hotel === hotel)) {
-                                                                                            e.currentTarget.style.background = "#f3f4f6";
-                                                                                        }
-                                                                                    }}
-                                                                                    onMouseLeave={(e) => {
-                                                                                        if (!dayCard.selectedHotels.some(h => h.hotel === hotel)) {
-                                                                                            e.currentTarget.style.background = "white";
-                                                                                        }
-                                                                                    }}
-                                                                                >
-                                                                                    <input
-                                                                                        type="checkbox"
-                                                                                        checked={dayCard.selectedHotels.some(h => h.hotel === hotel)}
-                                                                                        onChange={() => handleHotelToggle(dayCard.id, district, hotel)}
-                                                                                        style={{ cursor: "pointer", transform: "scale(0.8)" }}
-                                                                                    />
-                                                                                    {hotel.name || `Hotel ${hotelIndex + 1}`}
-                                                                                </label>
-                                                                            ))}
+                                                                                        color: "#6b7280",
+                                                                                        padding: "6px 0"
+                                                                                    }}>
+                                                                                        No hotels available
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 );
                                                             })}
                                                             
-                                                            {/* Selected Hotels Display */}
+                                                            {/* Selected Services Summary */}
                                                             {dayCard.selectedHotels.length > 0 && (
                                                                 <div style={{
                                                                     marginTop: "8px",
-                                                                    padding: "8px",
-                                                                    background: "#e0f2fe",
-                                                                    borderRadius: "6px",
-                                                                    border: "1px solid #bae6fd"
-                                                                }}>
-                                                                    <div style={{
-                                                                        fontSize: "10px",
-                                                                        fontWeight: "600",
-                                                                        color: "#0369a1",
-                                                                        marginBottom: "6px"
-                                                                    }}>
-                                                                        Selected Hotels ({dayCard.selectedHotels.length})
-                                                                    </div>
-                                                                    <div style={{
-                                                                        display: "flex",
-                                                                        flexWrap: "wrap",
-                                                                        gap: "4px"
-                                                                    }}>
-                                                                        {dayCard.selectedHotels.map((selectedHotel, idx) => (
-                                                                            <div key={idx} style={{
-                                                                                fontSize: "9px",
-                                                                                padding: "3px 6px",
-                                                                                background: "white",
-                                                                                borderRadius: "3px",
-                                                                                border: "1px solid #e5e7eb",
-                                                                                display: "flex",
-                                                                                alignItems: "center",
-                                                                                gap: "4px"
-                                                                            }}>
-                                                                                <span>🏨 {selectedHotel.hotel.name || 'Hotel'}</span>
-                                                                                <span style={{ color: "#6b7280" }}>({selectedHotel.district})</span>
-                                                                                <button
-                                                                                    onClick={() => handleHotelToggle(dayCard.id, selectedHotel.district, selectedHotel.hotel)}
-                                                                                    style={{
-                                                                                        background: "transparent",
-                                                                                        border: "none",
-                                                                                        color: "#ef4444",
-                                                                                        fontSize: "10px",
-                                                                                        cursor: "pointer",
-                                                                                        padding: "0",
-                                                                                        marginLeft: "2px"
-                                                                                    }}
-                                                                                >
-                                                                                    ×
-                                                                                </button>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                            
-                                                            {/* Hotel Images Gallery */}
-                                                            {dayCard.selectedHotels.length > 0 && dayCard.selectedHotels.some(h => h.hotel.images && h.hotel.images.length > 0) && (
-                                                                <div style={{
-                                                                    marginTop: "12px",
                                                                     padding: "12px",
                                                                     background: "#f0f9ff",
                                                                     borderRadius: "8px",
@@ -1461,51 +1526,165 @@ export default function ReportGeneration() {
                                                                         fontSize: "11px",
                                                                         fontWeight: "600",
                                                                         color: "#0369a1",
+                                                                        marginBottom: "8px"
+                                                                    }}>
+                                                                        Selected Services ({dayCard.selectedHotels.length})
+                                                                    </div>
+                                                                    <div style={{
+                                                                        display: "flex",
+                                                                        flexWrap: "wrap",
+                                                                        gap: "6px"
+                                                                    }}>
+                                                                        {dayCard.selectedHotels.map((selectedService, idx) => {
+                                                                            const icon = selectedService.type === 'transport' ? '🚗' : '🎯';
+                                                                            const bgColor = selectedService.type === 'transport' ? '#e0f2fe' : '#fef3f2';
+                                                                            const borderColor = selectedService.type === 'transport' ? '#0ea5e9' : '#ef4444';
+                                                                            
+                                                                            return (
+                                                                                <div key={idx} style={{
+                                                                                    fontSize: "10px",
+                                                                                    padding: "4px 8px",
+                                                                                    background: bgColor,
+                                                                                    borderRadius: "4px",
+                                                                                    border: `1px solid ${borderColor}`,
+                                                                                    display: "flex",
+                                                                                    alignItems: "center",
+                                                                                    gap: "4px"
+                                                                                }}>
+                                                                                    <span>{icon} {selectedService.hotel.name || 'Service'}</span>
+                                                                                    <span style={{ color: "#6b7280", fontSize: "9px" }}>({selectedService.district})</span>
+                                                                                    <button
+                                                                                        onClick={() => handleServiceToggle(dayCard.id, selectedService.district, selectedService.hotel, selectedService.type)}
+                                                                                        style={{
+                                                                                            background: "transparent",
+                                                                                            border: "none",
+                                                                                            color: "#ef4444",
+                                                                                            fontSize: "10px",
+                                                                                            cursor: "pointer",
+                                                                                            padding: "0",
+                                                                                            marginLeft: "2px"
+                                                                                        }}
+                                                                                    >
+                                                                                        ×
+                                                                                    </button>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {/* Service Details with Images */}
+                                                            {dayCard.selectedHotels.length > 0 && dayCard.selectedHotels.some(h => h.hotel.images && h.hotel.images.length > 0) && (
+                                                                <div style={{
+                                                                    marginTop: "12px",
+                                                                    padding: "12px",
+                                                                    background: "#fafafa",
+                                                                    borderRadius: "8px",
+                                                                    border: "1px solid #e5e7eb"
+                                                                }}>
+                                                                    <div style={{
+                                                                        fontSize: "11px",
+                                                                        fontWeight: "600",
+                                                                        color: "#374151",
                                                                         marginBottom: "8px",
                                                                         display: "flex",
                                                                         alignItems: "center",
                                                                         gap: "6px"
                                                                     }}>
-                                                                        🖼️ Hotel Images
+                                                                        📋 Service Details & Images
                                                                     </div>
-                                                                    {dayCard.selectedHotels.map((selectedHotel, idx) => {
-                                                                        if (!selectedHotel.hotel.images || selectedHotel.hotel.images.length === 0) return null;
+                                                                    {dayCard.selectedHotels.map((selectedService, idx) => {
+                                                                        if (!selectedService.hotel.images || selectedService.hotel.images.length === 0) return null;
+                                                                        
+                                                                        const icon = selectedService.type === 'transport' ? '🚗' : '🎯';
+                                                                        const typeLabel = selectedService.type === 'transport' ? 'Transport Service' : 'Activity';
                                                                         
                                                                         return (
                                                                             <div key={idx} style={{
-                                                                                marginBottom: "12px",
-                                                                                padding: "10px",
+                                                                                marginBottom: "16px",
+                                                                                padding: "12px",
                                                                                 background: "white",
-                                                                                borderRadius: "6px",
+                                                                                borderRadius: "8px",
                                                                                 border: "1px solid #e5e7eb",
                                                                                 boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)"
                                                                             }}>
                                                                                 <div style={{
-                                                                                    fontSize: "11px",
-                                                                                    fontWeight: "600",
-                                                                                    color: "#1f2937",
-                                                                                    marginBottom: "8px",
                                                                                     display: "flex",
-                                                                                    alignItems: "center",
-                                                                                    gap: "6px"
+                                                                                    justifyContent: "space-between",
+                                                                                    alignItems: "flex-start",
+                                                                                    marginBottom: "8px"
                                                                                 }}>
-                                                                                    🏨 {selectedHotel.hotel.name || 'Hotel'}
-                                                                                    <span style={{
-                                                                                        fontSize: "10px",
-                                                                                        background: "#f3f4f6",
-                                                                                        padding: "2px 6px",
-                                                                                        borderRadius: "4px",
-                                                                                        color: "#6b7280"
-                                                                                    }}>
-                                                                                        📍 {selectedHotel.district}
-                                                                                    </span>
+                                                                                    <div>
+                                                                                        <div style={{
+                                                                                            fontSize: "12px",
+                                                                                            fontWeight: "600",
+                                                                                            color: "#1f2937",
+                                                                                            marginBottom: "4px",
+                                                                                            display: "flex",
+                                                                                            alignItems: "center",
+                                                                                            gap: "6px"
+                                                                                        }}>
+                                                                                            {icon} {selectedService.hotel.name || 'Service'}
+                                                                                        </div>
+                                                                                        <div style={{
+                                                                                            fontSize: "10px",
+                                                                                            color: "#6b7280",
+                                                                                            background: "#f3f4f6",
+                                                                                            padding: "2px 6px",
+                                                                                            borderRadius: "4px",
+                                                                                            display: "inline-block",
+                                                                                            marginRight: "6px"
+                                                                                        }}>
+                                                                                            📍 {selectedService.district}
+                                                                                        </div>
+                                                                                        <div style={{
+                                                                                            fontSize: "10px",
+                                                                                            color: selectedService.type === 'transport' ? "#0369a1" : "#dc2626",
+                                                                                            background: selectedService.type === 'transport' ? "#e0f2fe" : "#fef3f2",
+                                                                                            padding: "2px 6px",
+                                                                                            borderRadius: "4px",
+                                                                                            display: "inline-block"
+                                                                                        }}>
+                                                                                            {typeLabel}
+                                                                                        </div>
+                                                                                    </div>
                                                                                 </div>
+                                                                                
+                                                                                {/* Service Description */}
+                                                                                {selectedService.hotel.description && (
+                                                                                    <div style={{
+                                                                                        marginBottom: "8px",
+                                                                                        padding: "8px",
+                                                                                        background: "#f8f9fa",
+                                                                                        borderRadius: "6px",
+                                                                                        border: "1px solid #e9ecef"
+                                                                                    }}>
+                                                                                        <div style={{
+                                                                                            fontSize: "10px",
+                                                                                            fontWeight: "600",
+                                                                                            color: "#495057",
+                                                                                            marginBottom: "4px"
+                                                                                        }}>
+                                                                                            📄 Description
+                                                                                        </div>
+                                                                                        <div style={{
+                                                                                            fontSize: "10px",
+                                                                                            color: "#6c757d",
+                                                                                            lineHeight: "1.4"
+                                                                                        }}>
+                                                                                            {selectedService.hotel.description}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+                                                                                
+                                                                                {/* Images */}
                                                                                 <div style={{
                                                                                     display: "grid",
-                                                                                    gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+                                                                                    gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
                                                                                     gap: "8px"
                                                                                 }}>
-                                                                                    {selectedHotel.hotel.images.map((image: string, imageIdx: number) => {
+                                                                                    {selectedService.hotel.images.map((image: string, imageIdx: number) => {
                                                                                         // Handle base64 images
                                                                                         const getImageSrc = (imgData: any) => {
                                                                                             const imgString = typeof imgData === 'string' ? imgData : imgData.url || imgData.src || imgData.path;
@@ -1533,7 +1712,7 @@ export default function ReportGeneration() {
                                                                                             }}>
                                                                                                 <img
                                                                                                     src={getImageSrc(image)}
-                                                                                                    alt={`${selectedHotel.hotel.name || 'Hotel'} image ${imageIdx + 1}`}
+                                                                                                    alt={`${selectedService.hotel.name || 'Service'} image ${imageIdx + 1}`}
                                                                                                     style={{
                                                                                                         width: "100%",
                                                                                                         height: "80px",
