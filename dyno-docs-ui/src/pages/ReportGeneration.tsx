@@ -26,7 +26,6 @@ export default function ReportGeneration() {
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [generatedReport, setGeneratedReport] = useState<{ templateDesign: any; template: any } | null>(null);
     const [exportMenuOpen, setExportMenuOpen] = useState(false);
-    const [exportingPDF, setExportingPDF] = useState(false);
     const dayCardRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -2348,71 +2347,54 @@ ${bodyExtra}
                         return `${name}_${last4}`;
                     })();
 
-                    // ── export as PDF (page-by-page, images pre-fetched as base64) ──
-                    const handleExportPDF = async () => {
+                    // ── export as PDF (print dialog) ──────────────────────
+                    const handleExportPDF = () => {
                         setExportMenuOpen(false);
                         const content = document.getElementById('report-print-content');
                         if (!content) return;
-                        setExportingPDF(true);
-                        try {
+                        const printWin = window.open('', '_blank');
+                        if (!printWin) { alert('Pop-ups are blocked. Please allow pop-ups for this site.'); return; }
 
-                        // ① pre-convert every <img> to a base64 data URL to bypass CORS
-                        const toBase64 = (img: HTMLImageElement): Promise<void> =>
-                            new Promise(resolve => {
-                                if (!img.src || img.src.startsWith('data:')) { resolve(); return; }
-                                fetch(img.src, { mode: 'cors' })
-                                    .then(r => r.blob())
-                                    .then(blob => {
-                                        const reader = new FileReader();
-                                        reader.onload = () => { img.src = reader.result as string; resolve(); };
-                                        reader.onerror = () => resolve();
-                                        reader.readAsDataURL(blob);
-                                    })
-                                    .catch(() => resolve()); // if CORS fails, leave as-is (may be blank)
-                            });
+                        const scriptTag = '<' + 'script>' +
+                            'var imgs=Array.from(document.images),total=imgs.length,loaded=0;' +
+                            'function tryPrint(){setTimeout(function(){window.focus();window.print();},600);}' +
+                            'if(total===0){tryPrint();}' +
+                            'else{imgs.forEach(function(img){' +
+                            '  if(img.complete){if(++loaded>=total)tryPrint();}' +
+                            '  else{img.onload=img.onerror=function(){if(++loaded>=total)tryPrint();};}' +
+                            '});}' +
+                            '</' + 'script>';
 
-                        const allImgs = Array.from(content.querySelectorAll('img')) as HTMLImageElement[];
-                        await Promise.all(allImgs.map(toBase64));
+                        const css = [
+                            '*, *::before, *::after { box-sizing: border-box; }',
+                            'html, body { margin: 0; padding: 0; background: #fff; }',
+                            '@page { size: 700px 991px; margin: 0; }',
+                            '@media print {',
+                            '  @page { size: 700px 991px; margin: 0; }',
+                            '  body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
+                            '  .rpt-page-label { display: none !important; }',
+                            '  .rpt-page-wrap { page-break-after: always !important; break-after: page !important;',
+                            '    height: 991px !important; overflow: hidden !important;',
+                            '    margin: 0 !important; padding: 0 !important; display: block !important; }',
+                            '  #rpt-canvas { padding: 0 !important; gap: 0 !important; background: white !important; }',
+                            '  img { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
+                            '}',
+                            '.rpt-page-wrap { margin-bottom: 48px; }',
+                            '#rpt-canvas { padding: 44px 24px 60px; display: flex; flex-direction: column; align-items: center; gap: 0; }',
+                            '.rpt-img-grid { display: grid; }',
+                            '.rpt-hero-img { position: absolute; top: 0; height: 100%; object-fit: cover; filter: brightness(0.45); display: block; }',
+                        ].join('\n');
 
-                        // ② capture each page individually so overflow:hidden and transforms are respected
-                        const [h2cMod, jsPDFMod] = await Promise.all([
-                            import('html2canvas'),
-                            import('jspdf'),
-                        ]);
-                        const html2canvas = (h2cMod as any).default ?? h2cMod;
-                        const { jsPDF } = jsPDFMod as any;
-
-                        const pageEls = Array.from(content.querySelectorAll('.rpt-page-wrap')) as HTMLElement[];
-                        if (pageEls.length === 0) return;
-
-                        const pdf = new jsPDF({ unit: 'px', format: [700, 991], orientation: 'portrait', compress: true });
-
-                        for (let i = 0; i < pageEls.length; i++) {
-                            const el = pageEls[i];
-                            // ③ for template-cover pages that use CSS transform:scale, temporarily
-                            //    snapshot the inner scaled div as its own canvas at 595×842 then
-                            //    draw it stretched to 700×991 — avoids bleed/overlap
-                            const canvas: HTMLCanvasElement = await html2canvas(el, {
-                                scale: 2,
-                                useCORS: true,
-                                allowTaint: true,
-                                backgroundColor: '#ffffff',
-                                width: 700,
-                                height: 991,
-                                windowWidth: 700,
-                                windowHeight: 991,
-                                x: 0,
-                                y: 0,
-                            });
-                            if (i > 0) pdf.addPage([700, 991], 'portrait');
-                            pdf.addImage(
-                                canvas.toDataURL('image/jpeg', 0.95),
-                                'JPEG', 0, 0, 700, 991,
-                            );
-                        }
-
-                        pdf.save(`${reportFilename}.pdf`);
-                        } finally { setExportingPDF(false); }
+                        printWin.document.write(
+                            '<!DOCTYPE html><html><head><meta charset="utf-8"/>' +
+                            '<title>' + reportFilename + '</title>' +
+                            '<style>' + css + '</style>' +
+                            '</head><body>' +
+                            '<div id="rpt-canvas">' + content.innerHTML + '</div>' +
+                            scriptTag +
+                            '</body></html>'
+                        );
+                        printWin.document.close();
                     };
 
                     // ── export as HTML ────────────────────────────────────
@@ -2494,39 +2476,24 @@ ${bodyExtra}
                                             {/* main action — Export PDF */}
                                             <button
                                                 onClick={handleExportPDF}
-                                                disabled={exportingPDF}
                                                 style={{
                                                     background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)',
                                                     border: 'none', borderRadius: '8px 0 0 8px',
                                                     color: 'white', padding: '7px 16px',
-                                                    cursor: exportingPDF ? 'not-allowed' : 'pointer',
+                                                    cursor: 'pointer',
                                                     fontSize: '13px', fontWeight: 700,
                                                     display: 'flex', alignItems: 'center', gap: '6px',
-                                                    opacity: exportingPDF ? 0.7 : 1,
                                                     transition: 'opacity 0.15s',
                                                 }}
-                                                onMouseEnter={e => { if (!exportingPDF) e.currentTarget.style.opacity = '0.88'; }}
-                                                onMouseLeave={e => { if (!exportingPDF) e.currentTarget.style.opacity = '1'; }}
+                                                onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
                                             >
-                                                {exportingPDF ? (
-                                                    <>
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                                                            style={{ animation: 'spin 1s linear infinite' }}>
-                                                            <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
-                                                            <path d="M12 2a10 10 0 0 1 10 10" />
-                                                        </svg>
-                                                        Generating…
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                                            <polyline points="7 10 12 15 17 10" />
-                                                            <line x1="12" y1="15" x2="12" y2="3" />
-                                                        </svg>
-                                                        Export PDF
-                                                    </>
-                                                )}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                    <polyline points="7 10 12 15 17 10" />
+                                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                                </svg>
+                                                Export PDF
                                             </button>
                                             {/* divider */}
                                             <div style={{ width: '1px', background: 'rgba(255,255,255,0.3)', flexShrink: 0, alignSelf: 'stretch' }} />
