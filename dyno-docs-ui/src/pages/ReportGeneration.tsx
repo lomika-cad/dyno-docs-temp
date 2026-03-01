@@ -12,20 +12,22 @@ import { getUserTemplates } from "../services/template-api";
 
 export default function ReportGeneration() {
     const [infoOpen, setInfoOpen] = useState(false);
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState(3);
     const [isLoading, setIsLoading] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [districtData, setDistrictData] = useState<{[key: string]: any}>({});
-    const [loadingDistricts, setLoadingDistricts] = useState<{[key: string]: boolean}>({});
-    const [partnershipData, setPartnershipData] = useState<{[key: string]: any}>({});
-    const [loadingPartnerships, setLoadingPartnerships] = useState<{[key: string]: boolean}>({});
-    const [generatedDescriptions, setGeneratedDescriptions] = useState<{[key: number]: string}>({});
+    const [districtData, setDistrictData] = useState<{ [key: string]: any }>({});
+    const [loadingDistricts, setLoadingDistricts] = useState<{ [key: string]: boolean }>({});
+    const [partnershipData, setPartnershipData] = useState<{ [key: string]: any }>({});
+    const [loadingPartnerships, setLoadingPartnerships] = useState<{ [key: string]: boolean }>({});
+    const [generatedDescriptions, setGeneratedDescriptions] = useState<{ [key: number]: string }>({});
     const [generatingDescriptionFor, setGeneratingDescriptionFor] = useState<number | null>(null);
     const [templates, setTemplates] = useState<any[]>([]);
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [generatedReport, setGeneratedReport] = useState<{ templateDesign: any; template: any } | null>(null);
-    const dayCardRefs = useRef<{[key: number]: HTMLDivElement | null}>({});
+    const [exportMenuOpen, setExportMenuOpen] = useState(false);
+    const [exportingPDF, setExportingPDF] = useState(false);
+    const dayCardRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -70,16 +72,16 @@ export default function ReportGeneration() {
                 id: 1,
                 selectedDay: "",
                 visitingPlaces: [] as string[],
-                selectedPlaces: [] as Array<{district: string, place: any}>,
-                selectedHotels: [] as Array<{district: string, hotel: any, type: 'transport' | 'activity' | 'hotel'}>,
+                selectedPlaces: [] as Array<{ district: string, place: any }>,
+                selectedHotels: [] as Array<{ district: string, hotel: any, type: 'transport' | 'activity' | 'hotel' }>,
                 remarks: ""
             }
         ] as Array<{
             id: number;
             selectedDay: string;
             visitingPlaces: string[];
-            selectedPlaces: Array<{district: string, place: any}>;
-            selectedHotels: Array<{district: string, hotel: any, type: 'transport' | 'activity' | 'hotel'}>;
+            selectedPlaces: Array<{ district: string, place: any }>;
+            selectedHotels: Array<{ district: string, hotel: any, type: 'transport' | 'activity' | 'hotel' }>;
             remarks: string;
         }>,
         selectedTemplate: "",
@@ -144,25 +146,25 @@ export default function ReportGeneration() {
 
     const handleDayCardLocationToggle = async (cardId: number, location: string) => {
         const isCurrentlySelected = formData.dayCards.find(card => card.id === cardId)?.visitingPlaces.includes(location);
-        
+
         // Update the form data
         setFormData((prev) => ({
             ...prev,
             dayCards: prev.dayCards.map((card) =>
                 card.id === cardId
                     ? {
-                          ...card,
-                          visitingPlaces: card.visitingPlaces.includes(location)
-                              ? card.visitingPlaces.filter((l) => l !== location)
-                              : [...card.visitingPlaces, location],
-                          // If unselecting a visiting place, also remove all selected places and hotels from that district
-                          selectedPlaces: card.visitingPlaces.includes(location)
-                              ? card.selectedPlaces.filter(p => p.district !== location)
-                              : card.selectedPlaces,
-                          selectedHotels: card.visitingPlaces.includes(location)
-                              ? card.selectedHotels.filter(h => h.district !== location)
-                              : card.selectedHotels
-                      }
+                        ...card,
+                        visitingPlaces: card.visitingPlaces.includes(location)
+                            ? card.visitingPlaces.filter((l) => l !== location)
+                            : [...card.visitingPlaces, location],
+                        // If unselecting a visiting place, also remove all selected places and hotels from that district
+                        selectedPlaces: card.visitingPlaces.includes(location)
+                            ? card.selectedPlaces.filter(p => p.district !== location)
+                            : card.selectedPlaces,
+                        selectedHotels: card.visitingPlaces.includes(location)
+                            ? card.selectedHotels.filter(h => h.district !== location)
+                            : card.selectedHotels
+                    }
                     : card
             ),
         }));
@@ -171,7 +173,7 @@ export default function ReportGeneration() {
         if (!isCurrentlySelected && !districtData[location]) {
             await fetchDistrictData(location);
         }
-        
+
         // Also fetch partnership data for hotels if selecting
         if (!isCurrentlySelected && !partnershipData[location]) {
             await fetchPartnershipData(location);
@@ -184,11 +186,11 @@ export default function ReportGeneration() {
             dayCards: prev.dayCards.map((card) =>
                 card.id === cardId
                     ? {
-                          ...card,
-                          selectedHotels: card.selectedHotels.some(h => h.hotel === service && h.type === serviceType)
-                              ? card.selectedHotels.filter(h => !(h.hotel === service && h.type === serviceType))
-                              : [...card.selectedHotels, { district, hotel: service, type: serviceType }],
-                      }
+                        ...card,
+                        selectedHotels: card.selectedHotels.some(h => h.hotel === service && h.type === serviceType)
+                            ? card.selectedHotels.filter(h => !(h.hotel === service && h.type === serviceType))
+                            : [...card.selectedHotels, { district, hotel: service, type: serviceType }],
+                    }
                     : card
             ),
         }));
@@ -200,11 +202,11 @@ export default function ReportGeneration() {
             dayCards: prev.dayCards.map((card) =>
                 card.id === cardId
                     ? {
-                          ...card,
-                          selectedPlaces: card.selectedPlaces.some(p => p.place === place)
-                              ? card.selectedPlaces.filter(p => p.place !== place)
-                              : [...card.selectedPlaces, { district, place }],
-                      }
+                        ...card,
+                        selectedPlaces: card.selectedPlaces.some(p => p.place === place)
+                            ? card.selectedPlaces.filter(p => p.place !== place)
+                            : [...card.selectedPlaces, { district, place }],
+                    }
                     : card
             ),
         }));
@@ -674,13 +676,13 @@ export default function ReportGeneration() {
                                             }}
                                         >
                                             <span style={{ color: formData.selectedRoutes.length === 0 ? "#9ca3af" : "#374151" }}>
-                                                {formData.selectedRoutes.length === 0 
-                                                    ? "Select routes" 
+                                                {formData.selectedRoutes.length === 0
+                                                    ? "Select routes"
                                                     : `${formData.selectedRoutes.length} route(s) selected`}
                                             </span>
                                             <span style={{ transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▼</span>
                                         </div>
-                                        
+
                                         {dropdownOpen && (
                                             <div style={{
                                                 position: "absolute",
@@ -723,7 +725,7 @@ export default function ReportGeneration() {
                                                         <input
                                                             type="checkbox"
                                                             checked={formData.selectedRoutes.includes(route)}
-                                                            onChange={() => {}} // Handled by parent onClick
+                                                            onChange={() => { }} // Handled by parent onClick
                                                             style={{ pointerEvents: "none" }}
                                                         />
                                                         {route}
@@ -732,7 +734,7 @@ export default function ReportGeneration() {
                                             </div>
                                         )}
                                     </div>
-                                    
+
                                     {/* Selected Routes Display */}
                                     {formData.selectedRoutes.length > 0 && (
                                         <div style={{
@@ -813,7 +815,7 @@ export default function ReportGeneration() {
                                             onClick={addDayCard}
                                             disabled={formData.selectedRoutes.length === 0}
                                             style={{
-                                                background: formData.selectedRoutes.length === 0 
+                                                background: formData.selectedRoutes.length === 0
                                                     ? "linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%)"
                                                     : "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)",
                                                 color: formData.selectedRoutes.length === 0 ? "#6b7280" : "white",
@@ -833,7 +835,7 @@ export default function ReportGeneration() {
                                             + Add Day
                                         </button>
                                     </div>
-                                    
+
                                     {formData.dayCards.map((dayCard, index) => (
                                         <div
                                             key={dayCard.id}
@@ -1019,7 +1021,7 @@ export default function ReportGeneration() {
                                                                         borderRadius: "10px",
                                                                         marginLeft: "4px"
                                                                     }}>
-                                                                        {Array.isArray(districtData[location]) 
+                                                                        {Array.isArray(districtData[location])
                                                                             ? `${districtData[location].length} places`
                                                                             : 'Data loaded'
                                                                         }
@@ -1048,7 +1050,7 @@ export default function ReportGeneration() {
                                                     }}>
                                                         {dayCard.visitingPlaces.map(place => {
                                                             if (!districtData[place]) return null;
-                                                            
+
                                                             return (
                                                                 <div key={place} style={{ marginBottom: "12px" }}>
                                                                     <div style={{
@@ -1248,13 +1250,13 @@ export default function ReportGeneration() {
                                                                         // Check for numbered image URLs (image1Url, image2Url, etc.)
                                                                         const imageUrls = [];
                                                                         let imageIndex = 1;
-                                                                        
+
                                                                         // Look for image1Url, image2Url, image3Url, etc.
                                                                         while (selectedPlace.place[`image${imageIndex}Url`]) {
                                                                             imageUrls.push(selectedPlace.place[`image${imageIndex}Url`]);
                                                                             imageIndex++;
                                                                         }
-                                                                        
+
                                                                         // Also check for other common image field patterns as fallback
                                                                         if (imageUrls.length === 0) {
                                                                             const otherImageFields = selectedPlace.place.images || selectedPlace.place.Images || selectedPlace.place.image || selectedPlace.place.Image;
@@ -1263,106 +1265,106 @@ export default function ReportGeneration() {
                                                                                 imageUrls.push(...imageArray);
                                                                             }
                                                                         }
-                                                                        
+
                                                                         return imageUrls.length > 0;
                                                                     })() && (
-                                                                        <div style={{
-                                                                            marginBottom: "8px",
-                                                                            padding: "8px",
-                                                                            background: "#e8f5e8",
-                                                                            borderRadius: "6px",
-                                                                            border: "1px solid #c3e6c3"
-                                                                        }}>
                                                                             <div style={{
-                                                                                fontSize: "11px",
-                                                                                fontWeight: "600",
-                                                                                color: "#155724",
-                                                                                marginBottom: "6px"
+                                                                                marginBottom: "8px",
+                                                                                padding: "8px",
+                                                                                background: "#e8f5e8",
+                                                                                borderRadius: "6px",
+                                                                                border: "1px solid #c3e6c3"
                                                                             }}>
-                                                                                🖼️ Images
-                                                                            </div>
-                                                                            <div style={{
-                                                                                display: "flex",
-                                                                                flexWrap: "wrap",
-                                                                                gap: "6px"
-                                                                            }}>
-                                                                                {(() => {
-                                                                                    // Collect numbered image URLs
-                                                                                    const imageUrls = [];
-                                                                                    let imageIndex = 1;
-                                                                                    
-                                                                                    while (selectedPlace.place[`image${imageIndex}Url`]) {
-                                                                                        imageUrls.push(selectedPlace.place[`image${imageIndex}Url`]);
-                                                                                        imageIndex++;
-                                                                                    }
-                                                                                    
-                                                                                    // Fallback to other image fields if no numbered URLs found
-                                                                                    if (imageUrls.length === 0) {
-                                                                                        const otherImageFields = selectedPlace.place.images || selectedPlace.place.Images || selectedPlace.place.image || selectedPlace.place.Image;
-                                                                                        if (otherImageFields) {
-                                                                                            const imageArray = Array.isArray(otherImageFields) ? otherImageFields : [otherImageFields];
-                                                                                            imageUrls.push(...imageArray);
-                                                                                        }
-                                                                                    }
-                                                                                    
-                                                                                    return imageUrls.map((imgUrl: any, imgIndex: number) => {
-                                                                                        // Handle base64 images
-                                                                                        const getImageSrc = (url: any) => {
-                                                                                            const urlString = typeof url === 'string' ? url : url.url || url.src || url.path;
-                                                                                            
-                                                                                            // Check if it's already a data URI
-                                                                                            if (urlString && urlString.startsWith('data:')) {
-                                                                                                return urlString;
-                                                                                            }
-                                                                                            
-                                                                                            // Check if it's base64 without data URI prefix
-                                                                                            if (urlString && (urlString.match(/^[A-Za-z0-9+/]*={0,2}$/) && urlString.length > 100)) {
-                                                                                                // Assume it's base64, add data URI prefix (defaulting to jpeg)
-                                                                                                return `data:image/jpeg;base64,${urlString}`;
-                                                                                            }
-                                                                                            
-                                                                                            // Regular URL
-                                                                                            return urlString;
-                                                                                        };
+                                                                                <div style={{
+                                                                                    fontSize: "11px",
+                                                                                    fontWeight: "600",
+                                                                                    color: "#155724",
+                                                                                    marginBottom: "6px"
+                                                                                }}>
+                                                                                    🖼️ Images
+                                                                                </div>
+                                                                                <div style={{
+                                                                                    display: "flex",
+                                                                                    flexWrap: "wrap",
+                                                                                    gap: "6px"
+                                                                                }}>
+                                                                                    {(() => {
+                                                                                        // Collect numbered image URLs
+                                                                                        const imageUrls = [];
+                                                                                        let imageIndex = 1;
 
-                                                                                        return (
-                                                                                            <div key={imgIndex} style={{
-                                                                                                background: "white",
-                                                                                                borderRadius: "4px",
-                                                                                                overflow: "hidden",
-                                                                                                border: "1px solid #dee2e6",
-                                                                                                maxWidth: "120px"
-                                                                                            }}>
-                                                                                                <img 
-                                                                                                    src={getImageSrc(imgUrl)} 
-                                                                                                    alt={`Place image ${imgIndex + 1}`}
-                                                                                                    style={{
-                                                                                                        width: "100%",
-                                                                                                        height: "80px",
-                                                                                                        objectFit: "cover",
-                                                                                                        display: "block"
-                                                                                                    }}
-                                                                                                    onError={(e) => {
-                                                                                                        e.currentTarget.style.display = 'none';
-                                                                                                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
-                                                                                                    }}
-                                                                                                />
-                                                                                                <div style={{
-                                                                                                    display: "none",
-                                                                                                    padding: "8px",
-                                                                                                    fontSize: "10px",
-                                                                                                    color: "#6c757d",
-                                                                                                    textAlign: "center"
+                                                                                        while (selectedPlace.place[`image${imageIndex}Url`]) {
+                                                                                            imageUrls.push(selectedPlace.place[`image${imageIndex}Url`]);
+                                                                                            imageIndex++;
+                                                                                        }
+
+                                                                                        // Fallback to other image fields if no numbered URLs found
+                                                                                        if (imageUrls.length === 0) {
+                                                                                            const otherImageFields = selectedPlace.place.images || selectedPlace.place.Images || selectedPlace.place.image || selectedPlace.place.Image;
+                                                                                            if (otherImageFields) {
+                                                                                                const imageArray = Array.isArray(otherImageFields) ? otherImageFields : [otherImageFields];
+                                                                                                imageUrls.push(...imageArray);
+                                                                                            }
+                                                                                        }
+
+                                                                                        return imageUrls.map((imgUrl: any, imgIndex: number) => {
+                                                                                            // Handle base64 images
+                                                                                            const getImageSrc = (url: any) => {
+                                                                                                const urlString = typeof url === 'string' ? url : url.url || url.src || url.path;
+
+                                                                                                // Check if it's already a data URI
+                                                                                                if (urlString && urlString.startsWith('data:')) {
+                                                                                                    return urlString;
+                                                                                                }
+
+                                                                                                // Check if it's base64 without data URI prefix
+                                                                                                if (urlString && (urlString.match(/^[A-Za-z0-9+/]*={0,2}$/) && urlString.length > 100)) {
+                                                                                                    // Assume it's base64, add data URI prefix (defaulting to jpeg)
+                                                                                                    return `data:image/jpeg;base64,${urlString}`;
+                                                                                                }
+
+                                                                                                // Regular URL
+                                                                                                return urlString;
+                                                                                            };
+
+                                                                                            return (
+                                                                                                <div key={imgIndex} style={{
+                                                                                                    background: "white",
+                                                                                                    borderRadius: "4px",
+                                                                                                    overflow: "hidden",
+                                                                                                    border: "1px solid #dee2e6",
+                                                                                                    maxWidth: "120px"
                                                                                                 }}>
-                                                                                                    Image not available
+                                                                                                    <img
+                                                                                                        src={getImageSrc(imgUrl)}
+                                                                                                        alt={`Place image ${imgIndex + 1}`}
+                                                                                                        style={{
+                                                                                                            width: "100%",
+                                                                                                            height: "80px",
+                                                                                                            objectFit: "cover",
+                                                                                                            display: "block"
+                                                                                                        }}
+                                                                                                        onError={(e) => {
+                                                                                                            e.currentTarget.style.display = 'none';
+                                                                                                            (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
+                                                                                                        }}
+                                                                                                    />
+                                                                                                    <div style={{
+                                                                                                        display: "none",
+                                                                                                        padding: "8px",
+                                                                                                        fontSize: "10px",
+                                                                                                        color: "#6c757d",
+                                                                                                        textAlign: "center"
+                                                                                                    }}>
+                                                                                                        Image not available
+                                                                                                    </div>
                                                                                                 </div>
-                                                                                            </div>
-                                                                                        );
-                                                                                    });
-                                                                                })()}
+                                                                                            );
+                                                                                        });
+                                                                                    })()}
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
-                                                                    )}
+                                                                        )}
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -1370,446 +1372,446 @@ export default function ReportGeneration() {
                                                 </div>
                                             )}
 
-                                            
 
-                                                {/* Partnership Services Selection */}
-                                                <div className="formField">
-                                                    <label className="formField-label" style={{ fontSize: "12px" }}>
-                                                        Day {index + 1} - Partnership Services
-                                                    </label>
-                                                    {dayCard.visitingPlaces.length === 0 ? (
-                                                        <div style={{
-                                                            padding: "12px",
-                                                            borderRadius: "6px",
-                                                            background: "#fef3f2",
-                                                            border: "1px solid #fecaca",
-                                                            textAlign: "center",
-                                                            fontSize: "11px",
-                                                            color: "#ef4444"
-                                                        }}>
-                                                            🏨 Select visiting places first to see available services
-                                                        </div>
-                                                    ) : (
-                                                        <div>
-                                                            {dayCard.visitingPlaces.map(district => {
-                                                                const partnerships = partnershipData[district];
-                                                                if (!partnerships || !Array.isArray(partnerships)) return null;
-                                                                
-                                                                // Separate partnerships by type
-                                                                const transportServices = partnerships.filter((p: any) => p.partnershipType === 1);
-                                                                const activities = partnerships.filter((p: any) => p.partnershipType === 2);
-                                                                
-                                                                return (
-                                                                    <div key={district} style={{
-                                                                        marginBottom: "16px",
-                                                                        padding: "12px",
-                                                                        background: "#f8f9fa",
-                                                                        borderRadius: "8px",
-                                                                        border: "1px solid #e9ecef"
+
+                                            {/* Partnership Services Selection */}
+                                            <div className="formField">
+                                                <label className="formField-label" style={{ fontSize: "12px" }}>
+                                                    Day {index + 1} - Partnership Services
+                                                </label>
+                                                {dayCard.visitingPlaces.length === 0 ? (
+                                                    <div style={{
+                                                        padding: "12px",
+                                                        borderRadius: "6px",
+                                                        background: "#fef3f2",
+                                                        border: "1px solid #fecaca",
+                                                        textAlign: "center",
+                                                        fontSize: "11px",
+                                                        color: "#ef4444"
+                                                    }}>
+                                                        🏨 Select visiting places first to see available services
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        {dayCard.visitingPlaces.map(district => {
+                                                            const partnerships = partnershipData[district];
+                                                            if (!partnerships || !Array.isArray(partnerships)) return null;
+
+                                                            // Separate partnerships by type
+                                                            const transportServices = partnerships.filter((p: any) => p.partnershipType === 1);
+                                                            const activities = partnerships.filter((p: any) => p.partnershipType === 2);
+
+                                                            return (
+                                                                <div key={district} style={{
+                                                                    marginBottom: "16px",
+                                                                    padding: "12px",
+                                                                    background: "#f8f9fa",
+                                                                    borderRadius: "8px",
+                                                                    border: "1px solid #e9ecef"
+                                                                }}>
+                                                                    <div style={{
+                                                                        fontSize: "12px",
+                                                                        fontWeight: "600",
+                                                                        color: "#495057",
+                                                                        marginBottom: "12px",
+                                                                        display: "flex",
+                                                                        alignItems: "center",
+                                                                        gap: "6px"
                                                                     }}>
-                                                                        <div style={{
-                                                                            fontSize: "12px",
-                                                                            fontWeight: "600",
-                                                                            color: "#495057",
-                                                                            marginBottom: "12px",
-                                                                            display: "flex",
-                                                                            alignItems: "center",
-                                                                            gap: "6px"
-                                                                        }}>
-                                                                            📍 Services in {district}
-                                                                            {loadingPartnerships[district] && (
-                                                                                <span style={{ fontSize: "10px" }}>⏳ Loading...</span>
-                                                                            )}
-                                                                        </div>
-                                                                        
-                                                                        {/* Transport Services */}
-                                                                        {transportServices.length > 0 && (
-                                                                            <div style={{ marginBottom: "12px" }}>
-                                                                                <div style={{
-                                                                                    fontSize: "11px",
-                                                                                    fontWeight: "600",
-                                                                                    color: "#0066cc",
-                                                                                    marginBottom: "6px",
-                                                                                    display: "flex",
-                                                                                    alignItems: "center",
-                                                                                    gap: "4px"
-                                                                                }}>
-                                                                                    🚗 Transport Services ({transportServices.length})
-                                                                                </div>
-                                                                                <div style={{
-                                                                                    display: "flex",
-                                                                                    flexWrap: "wrap",
-                                                                                    gap: "6px",
-                                                                                    marginBottom: "8px"
-                                                                                }}>
-                                                                                    {transportServices.map((transport: any, idx: number) => (
-                                                                                        <label
-                                                                                            key={idx}
-                                                                                            style={{
-                                                                                                fontSize: "10px",
-                                                                                                padding: "6px 8px",
-                                                                                                background: dayCard.selectedHotels.some(h => h.hotel === transport && h.type === 'transport') ? "#e0f2fe" : "white",
-                                                                                                borderRadius: "4px",
-                                                                                                border: dayCard.selectedHotels.some(h => h.hotel === transport && h.type === 'transport') ? "1px solid #0ea5e9" : "1px solid #e5e7eb",
-                                                                                                color: "#374151",
-                                                                                                cursor: "pointer",
-                                                                                                transition: "all 0.2s",
-                                                                                                display: "flex",
-                                                                                                alignItems: "center",
-                                                                                                gap: "4px",
-                                                                                                userSelect: "none"
-                                                                                            }}
-                                                                                        >
-                                                                                            <input
-                                                                                                type="checkbox"
-                                                                                                checked={dayCard.selectedHotels.some(h => h.hotel === transport && h.type === 'transport')}
-                                                                                                onChange={() => handleServiceToggle(dayCard.id, district, transport, 'transport')}
-                                                                                                style={{ cursor: "pointer", transform: "scale(0.8)" }}
-                                                                                            />
-                                                                                            🚗 {transport.name || `Transport ${idx + 1}`}
-                                                                                        </label>
-                                                                                    ))}
-                                                                                </div>
-                                                                            </div>
+                                                                        📍 Services in {district}
+                                                                        {loadingPartnerships[district] && (
+                                                                            <span style={{ fontSize: "10px" }}>⏳ Loading...</span>
                                                                         )}
-                                                                        
-                                                                        {/* Activities */}
-                                                                        {activities.length > 0 && (
-                                                                            <div>
-                                                                                <div style={{
-                                                                                    fontSize: "11px",
-                                                                                    fontWeight: "600",
-                                                                                    color: "#dc2626",
-                                                                                    marginBottom: "6px",
-                                                                                    display: "flex",
-                                                                                    alignItems: "center",
-                                                                                    gap: "4px"
-                                                                                }}>
-                                                                                    🎯 Activities ({activities.length})
-                                                                                </div>
-                                                                                <div style={{
-                                                                                    display: "flex",
-                                                                                    flexWrap: "wrap",
-                                                                                    gap: "6px"
-                                                                                }}>
-                                                                                    {activities.map((activity: any, idx: number) => (
-                                                                                        <label
-                                                                                            key={idx}
-                                                                                            style={{
-                                                                                                fontSize: "10px",
-                                                                                                padding: "6px 8px",
-                                                                                                background: dayCard.selectedHotels.some(h => h.hotel === activity && h.type === 'activity') ? "#fef3f2" : "white",
-                                                                                                borderRadius: "4px",
-                                                                                                border: dayCard.selectedHotels.some(h => h.hotel === activity && h.type === 'activity') ? "1px solid #ef4444" : "1px solid #e5e7eb",
-                                                                                                color: "#374151",
-                                                                                                cursor: "pointer",
-                                                                                                transition: "all 0.2s",
-                                                                                                display: "flex",
-                                                                                                alignItems: "center",
-                                                                                                gap: "4px",
-                                                                                                userSelect: "none"
-                                                                                            }}
-                                                                                        >
-                                                                                            <input
-                                                                                                type="checkbox"
-                                                                                                checked={dayCard.selectedHotels.some(h => h.hotel === activity && h.type === 'activity')}
-                                                                                                onChange={() => handleServiceToggle(dayCard.id, district, activity, 'activity')}
-                                                                                                style={{ cursor: "pointer", transform: "scale(0.8)" }}
-                                                                                            />
-                                                                                            🎯 {activity.name || `Activity ${idx + 1}`}
-                                                                                        </label>
-                                                                                    ))}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                        
-                                                                        {/* Select Night Hotel */}
-                                                                        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #e9ecef" }}>
+                                                                    </div>
+
+                                                                    {/* Transport Services */}
+                                                                    {transportServices.length > 0 && (
+                                                                        <div style={{ marginBottom: "12px" }}>
                                                                             <div style={{
                                                                                 fontSize: "11px",
                                                                                 fontWeight: "600",
-                                                                                color: "#9333ea",
+                                                                                color: "#0066cc",
                                                                                 marginBottom: "6px",
                                                                                 display: "flex",
                                                                                 alignItems: "center",
                                                                                 gap: "4px"
                                                                             }}>
-                                                                                🏨 Select Night Hotel
+                                                                                🚗 Transport Services ({transportServices.length})
+                                                                            </div>
+                                                                            <div style={{
+                                                                                display: "flex",
+                                                                                flexWrap: "wrap",
+                                                                                gap: "6px",
+                                                                                marginBottom: "8px"
+                                                                            }}>
+                                                                                {transportServices.map((transport: any, idx: number) => (
+                                                                                    <label
+                                                                                        key={idx}
+                                                                                        style={{
+                                                                                            fontSize: "10px",
+                                                                                            padding: "6px 8px",
+                                                                                            background: dayCard.selectedHotels.some(h => h.hotel === transport && h.type === 'transport') ? "#e0f2fe" : "white",
+                                                                                            borderRadius: "4px",
+                                                                                            border: dayCard.selectedHotels.some(h => h.hotel === transport && h.type === 'transport') ? "1px solid #0ea5e9" : "1px solid #e5e7eb",
+                                                                                            color: "#374151",
+                                                                                            cursor: "pointer",
+                                                                                            transition: "all 0.2s",
+                                                                                            display: "flex",
+                                                                                            alignItems: "center",
+                                                                                            gap: "4px",
+                                                                                            userSelect: "none"
+                                                                                        }}
+                                                                                    >
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={dayCard.selectedHotels.some(h => h.hotel === transport && h.type === 'transport')}
+                                                                                            onChange={() => handleServiceToggle(dayCard.id, district, transport, 'transport')}
+                                                                                            style={{ cursor: "pointer", transform: "scale(0.8)" }}
+                                                                                        />
+                                                                                        🚗 {transport.name || `Transport ${idx + 1}`}
+                                                                                    </label>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Activities */}
+                                                                    {activities.length > 0 && (
+                                                                        <div>
+                                                                            <div style={{
+                                                                                fontSize: "11px",
+                                                                                fontWeight: "600",
+                                                                                color: "#dc2626",
+                                                                                marginBottom: "6px",
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                gap: "4px"
+                                                                            }}>
+                                                                                🎯 Activities ({activities.length})
                                                                             </div>
                                                                             <div style={{
                                                                                 display: "flex",
                                                                                 flexWrap: "wrap",
                                                                                 gap: "6px"
                                                                             }}>
-                                                                                {partnerships.filter((p: any) => p.partnershipType === 0).length > 0 ? (
-                                                                                    partnerships.filter((p: any) => p.partnershipType === 0).map((hotel: any, idx: number) => (
-                                                                                        <label
-                                                                                            key={idx}
-                                                                                            style={{
-                                                                                                fontSize: "10px",
-                                                                                                padding: "6px 8px",
-                                                                                                background: dayCard.selectedHotels.some(h => h.hotel === hotel && h.type === 'hotel') ? "#f3e8ff" : "white",
-                                                                                                borderRadius: "4px",
-                                                                                                border: dayCard.selectedHotels.some(h => h.hotel === hotel && h.type === 'hotel') ? "1px solid #9333ea" : "1px solid #e5e7eb",
-                                                                                                color: "#374151",
-                                                                                                cursor: "pointer",
-                                                                                                transition: "all 0.2s",
-                                                                                                display: "flex",
-                                                                                                alignItems: "center",
-                                                                                                gap: "4px",
-                                                                                                userSelect: "none"
-                                                                                            }}
-                                                                                        >
-                                                                                            <input
-                                                                                                type="checkbox"
-                                                                                                checked={dayCard.selectedHotels.some(h => h.hotel === hotel && h.type === 'hotel')}
-                                                                                                onChange={() => handleServiceToggle(dayCard.id, district, hotel, 'hotel')}
-                                                                                                style={{ cursor: "pointer", transform: "scale(0.8)" }}
-                                                                                            />
-                                                                                            🏨 {hotel.name || `Hotel ${idx + 1}`}
-                                                                                        </label>
-                                                                                    ))
-                                                                                ) : (
-                                                                                    <div style={{
-                                                                                        fontSize: "10px",
-                                                                                        color: "#6b7280",
-                                                                                        padding: "6px 0"
-                                                                                    }}>
-                                                                                        No hotels available
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                            
-                                                            {/* Selected Services Summary */}
-                                                            {dayCard.selectedHotels.length > 0 && (
-                                                                <div style={{
-                                                                    marginTop: "8px",
-                                                                    padding: "12px",
-                                                                    background: "#f0f9ff",
-                                                                    borderRadius: "8px",
-                                                                    border: "1px solid #bae6fd"
-                                                                }}>
-                                                                    <div style={{
-                                                                        fontSize: "11px",
-                                                                        fontWeight: "600",
-                                                                        color: "#0369a1",
-                                                                        marginBottom: "8px"
-                                                                    }}>
-                                                                        Selected Services ({dayCard.selectedHotels.length})
-                                                                    </div>
-                                                                    <div style={{
-                                                                        display: "flex",
-                                                                        flexWrap: "wrap",
-                                                                        gap: "6px"
-                                                                    }}>
-                                                                        {dayCard.selectedHotels.map((selectedService, idx) => {
-                                                                            const icon = selectedService.type === 'transport' ? '🚗' : '🎯';
-                                                                            const bgColor = selectedService.type === 'transport' ? '#e0f2fe' : '#fef3f2';
-                                                                            const borderColor = selectedService.type === 'transport' ? '#0ea5e9' : '#ef4444';
-                                                                            
-                                                                            return (
-                                                                                <div key={idx} style={{
-                                                                                    fontSize: "10px",
-                                                                                    padding: "4px 8px",
-                                                                                    background: bgColor,
-                                                                                    borderRadius: "4px",
-                                                                                    border: `1px solid ${borderColor}`,
-                                                                                    display: "flex",
-                                                                                    alignItems: "center",
-                                                                                    gap: "4px"
-                                                                                }}>
-                                                                                    <span>{icon} {selectedService.hotel.name || 'Service'}</span>
-                                                                                    <span style={{ color: "#6b7280", fontSize: "9px" }}>({selectedService.district})</span>
-                                                                                    <button
-                                                                                        onClick={() => handleServiceToggle(dayCard.id, selectedService.district, selectedService.hotel, selectedService.type)}
+                                                                                {activities.map((activity: any, idx: number) => (
+                                                                                    <label
+                                                                                        key={idx}
                                                                                         style={{
-                                                                                            background: "transparent",
-                                                                                            border: "none",
-                                                                                            color: "#ef4444",
                                                                                             fontSize: "10px",
+                                                                                            padding: "6px 8px",
+                                                                                            background: dayCard.selectedHotels.some(h => h.hotel === activity && h.type === 'activity') ? "#fef3f2" : "white",
+                                                                                            borderRadius: "4px",
+                                                                                            border: dayCard.selectedHotels.some(h => h.hotel === activity && h.type === 'activity') ? "1px solid #ef4444" : "1px solid #e5e7eb",
+                                                                                            color: "#374151",
                                                                                             cursor: "pointer",
-                                                                                            padding: "0",
-                                                                                            marginLeft: "2px"
-                                                                                        }}
-                                                                                    >
-                                                                                        ×
-                                                                                    </button>
-                                                                                </div>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                            
-                                                            {/* Service Details with Images */}
-                                                            {dayCard.selectedHotels.length > 0 && dayCard.selectedHotels.some(h => h.hotel.images && h.hotel.images.length > 0) && (
-                                                                <div style={{
-                                                                    marginTop: "12px",
-                                                                    padding: "12px",
-                                                                    background: "#fafafa",
-                                                                    borderRadius: "8px",
-                                                                    border: "1px solid #e5e7eb"
-                                                                }}>
-                                                                    <div style={{
-                                                                        fontSize: "11px",
-                                                                        fontWeight: "600",
-                                                                        color: "#374151",
-                                                                        marginBottom: "8px",
-                                                                        display: "flex",
-                                                                        alignItems: "center",
-                                                                        gap: "6px"
-                                                                    }}>
-                                                                        📋 Service Details & Images
-                                                                    </div>
-                                                                    {dayCard.selectedHotels.map((selectedService, idx) => {
-                                                                        if (!selectedService.hotel.images || selectedService.hotel.images.length === 0) return null;
-                                                                        
-                                                                        const icon = selectedService.type === 'transport' ? '🚗' : '🎯';
-                                                                        const typeLabel = selectedService.type === 'transport' ? 'Transport Service' : 'Activity';
-                                                                        
-                                                                        return (
-                                                                            <div key={idx} style={{
-                                                                                marginBottom: "16px",
-                                                                                padding: "12px",
-                                                                                background: "white",
-                                                                                borderRadius: "8px",
-                                                                                border: "1px solid #e5e7eb",
-                                                                                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)"
-                                                                            }}>
-                                                                                <div style={{
-                                                                                    display: "flex",
-                                                                                    justifyContent: "space-between",
-                                                                                    alignItems: "flex-start",
-                                                                                    marginBottom: "8px"
-                                                                                }}>
-                                                                                    <div>
-                                                                                        <div style={{
-                                                                                            fontSize: "12px",
-                                                                                            fontWeight: "600",
-                                                                                            color: "#1f2937",
-                                                                                            marginBottom: "4px",
+                                                                                            transition: "all 0.2s",
                                                                                             display: "flex",
                                                                                             alignItems: "center",
-                                                                                            gap: "6px"
-                                                                                        }}>
-                                                                                            {icon} {selectedService.hotel.name || 'Service'}
-                                                                                        </div>
-                                                                                        <div style={{
+                                                                                            gap: "4px",
+                                                                                            userSelect: "none"
+                                                                                        }}
+                                                                                    >
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={dayCard.selectedHotels.some(h => h.hotel === activity && h.type === 'activity')}
+                                                                                            onChange={() => handleServiceToggle(dayCard.id, district, activity, 'activity')}
+                                                                                            style={{ cursor: "pointer", transform: "scale(0.8)" }}
+                                                                                        />
+                                                                                        🎯 {activity.name || `Activity ${idx + 1}`}
+                                                                                    </label>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Select Night Hotel */}
+                                                                    <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #e9ecef" }}>
+                                                                        <div style={{
+                                                                            fontSize: "11px",
+                                                                            fontWeight: "600",
+                                                                            color: "#9333ea",
+                                                                            marginBottom: "6px",
+                                                                            display: "flex",
+                                                                            alignItems: "center",
+                                                                            gap: "4px"
+                                                                        }}>
+                                                                            🏨 Select Night Hotel
+                                                                        </div>
+                                                                        <div style={{
+                                                                            display: "flex",
+                                                                            flexWrap: "wrap",
+                                                                            gap: "6px"
+                                                                        }}>
+                                                                            {partnerships.filter((p: any) => p.partnershipType === 0).length > 0 ? (
+                                                                                partnerships.filter((p: any) => p.partnershipType === 0).map((hotel: any, idx: number) => (
+                                                                                    <label
+                                                                                        key={idx}
+                                                                                        style={{
                                                                                             fontSize: "10px",
-                                                                                            color: "#6b7280",
-                                                                                            background: "#f3f4f6",
-                                                                                            padding: "2px 6px",
+                                                                                            padding: "6px 8px",
+                                                                                            background: dayCard.selectedHotels.some(h => h.hotel === hotel && h.type === 'hotel') ? "#f3e8ff" : "white",
                                                                                             borderRadius: "4px",
-                                                                                            display: "inline-block",
-                                                                                            marginRight: "6px"
-                                                                                        }}>
-                                                                                            📍 {selectedService.district}
-                                                                                        </div>
-                                                                                        <div style={{
-                                                                                            fontSize: "10px",
-                                                                                            color: selectedService.type === 'transport' ? "#0369a1" : "#dc2626",
-                                                                                            background: selectedService.type === 'transport' ? "#e0f2fe" : "#fef3f2",
-                                                                                            padding: "2px 6px",
-                                                                                            borderRadius: "4px",
-                                                                                            display: "inline-block"
-                                                                                        }}>
-                                                                                            {typeLabel}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                                
-                                                                                {/* Service Description */}
-                                                                                {selectedService.hotel.description && (
-                                                                                    <div style={{
-                                                                                        marginBottom: "8px",
-                                                                                        padding: "8px",
-                                                                                        background: "#f8f9fa",
-                                                                                        borderRadius: "6px",
-                                                                                        border: "1px solid #e9ecef"
-                                                                                    }}>
-                                                                                        <div style={{
-                                                                                            fontSize: "10px",
-                                                                                            fontWeight: "600",
-                                                                                            color: "#495057",
-                                                                                            marginBottom: "4px"
-                                                                                        }}>
-                                                                                            📄 Description
-                                                                                        </div>
-                                                                                        <div style={{
-                                                                                            fontSize: "10px",
-                                                                                            color: "#6c757d",
-                                                                                            lineHeight: "1.4"
-                                                                                        }}>
-                                                                                            {selectedService.hotel.description}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )}
-                                                                                
-                                                                                {/* Images */}
+                                                                                            border: dayCard.selectedHotels.some(h => h.hotel === hotel && h.type === 'hotel') ? "1px solid #9333ea" : "1px solid #e5e7eb",
+                                                                                            color: "#374151",
+                                                                                            cursor: "pointer",
+                                                                                            transition: "all 0.2s",
+                                                                                            display: "flex",
+                                                                                            alignItems: "center",
+                                                                                            gap: "4px",
+                                                                                            userSelect: "none"
+                                                                                        }}
+                                                                                    >
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={dayCard.selectedHotels.some(h => h.hotel === hotel && h.type === 'hotel')}
+                                                                                            onChange={() => handleServiceToggle(dayCard.id, district, hotel, 'hotel')}
+                                                                                            style={{ cursor: "pointer", transform: "scale(0.8)" }}
+                                                                                        />
+                                                                                        🏨 {hotel.name || `Hotel ${idx + 1}`}
+                                                                                    </label>
+                                                                                ))
+                                                                            ) : (
                                                                                 <div style={{
-                                                                                    display: "grid",
-                                                                                    gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-                                                                                    gap: "8px"
+                                                                                    fontSize: "10px",
+                                                                                    color: "#6b7280",
+                                                                                    padding: "6px 0"
                                                                                 }}>
-                                                                                    {selectedService.hotel.images.map((image: string, imageIdx: number) => {
-                                                                                        // Handle base64 images
-                                                                                        const getImageSrc = (imgData: any) => {
-                                                                                            const imgString = typeof imgData === 'string' ? imgData : imgData.url || imgData.src || imgData.path;
-                                                                                            
-                                                                                            // Check if it's already a data URI
-                                                                                            if (imgString && imgString.startsWith('data:')) {
-                                                                                                return imgString;
-                                                                                            }
-                                                                                            
-                                                                                            // Check if it's base64 without data URI prefix
-                                                                                            if (imgString && (imgString.match(/^[A-Za-z0-9+/]*={0,2}$/) && imgString.length > 100)) {
-                                                                                                return `data:image/jpeg;base64,${imgString}`;
-                                                                                            }
-                                                                                            
-                                                                                            // Regular URL
-                                                                                            return imgString;
-                                                                                        };
-                                                                                        
-                                                                                        return (
-                                                                                            <div key={imageIdx} style={{
-                                                                                                background: "#f8f9fa",
-                                                                                                borderRadius: "6px",
-                                                                                                overflow: "hidden",
-                                                                                                border: "1px solid #dee2e6"
-                                                                                            }}>
-                                                                                                <img
-                                                                                                    src={getImageSrc(image)}
-                                                                                                    alt={`${selectedService.hotel.name || 'Service'} image ${imageIdx + 1}`}
-                                                                                                    style={{
-                                                                                                        width: "100%",
-                                                                                                        height: "80px",
-                                                                                                        objectFit: "cover",
-                                                                                                        display: "block"
-                                                                                                    }}
-                                                                                                    onError={(e) => {
-                                                                                                        e.currentTarget.style.display = 'none';
-                                                                                                        const parent = e.currentTarget.parentElement;
-                                                                                                        if (parent) {
-                                                                                                            parent.innerHTML = `<div style="padding: 8px; fontSize: 9px; color: #6c757d; textAlign: center;">Image not available</div>`;
-                                                                                                        }
-                                                                                                    }}
-                                                                                                />
-                                                                                            </div>
-                                                                                        );
-                                                                                    })}
+                                                                                    No hotels available
                                                                                 </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+
+                                                        {/* Selected Services Summary */}
+                                                        {dayCard.selectedHotels.length > 0 && (
+                                                            <div style={{
+                                                                marginTop: "8px",
+                                                                padding: "12px",
+                                                                background: "#f0f9ff",
+                                                                borderRadius: "8px",
+                                                                border: "1px solid #bae6fd"
+                                                            }}>
+                                                                <div style={{
+                                                                    fontSize: "11px",
+                                                                    fontWeight: "600",
+                                                                    color: "#0369a1",
+                                                                    marginBottom: "8px"
+                                                                }}>
+                                                                    Selected Services ({dayCard.selectedHotels.length})
+                                                                </div>
+                                                                <div style={{
+                                                                    display: "flex",
+                                                                    flexWrap: "wrap",
+                                                                    gap: "6px"
+                                                                }}>
+                                                                    {dayCard.selectedHotels.map((selectedService, idx) => {
+                                                                        const icon = selectedService.type === 'transport' ? '🚗' : '🎯';
+                                                                        const bgColor = selectedService.type === 'transport' ? '#e0f2fe' : '#fef3f2';
+                                                                        const borderColor = selectedService.type === 'transport' ? '#0ea5e9' : '#ef4444';
+
+                                                                        return (
+                                                                            <div key={idx} style={{
+                                                                                fontSize: "10px",
+                                                                                padding: "4px 8px",
+                                                                                background: bgColor,
+                                                                                borderRadius: "4px",
+                                                                                border: `1px solid ${borderColor}`,
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                gap: "4px"
+                                                                            }}>
+                                                                                <span>{icon} {selectedService.hotel.name || 'Service'}</span>
+                                                                                <span style={{ color: "#6b7280", fontSize: "9px" }}>({selectedService.district})</span>
+                                                                                <button
+                                                                                    onClick={() => handleServiceToggle(dayCard.id, selectedService.district, selectedService.hotel, selectedService.type)}
+                                                                                    style={{
+                                                                                        background: "transparent",
+                                                                                        border: "none",
+                                                                                        color: "#ef4444",
+                                                                                        fontSize: "10px",
+                                                                                        cursor: "pointer",
+                                                                                        padding: "0",
+                                                                                        marginLeft: "2px"
+                                                                                    }}
+                                                                                >
+                                                                                    ×
+                                                                                </button>
                                                                             </div>
                                                                         );
                                                                     })}
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Service Details with Images */}
+                                                        {dayCard.selectedHotels.length > 0 && dayCard.selectedHotels.some(h => h.hotel.images && h.hotel.images.length > 0) && (
+                                                            <div style={{
+                                                                marginTop: "12px",
+                                                                padding: "12px",
+                                                                background: "#fafafa",
+                                                                borderRadius: "8px",
+                                                                border: "1px solid #e5e7eb"
+                                                            }}>
+                                                                <div style={{
+                                                                    fontSize: "11px",
+                                                                    fontWeight: "600",
+                                                                    color: "#374151",
+                                                                    marginBottom: "8px",
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    gap: "6px"
+                                                                }}>
+                                                                    📋 Service Details & Images
+                                                                </div>
+                                                                {dayCard.selectedHotels.map((selectedService, idx) => {
+                                                                    if (!selectedService.hotel.images || selectedService.hotel.images.length === 0) return null;
+
+                                                                    const icon = selectedService.type === 'transport' ? '🚗' : '🎯';
+                                                                    const typeLabel = selectedService.type === 'transport' ? 'Transport Service' : 'Activity';
+
+                                                                    return (
+                                                                        <div key={idx} style={{
+                                                                            marginBottom: "16px",
+                                                                            padding: "12px",
+                                                                            background: "white",
+                                                                            borderRadius: "8px",
+                                                                            border: "1px solid #e5e7eb",
+                                                                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)"
+                                                                        }}>
+                                                                            <div style={{
+                                                                                display: "flex",
+                                                                                justifyContent: "space-between",
+                                                                                alignItems: "flex-start",
+                                                                                marginBottom: "8px"
+                                                                            }}>
+                                                                                <div>
+                                                                                    <div style={{
+                                                                                        fontSize: "12px",
+                                                                                        fontWeight: "600",
+                                                                                        color: "#1f2937",
+                                                                                        marginBottom: "4px",
+                                                                                        display: "flex",
+                                                                                        alignItems: "center",
+                                                                                        gap: "6px"
+                                                                                    }}>
+                                                                                        {icon} {selectedService.hotel.name || 'Service'}
+                                                                                    </div>
+                                                                                    <div style={{
+                                                                                        fontSize: "10px",
+                                                                                        color: "#6b7280",
+                                                                                        background: "#f3f4f6",
+                                                                                        padding: "2px 6px",
+                                                                                        borderRadius: "4px",
+                                                                                        display: "inline-block",
+                                                                                        marginRight: "6px"
+                                                                                    }}>
+                                                                                        📍 {selectedService.district}
+                                                                                    </div>
+                                                                                    <div style={{
+                                                                                        fontSize: "10px",
+                                                                                        color: selectedService.type === 'transport' ? "#0369a1" : "#dc2626",
+                                                                                        background: selectedService.type === 'transport' ? "#e0f2fe" : "#fef3f2",
+                                                                                        padding: "2px 6px",
+                                                                                        borderRadius: "4px",
+                                                                                        display: "inline-block"
+                                                                                    }}>
+                                                                                        {typeLabel}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Service Description */}
+                                                                            {selectedService.hotel.description && (
+                                                                                <div style={{
+                                                                                    marginBottom: "8px",
+                                                                                    padding: "8px",
+                                                                                    background: "#f8f9fa",
+                                                                                    borderRadius: "6px",
+                                                                                    border: "1px solid #e9ecef"
+                                                                                }}>
+                                                                                    <div style={{
+                                                                                        fontSize: "10px",
+                                                                                        fontWeight: "600",
+                                                                                        color: "#495057",
+                                                                                        marginBottom: "4px"
+                                                                                    }}>
+                                                                                        📄 Description
+                                                                                    </div>
+                                                                                    <div style={{
+                                                                                        fontSize: "10px",
+                                                                                        color: "#6c757d",
+                                                                                        lineHeight: "1.4"
+                                                                                    }}>
+                                                                                        {selectedService.hotel.description}
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Images */}
+                                                                            <div style={{
+                                                                                display: "grid",
+                                                                                gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                                                                                gap: "8px"
+                                                                            }}>
+                                                                                {selectedService.hotel.images.map((image: string, imageIdx: number) => {
+                                                                                    // Handle base64 images
+                                                                                    const getImageSrc = (imgData: any) => {
+                                                                                        const imgString = typeof imgData === 'string' ? imgData : imgData.url || imgData.src || imgData.path;
+
+                                                                                        // Check if it's already a data URI
+                                                                                        if (imgString && imgString.startsWith('data:')) {
+                                                                                            return imgString;
+                                                                                        }
+
+                                                                                        // Check if it's base64 without data URI prefix
+                                                                                        if (imgString && (imgString.match(/^[A-Za-z0-9+/]*={0,2}$/) && imgString.length > 100)) {
+                                                                                            return `data:image/jpeg;base64,${imgString}`;
+                                                                                        }
+
+                                                                                        // Regular URL
+                                                                                        return imgString;
+                                                                                    };
+
+                                                                                    return (
+                                                                                        <div key={imageIdx} style={{
+                                                                                            background: "#f8f9fa",
+                                                                                            borderRadius: "6px",
+                                                                                            overflow: "hidden",
+                                                                                            border: "1px solid #dee2e6"
+                                                                                        }}>
+                                                                                            <img
+                                                                                                src={getImageSrc(image)}
+                                                                                                alt={`${selectedService.hotel.name || 'Service'} image ${imageIdx + 1}`}
+                                                                                                style={{
+                                                                                                    width: "100%",
+                                                                                                    height: "80px",
+                                                                                                    objectFit: "cover",
+                                                                                                    display: "block"
+                                                                                                }}
+                                                                                                onError={(e) => {
+                                                                                                    e.currentTarget.style.display = 'none';
+                                                                                                    const parent = e.currentTarget.parentElement;
+                                                                                                    if (parent) {
+                                                                                                        parent.innerHTML = `<div style="padding: 8px; fontSize: 9px; color: #6c757d; textAlign: center;">Image not available</div>`;
+                                                                                                    }
+                                                                                                }}
+                                                                                            />
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
 
                                             {/* Generate Day Description */}
                                             <div style={{
@@ -2298,13 +2300,11 @@ export default function ReportGeneration() {
                     };
                     const totalPages = (generatedReport.templateDesign?.pages?.length ?? 1) + 1 + formData.dayCards.length;
 
-                    // ── export as PDF ─────────────────────────────────────
-                    const handleExportPDF = () => {
+                    // ── shared HTML builder ───────────────────────────────
+                    const buildReportHTML = (bodyExtra = '') => {
                         const content = document.getElementById('report-print-content');
-                        if (!content) return;
-                        const printWin = window.open('', '_blank');
-                        if (!printWin) { alert('Pop-ups are blocked. Please allow pop-ups for this site and try again.'); return; }
-                        printWin.document.write(`<!DOCTYPE html>
+                        if (!content) return '';
+                        return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8"/>
@@ -2335,21 +2335,100 @@ export default function ReportGeneration() {
 </head>
 <body>
 <div id="rpt-canvas">${content.innerHTML}</div>
-<script>
-  var imgs = Array.from(document.images);
-  var total = imgs.length, loaded = 0;
-  function tryPrint() { setTimeout(function(){ window.focus(); window.print(); window.close(); }, 400); }
-  if (total === 0) { tryPrint(); }
-  else {
-    imgs.forEach(function(img) {
-      if (img.complete) { if (++loaded >= total) tryPrint(); }
-      else { img.onload = img.onerror = function() { if (++loaded >= total) tryPrint(); }; }
-    });
-  }
-<\/script>
+${bodyExtra}
 </body>
-</html>`);
-                        printWin.document.close();
+</html>`;
+                    };
+
+                    // ── shared filename helper ────────────────────────────
+                    const reportFilename = (() => {
+                        const name = formData.customerName.trim().replace(/\s+/g, '_') || 'TravelReport';
+                        const digits = (formData.mobileNo ?? '').replace(/\D/g, '');
+                        const last4 = digits.length > 0 ? digits.slice(-4).padStart(4, '0') : '0000';
+                        return `${name}_${last4}`;
+                    })();
+
+                    // ── export as PDF (page-by-page, images pre-fetched as base64) ──
+                    const handleExportPDF = async () => {
+                        setExportMenuOpen(false);
+                        const content = document.getElementById('report-print-content');
+                        if (!content) return;
+                        setExportingPDF(true);
+                        try {
+
+                        // ① pre-convert every <img> to a base64 data URL to bypass CORS
+                        const toBase64 = (img: HTMLImageElement): Promise<void> =>
+                            new Promise(resolve => {
+                                if (!img.src || img.src.startsWith('data:')) { resolve(); return; }
+                                fetch(img.src, { mode: 'cors' })
+                                    .then(r => r.blob())
+                                    .then(blob => {
+                                        const reader = new FileReader();
+                                        reader.onload = () => { img.src = reader.result as string; resolve(); };
+                                        reader.onerror = () => resolve();
+                                        reader.readAsDataURL(blob);
+                                    })
+                                    .catch(() => resolve()); // if CORS fails, leave as-is (may be blank)
+                            });
+
+                        const allImgs = Array.from(content.querySelectorAll('img')) as HTMLImageElement[];
+                        await Promise.all(allImgs.map(toBase64));
+
+                        // ② capture each page individually so overflow:hidden and transforms are respected
+                        const [h2cMod, jsPDFMod] = await Promise.all([
+                            import('html2canvas'),
+                            import('jspdf'),
+                        ]);
+                        const html2canvas = (h2cMod as any).default ?? h2cMod;
+                        const { jsPDF } = jsPDFMod as any;
+
+                        const pageEls = Array.from(content.querySelectorAll('.rpt-page-wrap')) as HTMLElement[];
+                        if (pageEls.length === 0) return;
+
+                        const pdf = new jsPDF({ unit: 'px', format: [700, 991], orientation: 'portrait', compress: true });
+
+                        for (let i = 0; i < pageEls.length; i++) {
+                            const el = pageEls[i];
+                            // ③ for template-cover pages that use CSS transform:scale, temporarily
+                            //    snapshot the inner scaled div as its own canvas at 595×842 then
+                            //    draw it stretched to 700×991 — avoids bleed/overlap
+                            const canvas: HTMLCanvasElement = await html2canvas(el, {
+                                scale: 2,
+                                useCORS: true,
+                                allowTaint: true,
+                                backgroundColor: '#ffffff',
+                                width: 700,
+                                height: 991,
+                                windowWidth: 700,
+                                windowHeight: 991,
+                                x: 0,
+                                y: 0,
+                            });
+                            if (i > 0) pdf.addPage([700, 991], 'portrait');
+                            pdf.addImage(
+                                canvas.toDataURL('image/jpeg', 0.95),
+                                'JPEG', 0, 0, 700, 991,
+                            );
+                        }
+
+                        pdf.save(`${reportFilename}.pdf`);
+                        } finally { setExportingPDF(false); }
+                    };
+
+                    // ── export as HTML ────────────────────────────────────
+                    const handleExportHTML = () => {
+                        setExportMenuOpen(false);
+                        const html = buildReportHTML();
+                        if (!html) return;
+                        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${reportFilename}.html`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
                     };
 
                     // ── shared page shell ─────────────────────────────────
@@ -2382,6 +2461,7 @@ export default function ReportGeneration() {
                             background: 'linear-gradient(160deg, #0a0a18 0%, #12121f 100%)',
                             display: 'flex', flexDirection: 'column', overflow: 'hidden',
                         }}>
+                            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                             {/* ── top bar ── */}
                             <div style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -2403,28 +2483,124 @@ export default function ReportGeneration() {
                                         </div>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button
-                                        onClick={handleExportPDF}
-                                        style={{
-                                            background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)',
-                                            border: 'none',
-                                            color: 'white', borderRadius: '8px', padding: '7px 18px',
-                                            cursor: 'pointer', fontSize: '13px', fontWeight: 700,
-                                            display: 'flex', alignItems: 'center', gap: '6px',
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    {/* ── Export split button ── */}
+                                    <div style={{ position: 'relative' }}>
+                                        {/* main + chevron row */}
+                                        <div style={{
+                                            display: 'flex', borderRadius: '8px', overflow: 'visible',
                                             boxShadow: '0 4px 14px rgba(255,123,46,0.35)',
-                                            transition: 'all 0.15s',
-                                        }}
-                                        onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                                    >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                            <polyline points="7 10 12 15 17 10"/>
-                                            <line x1="12" y1="15" x2="12" y2="3"/>
-                                        </svg>
-                                        Export PDF
-                                    </button>
+                                        }}>
+                                            {/* main action — Export PDF */}
+                                            <button
+                                                onClick={handleExportPDF}
+                                                disabled={exportingPDF}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)',
+                                                    border: 'none', borderRadius: '8px 0 0 8px',
+                                                    color: 'white', padding: '7px 16px',
+                                                    cursor: exportingPDF ? 'not-allowed' : 'pointer',
+                                                    fontSize: '13px', fontWeight: 700,
+                                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                                    opacity: exportingPDF ? 0.7 : 1,
+                                                    transition: 'opacity 0.15s',
+                                                }}
+                                                onMouseEnter={e => { if (!exportingPDF) e.currentTarget.style.opacity = '0.88'; }}
+                                                onMouseLeave={e => { if (!exportingPDF) e.currentTarget.style.opacity = '1'; }}
+                                            >
+                                                {exportingPDF ? (
+                                                    <>
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                                            style={{ animation: 'spin 1s linear infinite' }}>
+                                                            <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
+                                                            <path d="M12 2a10 10 0 0 1 10 10" />
+                                                        </svg>
+                                                        Generating…
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                            <polyline points="7 10 12 15 17 10" />
+                                                            <line x1="12" y1="15" x2="12" y2="3" />
+                                                        </svg>
+                                                        Export PDF
+                                                    </>
+                                                )}
+                                            </button>
+                                            {/* divider */}
+                                            <div style={{ width: '1px', background: 'rgba(255,255,255,0.3)', flexShrink: 0, alignSelf: 'stretch' }} />
+                                            {/* chevron toggle */}
+                                            <button
+                                                onClick={() => setExportMenuOpen(o => !o)}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #F0A94D 0%, #FF7B2E 100%)',
+                                                    border: 'none', borderRadius: '0 8px 8px 0',
+                                                    color: 'white', padding: '7px 9px',
+                                                    cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                                    transition: 'opacity 0.15s',
+                                                }}
+                                                onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                                            >
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"
+                                                    style={{ transform: exportMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.18s' }}>
+                                                    <polyline points="6 9 12 15 18 9" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        {/* dropdown menu */}
+                                        {exportMenuOpen && (
+                                            <div style={{
+                                                position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                                                background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '10px', overflow: 'hidden',
+                                                boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+                                                minWidth: '170px', zIndex: 100,
+                                            }}>
+                                                {/* PDF option */}
+                                                <button
+                                                    onClick={handleExportPDF}
+                                                    style={{
+                                                        width: '100%', background: 'none', border: 'none',
+                                                        color: 'rgba(255,255,255,0.88)', padding: '10px 16px',
+                                                        cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+                                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                                        textAlign: 'left', transition: 'background 0.12s',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,123,46,0.15)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+                                                >
+                                                    <span style={{ fontSize: '16px' }}>📄</span>
+                                                    <div>
+                                                        <div>Export as PDF</div>
+                                                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>Print / save via browser</div>
+                                                    </div>
+                                                </button>
+                                                {/* divider */}
+                                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '0 8px' }} />
+                                                {/* HTML option */}
+                                                <button
+                                                    onClick={handleExportHTML}
+                                                    style={{
+                                                        width: '100%', background: 'none', border: 'none',
+                                                        color: 'rgba(255,255,255,0.88)', padding: '10px 16px',
+                                                        cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+                                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                                        textAlign: 'left', transition: 'background 0.12s',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,179,237,0.15)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+                                                >
+                                                    <span style={{ fontSize: '16px' }}>🌐</span>
+                                                    <div>
+                                                        <div>Export as HTML</div>
+                                                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>Download .html file</div>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={() => setReportModalOpen(false)}
                                         style={{
@@ -2492,11 +2668,11 @@ export default function ReportGeneration() {
                                     const infoPage = (generatedReport.templateDesign?.pages?.length ?? 1) + 1;
                                     const customerInitials = formData.customerName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
                                     const infoFields = [
-                                        { icon: '👤', label: 'Full Name',      value: formData.customerName },
-                                        { icon: '🌍', label: 'Country',        value: formData.country },
-                                        { icon: '📱', label: 'Mobile',         value: formData.mobileNo },
-                                        { icon: '🗓️', label: 'Duration',       value: formData.daysAndNights },
-                                        { icon: '👥', label: 'Passengers',     value: formData.numberOfPassengers },
+                                        { icon: '👤', label: 'Full Name', value: formData.customerName },
+                                        { icon: '🌍', label: 'Country', value: formData.country },
+                                        { icon: '📱', label: 'Mobile', value: formData.mobileNo },
+                                        { icon: '🗓️', label: 'Duration', value: formData.daysAndNights },
+                                        { icon: '👥', label: 'Passengers', value: formData.numberOfPassengers },
                                         ...(formData.transportationMode ? [{ icon: '🚌', label: 'Transport', value: formData.transportationMode }] : []),
                                     ];
                                     return (
@@ -2649,9 +2825,9 @@ export default function ReportGeneration() {
                                     dayCard.selectedPlaces.forEach(sp => placeImgs(sp.place).slice(0, 2).forEach(u => heroImgs.push(u)));
                                     // Services with images
                                     const svcColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-                                        hotel:     { bg: '#f5f0ff', border: '#ddd6fe', text: '#5b21b6', badge: '#7c3aed' },
+                                        hotel: { bg: '#f5f0ff', border: '#ddd6fe', text: '#5b21b6', badge: '#7c3aed' },
                                         transport: { bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8', badge: '#2563eb' },
-                                        activity:  { bg: '#fff1f0', border: '#fecaca', text: '#b91c1c', badge: '#dc2626' },
+                                        activity: { bg: '#fff1f0', border: '#fecaca', text: '#b91c1c', badge: '#dc2626' },
                                     };
                                     return (
                                         <div key={dayCard.id} className="rpt-page-wrap" style={{ flexShrink: 0, marginBottom: '48px' }}>
