@@ -34,3 +34,36 @@ export const summarizeChat = async (messages: ChatMessage[], token: string): Pro
         throw error;
     }
 };
+
+export interface GenerateDayDescriptionRequest {
+    dayNumber: number;
+    date?: string;
+    places: string[];
+    visitingPlaces: string[];
+    services: string[];
+}
+
+export interface GenerateDayDescriptionResponse {
+    description: string;
+}
+
+export const generateDayDescription = async (
+    request: GenerateDayDescriptionRequest,
+    token: string
+): Promise<GenerateDayDescriptionResponse> => {
+    try {
+        const response = await axios.post<GenerateDayDescriptionResponse>(
+            `${API_URL}/generate-day-description`,
+            request,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};

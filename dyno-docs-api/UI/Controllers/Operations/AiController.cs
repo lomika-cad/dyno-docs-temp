@@ -97,6 +97,95 @@ Keep it concise.";
             return Ok(new SummarizeResponse(summary));
         }
 
+        public record GenerateDayDescriptionRequest(
+            int DayNumber,
+            string? Date,
+            string[] Places,
+            string[] VisitingPlaces,
+            string[] Services
+        );
+        public record GenerateDayDescriptionResponse(string Description);
+
+        [HttpPost("generate-day-description")]
+        public async Task<ActionResult<GenerateDayDescriptionResponse>> GenerateDayDescription([FromBody] GenerateDayDescriptionRequest request)
+        {
+            if (request == null)
+                return BadRequest("Request body is required.");
+
+            var apiKey = _config["Ai:GroqApiKey"];
+            var model = _config["Ai:GroqModel"] ?? "llama-3.1-8b-instant";
+
+            if (string.IsNullOrWhiteSpace(apiKey))
+                return StatusCode(500, "Groq API key not configured in appsettings.");
+
+            var systemPrompt =
+@"You are a professional travel itinerary writer for a tourism agency.
+Generate an engaging day description for a travel itinerary as bullet points.
+Use '•' for each bullet point. Each bullet should be concise and informative (1-2 sentences max).
+Focus on: places to explore, scenic highlights, activities, transport arrangements, and accommodation.
+Keep the tone professional, exciting, and enticing for travellers.
+Generate exactly 6-9 bullet points. Do not include headings or extra formatting — just the bullet points.";
+
+            var placesInfo = request.Places?.Length > 0
+                ? string.Join(", ", request.Places)
+                : "Not specified";
+            var regionsInfo = request.VisitingPlaces?.Length > 0
+                ? string.Join(", ", request.VisitingPlaces)
+                : "Not specified";
+            var servicesInfo = request.Services?.Length > 0
+                ? string.Join(", ", request.Services)
+                : "None";
+
+            var userMessage = $@"Generate bullet point descriptions for Day {request.DayNumber}{(string.IsNullOrWhiteSpace(request.Date) ? "" : $" ({request.Date})")} of the travel itinerary.
+
+Regions/Districts visited: {regionsInfo}
+Places to visit: {placesInfo}
+Transport & activity services: {servicesInfo}
+
+Write 6-9 engaging bullet points for this day.";
+
+            var groqRequest = new GroqChatRequest(
+                model,
+                new List<GroqMessage>
+                {
+                    new("system", systemPrompt),
+                    new("user", userMessage)
+                },
+                0.7
+            );
+
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", apiKey);
+
+            var json = JsonSerializer.Serialize(groqRequest,
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(
+                "https://api.groq.com/openai/v1/chat/completions",
+                content
+            );
+
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+                return StatusCode((int)response.StatusCode, responseBody);
+
+            var parsed = JsonSerializer.Deserialize<GroqChatResponse>(
+                responseBody,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+
+            var description = parsed?.choices?.FirstOrDefault()?.message?.content?.Trim();
+
+            if (string.IsNullOrWhiteSpace(description))
+                return StatusCode(500, "No description returned.");
+
+            return Ok(new GenerateDayDescriptionResponse(description));
+        }
+
         private static string BuildTranscript(SummarizeRequest request)
         {
             // Prefer `chat` when provided

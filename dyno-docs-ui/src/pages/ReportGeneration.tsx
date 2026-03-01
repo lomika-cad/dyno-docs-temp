@@ -1,10 +1,13 @@
 import { InfoOutline, NavigateNext, NavigateBefore } from "@mui/icons-material";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useState, useEffect, useRef } from "react";
 import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import { showSuccess, showError } from "../components/Toast";
 import { getDataByDistrict } from "../services/agency-data-api";
 import { getPartnershipByDistrict } from "../services/partnership-api";
+import { generateDayDescription } from "../services/ai-api";
 
 export default function ReportGeneration() {
     const [infoOpen, setInfoOpen] = useState(false);
@@ -15,6 +18,8 @@ export default function ReportGeneration() {
     const [loadingDistricts, setLoadingDistricts] = useState<{[key: string]: boolean}>({});
     const [partnershipData, setPartnershipData] = useState<{[key: string]: any}>({});
     const [loadingPartnerships, setLoadingPartnerships] = useState<{[key: string]: boolean}>({});
+    const [generatedDescriptions, setGeneratedDescriptions] = useState<{[key: number]: string}>({});
+    const [generatingDescriptionFor, setGeneratingDescriptionFor] = useState<number | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -200,6 +205,44 @@ export default function ReportGeneration() {
                     : card
             ),
         }));
+    };
+
+    const handleGenerateDescription = async (dayCard: typeof formData.dayCards[0], dayIndex: number) => {
+        const token = sessionStorage.getItem("dd_token");
+        if (!token) {
+            showError("Authentication required. Please log in again.");
+            return;
+        }
+
+        setGeneratingDescriptionFor(dayCard.id);
+
+        try {
+            const places = dayCard.selectedPlaces.map((sp: any) =>
+                sp.place?.name || sp.place?.placeName || sp.place?.toString() || "Unknown Place"
+            );
+            const services = dayCard.selectedHotels.map((sh: any) =>
+                `${sh.type === 'hotel' ? '🏨' : sh.type === 'transport' ? '🚗' : '🎯'} ${sh.hotel?.name || 'Service'} (${sh.district})`
+            );
+
+            const response = await generateDayDescription(
+                {
+                    dayNumber: dayIndex + 1,
+                    date: dayCard.selectedDay || undefined,
+                    places,
+                    visitingPlaces: dayCard.visitingPlaces,
+                    services,
+                },
+                token
+            );
+
+            setGeneratedDescriptions(prev => ({ ...prev, [dayCard.id]: response.description }));
+            showSuccess(`Day ${dayIndex + 1} description generated!`);
+        } catch (error: any) {
+            console.error("Error generating description:", error);
+            showError(error?.response?.data?.message || "Failed to generate description. Please try again.");
+        } finally {
+            setGeneratingDescriptionFor(null);
+        }
     };
 
     const fetchPartnershipData = async (district: string) => {
@@ -1739,6 +1782,117 @@ export default function ReportGeneration() {
                                                         </div>
                                                     )}
                                                 </div>
+
+                                            {/* Generate Day Description */}
+                                            <div style={{
+                                                marginTop: "20px",
+                                                paddingTop: "16px",
+                                                borderTop: "1px solid rgba(255, 123, 46, 0.1)"
+                                            }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleGenerateDescription(dayCard, index)}
+                                                    disabled={generatingDescriptionFor === dayCard.id}
+                                                    style={{
+                                                        background: 'white',
+                                                        border: '2px solid transparent',
+                                                        backgroundImage: 'linear-gradient(white, white), linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
+                                                        backgroundOrigin: 'border-box',
+                                                        backgroundClip: 'padding-box, border-box',
+                                                        color: '#a855f7',
+                                                        fontWeight: '600',
+                                                        padding: '8px 16px',
+                                                        borderRadius: '8px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        cursor: generatingDescriptionFor === dayCard.id ? 'not-allowed' : 'pointer',
+                                                        transition: 'all 0.3s ease',
+                                                        fontSize: '13px',
+                                                        opacity: generatingDescriptionFor === dayCard.id ? 0.7 : 1,
+                                                        marginBottom: '12px'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (generatingDescriptionFor !== dayCard.id) {
+                                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                        e.currentTarget.style.boxShadow = 'none';
+                                                    }}
+                                                >
+                                                    {generatingDescriptionFor === dayCard.id ? (
+                                                        <CircularProgress size={14} sx={{ color: '#a855f7' }} />
+                                                    ) : (
+                                                        <SmartToyIcon fontSize="small" style={{
+                                                            background: 'linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
+                                                            WebkitBackgroundClip: 'text',
+                                                            WebkitTextFillColor: 'transparent',
+                                                            backgroundClip: 'text'
+                                                        }} />
+                                                    )}
+                                                    <span style={{
+                                                        background: 'linear-gradient(90deg, #00d4ff 0%, #a855f7 25%, #ec4899 50%, #ef4444 75%, #f97316 100%)',
+                                                        WebkitBackgroundClip: 'text',
+                                                        WebkitTextFillColor: 'transparent',
+                                                        backgroundClip: 'text'
+                                                    }}>
+                                                        {generatingDescriptionFor === dayCard.id
+                                                            ? 'Generating...'
+                                                            : `Generate Day ${index + 1} Description`}
+                                                    </span>
+                                                </button>
+
+                                                {/* Generated Description Output */}
+                                                {generatedDescriptions[dayCard.id] && (
+                                                    <div style={{
+                                                        background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                                                        border: '1px solid #d8b4fe',
+                                                        borderRadius: '10px',
+                                                        padding: '14px',
+                                                    }}>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            marginBottom: '10px',
+                                                            fontSize: '12px',
+                                                            fontWeight: '700',
+                                                            color: '#7c3aed'
+                                                        }}>
+                                                            <SmartToyIcon fontSize="small" style={{ fontSize: '14px' }} />
+                                                            AI Generated — Day {index + 1} Description
+                                                        </div>
+                                                        <div style={{ fontSize: '12px', color: '#374151', lineHeight: '1.7' }}>
+                                                            {generatedDescriptions[dayCard.id].split('\n').map((line, i) => (
+                                                                <div key={i} style={{ marginBottom: line.startsWith('•') ? '4px' : '0' }}>
+                                                                    {line}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleGenerateDescription(dayCard, index)}
+                                                            style={{
+                                                                marginTop: '10px',
+                                                                background: 'transparent',
+                                                                border: '1px solid #c084fc',
+                                                                color: '#7c3aed',
+                                                                borderRadius: '6px',
+                                                                padding: '4px 10px',
+                                                                fontSize: '11px',
+                                                                cursor: 'pointer',
+                                                                fontWeight: '600'
+                                                            }}
+                                                        >
+                                                            ↺ Regenerate
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+
                                         </div>
                                     ))}
                                 </div>
@@ -1976,6 +2130,42 @@ export default function ReportGeneration() {
                                 ⏳
                             </div>
                             Generating your report...
+                        </div>
+                    </div>
+                )}
+
+                {/* AI Thinking Modal */}
+                {generatingDescriptionFor !== null && (
+                    <div className="ddModal" role="dialog" aria-modal="true" aria-label="AI Processing">
+                        <div className="ddModal-backdrop" style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }} />
+                        <div className="ddModal-card" style={{ maxWidth: '400px' }}>
+                            <div style={{
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 20px'
+                            }}>
+                                <SmartToyIcon style={{ fontSize: 40, color: 'white' }} />
+                            </div>
+                            <div className="ddModal-title" style={{ fontSize: '22px', marginBottom: '10px' }}>
+                                Thinking...
+                            </div>
+                            <div className="ddModal-subtitle" style={{ marginBottom: '28px' }}>
+                                Crafting an engaging itinerary description for Day {formData.dayCards.findIndex(c => c.id === generatingDescriptionFor) + 1}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                <CircularProgress
+                                    size={40}
+                                    sx={{
+                                        color: '#764ba2',
+                                        '& .MuiCircularProgress-circle': { strokeLinecap: 'round' }
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
                 )}
