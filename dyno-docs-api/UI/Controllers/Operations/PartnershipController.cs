@@ -30,6 +30,19 @@ public class PartnershipController(IMediator mediator) : ControllerBase
         var res = await mediator.Send(new GetPartnerships());
         return Ok(res);
     }
+    
+    [HttpGet("{tenantId}/{district}")]
+    [ProducesResponseType(typeof(List<Partnership>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPartnershipsByTenantAndDistrict(Guid tenantId, string district)
+    {
+        var query = new GetPartnershipsByDistrict()
+        {
+            TenantId = tenantId,
+            District = district
+        };
+        var res = await mediator.Send(query);
+        return Ok(res);
+    }
 
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]

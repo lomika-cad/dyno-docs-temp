@@ -797,7 +797,7 @@ export default function ReportGeneration() {
                                             {/* Card Content */}
                                             <div style={{
                                                 display: "grid",
-                                                gridTemplateColumns: "1fr 1fr",
+                                                gridTemplateColumns: "1fr",
                                                 gap: "16px",
                                                 marginBottom: "16px"
                                             }}>
@@ -813,26 +813,6 @@ export default function ReportGeneration() {
                                                         onChange={(e) => handleDayCardChange(dayCard.id, 'selectedDay', e.target.value)}
                                                         style={{ fontSize: "13px" }}
                                                     />
-                                                </div>
-
-                                                {/* Hotel Selection */}
-                                                <div className="formField">
-                                                    <label className="formField-label" style={{ fontSize: "12px" }}>
-                                                        Night {index + 1} - Select Hotel
-                                                    </label>
-                                                    <select
-                                                        className="formField-input"
-                                                        value={dayCard.selectedHotel}
-                                                        onChange={(e) => handleDayCardChange(dayCard.id, 'selectedHotel', e.target.value)}
-                                                        style={{ cursor: "pointer", fontSize: "13px" }}
-                                                    >
-                                                        <option value="">Select a hotel</option>
-                                                        {hotelOptions.map((hotel) => (
-                                                            <option key={hotel} value={hotel}>
-                                                                {hotel}
-                                                            </option>
-                                                        ))}
-                                                    </select>
                                                 </div>
                                             </div>
 
@@ -1267,20 +1247,27 @@ export default function ReportGeneration() {
                                                 </div>
                                             )}
 
-                                            {/* Remarks */}
-                                            <div className="formField">
-                                                <label className="formField-label" style={{ fontSize: "12px" }}>
-                                                    Remarks
-                                                </label>
-                                                <textarea
-                                                    className="formField-textarea"
-                                                    placeholder="Enter remarks for this day"
-                                                    value={dayCard.remarks}
-                                                    onChange={(e) => handleDayCardChange(dayCard.id, 'remarks', e.target.value)}
-                                                    rows={3}
-                                                    style={{ fontSize: "13px", resize: "vertical" }}
-                                                />
-                                            </div>
+                                            
+
+                                                {/* Hotel Selection */}
+                                                <div className="formField">
+                                                    <label className="formField-label" style={{ fontSize: "12px" }}>
+                                                        Night {index + 1} - Select Hotel
+                                                    </label>
+                                                    <select
+                                                        className="formField-input"
+                                                        value={dayCard.selectedHotel}
+                                                        onChange={(e) => handleDayCardChange(dayCard.id, 'selectedHotel', e.target.value)}
+                                                        style={{ cursor: "pointer", fontSize: "13px" }}
+                                                    >
+                                                        <option value="">Select a hotel</option>
+                                                        {hotelOptions.map((hotel) => (
+                                                            <option key={hotel} value={hotel}>
+                                                                {hotel}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
                                         </div>
                                     ))}
                                 </div>
