@@ -8,10 +8,11 @@ import { showSuccess, showError } from "../components/Toast";
 import { getDataByDistrict } from "../services/agency-data-api";
 import { getPartnershipByDistrict } from "../services/partnership-api";
 import { generateDayDescription } from "../services/ai-api";
+import { getUserTemplates } from "../services/template-api";
 
 export default function ReportGeneration() {
     const [infoOpen, setInfoOpen] = useState(false);
-    const [currentStep, setCurrentStep] = useState(2);
+    const [currentStep, setCurrentStep] = useState(3);
     const [isLoading, setIsLoading] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [districtData, setDistrictData] = useState<{[key: string]: any}>({});
@@ -20,6 +21,8 @@ export default function ReportGeneration() {
     const [loadingPartnerships, setLoadingPartnerships] = useState<{[key: string]: boolean}>({});
     const [generatedDescriptions, setGeneratedDescriptions] = useState<{[key: number]: string}>({});
     const [generatingDescriptionFor, setGeneratingDescriptionFor] = useState<number | null>(null);
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
     const dayCardRefs = useRef<{[key: number]: HTMLDivElement | null}>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +39,19 @@ export default function ReportGeneration() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    // Fetch templates when reaching step 3
+    useEffect(() => {
+        if (currentStep !== 3) return;
+        const token = sessionStorage.getItem("dd_token");
+        const userId = sessionStorage.getItem("dd_user_id");
+        if (!token || !userId) return;
+        setLoadingTemplates(true);
+        getUserTemplates(userId, token)
+            .then((data) => setTemplates(Array.isArray(data) ? data : data?.templates ?? data?.data ?? []))
+            .catch(() => showError("Failed to load templates."))
+            .finally(() => setLoadingTemplates(false));
+    }, [currentStep]);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -94,13 +110,6 @@ export default function ReportGeneration() {
         "Moneragala",
         "Ratnapura",
         "Kegalle"
-    ];
-
-    const templateOptions = [
-        { id: 1, name: "Template 1" },
-        { id: 2, name: "Template 2" },
-        { id: 3, name: "Template 3" },
-        { id: 4, name: "Template 4" },
     ];
 
     const handleInputChange = (
@@ -1938,66 +1947,117 @@ export default function ReportGeneration() {
                                     Choose a template for your report
                                     generation:
                                 </p>
-                                <div
-                                    style={{
-                                        display: "grid",
-                                        gridTemplateColumns:
-                                            "repeat(auto-fill, minmax(150px, 1fr))",
-                                        gap: "16px",
-                                    }}
-                                >
-                                    {templateOptions.map((template) => (
-                                        <div
-                                            key={template.id}
-                                            onClick={() =>
-                                                handleTemplateSelect(
-                                                    template.id
-                                                )
-                                            }
-                                            style={{
-                                                padding: "16px",
-                                                borderRadius: "12px",
-                                                border:
-                                                    formData.selectedTemplate ===
-                                                    template.id.toString()
-                                                        ? "2px solid var(--color-primary)"
-                                                        : "1px solid #e5e7eb",
-                                                background:
-                                                    formData.selectedTemplate ===
-                                                    template.id.toString()
-                                                        ? "linear-gradient(135deg, rgba(255, 123, 46, 0.1) 0%, rgba(255, 123, 46, 0.05) 100%)"
-                                                        : "linear-gradient(135deg, #f8f9fa 0%, #f3f4f6 100%)",
-                                                cursor: "pointer",
-                                                transition: "all 0.2s",
-                                                textAlign: "center",
-                                                minHeight: "120px",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <div>
+                                {loadingTemplates ? (
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px", gap: "12px", color: "#6b7280", fontSize: "13px" }}>
+                                        <CircularProgress size={20} sx={{ color: "var(--color-primary)" }} />
+                                        Loading templates...
+                                    </div>
+                                ) : templates.length === 0 ? (
+                                    <div style={{ padding: "32px", textAlign: "center", color: "#6b7280", fontSize: "13px", background: "#f9fafb", borderRadius: "12px", border: "1px dashed #e5e7eb" }}>
+                                        <div style={{ fontSize: "32px", marginBottom: "8px" }}>📭</div>
+                                        No templates assigned to your account.
+                                    </div>
+                                ) : (
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                                            gap: "16px",
+                                        }}
+                                    >
+                                        {templates.map((template) => {
+                                            const templateId = template.id ?? template.templateId;
+                                            const isSelected = formData.selectedTemplate === templateId?.toString();
+                                            const thumbnail = template.templateThumbnail;
+                                            const thumbnailSrc = thumbnail
+                                                ? thumbnail.startsWith("data:")
+                                                    ? thumbnail
+                                                    : `data:image/png;base64,${thumbnail}`
+                                                : null;
+                                            return (
                                                 <div
+                                                    key={templateId}
+                                                    onClick={() => handleTemplateSelect(templateId)}
                                                     style={{
-                                                        fontSize: "32px",
-                                                        marginBottom: "8px",
+                                                        borderRadius: "12px",
+                                                        border: isSelected
+                                                            ? "2px solid var(--color-primary)"
+                                                            : "1px solid #e5e7eb",
+                                                        background: isSelected
+                                                            ? "linear-gradient(135deg, rgba(255, 123, 46, 0.08) 0%, rgba(255, 123, 46, 0.03) 100%)"
+                                                            : "white",
+                                                        cursor: "pointer",
+                                                        transition: "all 0.2s",
+                                                        overflow: "hidden",
+                                                        boxShadow: isSelected
+                                                            ? "0 0 0 3px rgba(255, 123, 46, 0.2)"
+                                                            : "0 1px 4px rgba(0,0,0,0.06)",
                                                     }}
                                                 >
-                                                    📄
+                                                    {/* Thumbnail */}
+                                                    <div style={{
+                                                        width: "100%",
+                                                        height: "140px",
+                                                        background: "#f3f4f6",
+                                                        overflow: "hidden",
+                                                        position: "relative",
+                                                        borderBottom: "1px solid #e5e7eb",
+                                                    }}>
+                                                        {thumbnailSrc ? (
+                                                            <img
+                                                                src={thumbnailSrc}
+                                                                alt={template.name ?? template.templateName ?? "Template"}
+                                                                style={{
+                                                                    width: "100%",
+                                                                    height: "100%",
+                                                                    objectFit: "cover",
+                                                                    display: "block",
+                                                                }}
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display = "none";
+                                                                    const parent = e.currentTarget.parentElement;
+                                                                    if (parent) parent.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:36px;">📄</div>`;
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "36px" }}>
+                                                                📄
+                                                            </div>
+                                                        )}
+                                                        {isSelected && (
+                                                            <div style={{
+                                                                position: "absolute",
+                                                                top: "8px",
+                                                                right: "8px",
+                                                                background: "var(--color-primary)",
+                                                                color: "white",
+                                                                borderRadius: "50%",
+                                                                width: "22px",
+                                                                height: "22px",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "center",
+                                                                fontSize: "13px",
+                                                                fontWeight: "700",
+                                                            }}>✓</div>
+                                                        )}
+                                                    </div>
+                                                    {/* Info */}
+                                                    <div style={{ padding: "10px 12px" }}>
+                                                        <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--color-text-black)" }}>
+                                                            {template.name ?? template.templateName ?? `Template ${templateId}`}
+                                                        </div>
+                                                        {template.description && (
+                                                            <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "3px" }}>
+                                                                {template.description}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: "13px",
-                                                        fontWeight: "600",
-                                                        color: "var(--color-text-black)",
-                                                    }}
-                                                >
-                                                    {template.name}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         )}
 
