@@ -2311,19 +2311,26 @@ export default function ReportGeneration() {
 <title>Travel Report – ${formData.customerName}</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #12121f; font-family: 'Segoe UI', Arial, sans-serif; }
-  @page { size: 700px auto; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #fff; font-family: 'Segoe UI', Arial, sans-serif; }
+  @page { size: 700px 991px; margin: 0; }
   @media print {
     html, body { background: white !important; }
-    @page { size: 700px auto; margin: 0; }
+    @page { size: 700px 991px; margin: 0; }
     body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    .rpt-page-wrap { page-break-after: always !important; break-after: page !important; margin-bottom: 0 !important; }
+    .rpt-page-wrap { page-break-after: always !important; break-after: page !important;
+      margin-bottom: 0 !important; height: 991px !important; overflow: hidden !important;
+      display: block !important; }
     .rpt-page-label { display: none !important; }
+    #rpt-canvas { padding: 0 !important; gap: 0 !important; }
+    img { max-width: 100% !important; display: block !important; }
   }
-  .rpt-page-label { text-align: center; color: rgba(255,255,255,0.25); font-size: 11px;
+  .rpt-page-label { text-align: center; color: rgba(80,80,80,0.5); font-size: 11px;
     margin-bottom: 10px; letter-spacing: 0.06em; font-family: sans-serif; }
   .rpt-page-wrap { margin-bottom: 48px; flex-shrink: 0; }
   #rpt-canvas { padding: 44px 24px 60px; display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .rpt-img-grid { display: grid; }
+  .rpt-img-grid img { width: 100%; height: 70px; object-fit: cover; display: block; }
+  .rpt-hero-img { position: absolute; top: 0; height: 100%; object-fit: cover; filter: brightness(0.45); display: block; }
 </style>
 </head>
 <body>
@@ -2346,9 +2353,9 @@ export default function ReportGeneration() {
                     };
 
                     // ── shared page shell ─────────────────────────────────
-                    const PageShell = ({ children, minH = 842 }: { children: React.ReactNode; minH?: number }) => (
+                    const PageShell = ({ children }: { children: React.ReactNode }) => (
                         <div style={{
-                            width: '700px', minHeight: `${minH}px`, background: '#FAFAFA',
+                            width: '700px', height: '991px', background: '#FAFAFA',
                             boxShadow: '0 32px 80px rgba(0,0,0,0.75)',
                             fontFamily: '"Inter", "Segoe UI", Arial, sans-serif',
                             display: 'flex', flexDirection: 'column', overflow: 'hidden',
@@ -2500,7 +2507,7 @@ export default function ReportGeneration() {
                                             <PageShell>
                                                 {/* Hero banner */}
                                                 <div style={{
-                                                    height: '200px', flexShrink: 0, position: 'relative', overflow: 'hidden',
+                                                    height: '170px', flexShrink: 0, position: 'relative', overflow: 'hidden',
                                                     background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)',
                                                 }}>
                                                     {/* decorative circles */}
@@ -2546,19 +2553,19 @@ export default function ReportGeneration() {
                                                 </div>
 
                                                 {/* content area */}
-                                                <div style={{ padding: '28px 44px', flex: 1 }}>
+                                                <div style={{ padding: '20px 36px', flex: 1, overflow: 'hidden' }}>
                                                     {/* info cards */}
                                                     <SectionTitle color="#FF7B2E">Booking Details</SectionTitle>
-                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '24px' }}>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '14px' }}>
                                                         {infoFields.map((f, i) => (
                                                             <div key={i} style={{
-                                                                padding: '12px 14px', background: 'white',
-                                                                borderRadius: '10px', border: '1px solid #efefef',
-                                                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                                                padding: '8px 10px', background: 'white',
+                                                                borderRadius: '8px', border: '1px solid #efefef',
+                                                                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
                                                             }}>
-                                                                <div style={{ fontSize: '16px', marginBottom: '4px' }}>{f.icon}</div>
+                                                                <div style={{ fontSize: '13px', marginBottom: '2px' }}>{f.icon}</div>
                                                                 <div style={{ fontSize: '9px', color: '#adb5bd', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>{f.label}</div>
-                                                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#1a1a2e', marginTop: '2px' }}>{f.value}</div>
+                                                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#1a1a2e', marginTop: '1px' }}>{f.value}</div>
                                                             </div>
                                                         ))}
                                                     </div>
@@ -2566,9 +2573,9 @@ export default function ReportGeneration() {
                                                     {/* route timeline */}
                                                     <SectionTitle color="#0369a1">Route Journey</SectionTitle>
                                                     <div style={{
-                                                        padding: '16px 20px', background: 'white',
-                                                        borderRadius: '12px', border: '1px solid #e0f2fe',
-                                                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: '24px',
+                                                        padding: '10px 14px', background: 'white',
+                                                        borderRadius: '10px', border: '1px solid #e0f2fe',
+                                                        boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: '14px',
                                                     }}>
                                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0', alignItems: 'center' }}>
                                                             {formData.selectedRoutes.map((route, i) => (
@@ -2590,13 +2597,13 @@ export default function ReportGeneration() {
 
                                                     {/* day summary cards */}
                                                     <SectionTitle color="#7c3aed">Day-by-Day Summary</SectionTitle>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                         {formData.dayCards.map((card, ci) => (
                                                             <div key={card.id} style={{
-                                                                display: 'flex', alignItems: 'center', gap: '12px',
-                                                                padding: '10px 14px', background: 'white',
-                                                                borderRadius: '10px', border: '1px solid #f3f0ff',
-                                                                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                                                                display: 'flex', alignItems: 'center', gap: '10px',
+                                                                padding: '7px 12px', background: 'white',
+                                                                borderRadius: '8px', border: '1px solid #f3f0ff',
+                                                                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
                                                             }}>
                                                                 <div style={{
                                                                     width: '30px', height: '30px', borderRadius: '50%',
@@ -2654,27 +2661,30 @@ export default function ReportGeneration() {
                                             <PageShell>
                                                 {/* ── Day hero banner ── */}
                                                 <div style={{
-                                                    height: heroImgs.length > 0 ? '200px' : '110px',
+                                                    height: '130px',
                                                     flexShrink: 0, position: 'relative', overflow: 'hidden',
                                                     background: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)',
                                                 }}>
-                                                    {/* background image collage */}
-                                                    {heroImgs.length > 0 && (
-                                                        <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
-                                                            {heroImgs.slice(0, 3).map((src, hi) => (
-                                                                <img key={hi} src={src} alt=""
-                                                                    style={{
-                                                                        flex: 1, height: '100%', objectFit: 'cover',
-                                                                        filter: 'brightness(0.45)',
-                                                                        borderRight: hi < Math.min(heroImgs.length, 3) - 1 ? '2px solid rgba(255,255,255,0.15)' : 'none',
-                                                                    }}
-                                                                    onError={e => { e.currentTarget.style.display = 'none'; }}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    {/* decorative circles */}
-                                                    <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,123,46,0.18)' }} />
+                                                    {/* background image collage - explicit widths for print */}
+                                                    {heroImgs.length > 0 && heroImgs.slice(0, 3).map((src, hi) => {
+                                                        const count = Math.min(heroImgs.length, 3);
+                                                        return (
+                                                            <img key={hi} src={src} alt="" className="rpt-hero-img"
+                                                                style={{
+                                                                    position: 'absolute', top: 0,
+                                                                    left: `${(hi / count) * 100}%`,
+                                                                    width: `${100 / count}%`,
+                                                                    height: '100%', objectFit: 'cover',
+                                                                    filter: 'brightness(0.45)',
+                                                                    borderRight: hi < count - 1 ? '2px solid rgba(255,255,255,0.15)' : 'none',
+                                                                    display: 'block',
+                                                                }}
+                                                                onError={e => { e.currentTarget.style.display = 'none'; }}
+                                                            />
+                                                        );
+                                                    })}
+                                                    {/* decorative circle */}
+                                                    <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255,123,46,0.18)' }} />
 
                                                     {/* day label */}
                                                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 44px', gap: '18px' }}>
@@ -2701,18 +2711,17 @@ export default function ReportGeneration() {
                                                 </div>
 
                                                 {/* ── Day body ── */}
-                                                <div style={{ padding: '24px 44px', flex: 1, background: '#FAFAFA' }}>
+                                                <div style={{ padding: '16px 36px', flex: 1, background: '#FAFAFA', overflow: 'hidden' }}>
 
                                                     {/* AI description */}
                                                     {generatedDescriptions[dayCard.id] && (
-                                                        <div style={{ marginBottom: '20px' }}>
+                                                        <div style={{ marginBottom: '12px' }}>
                                                             <SectionTitle color="#7c3aed">Day Overview</SectionTitle>
                                                             <div style={{
-                                                                padding: '16px 18px',
+                                                                padding: '10px 14px',
                                                                 background: 'linear-gradient(135deg, #faf5ff 0%, #f5f0ff 100%)',
-                                                                borderRadius: '12px', border: '1px solid #e9d5ff',
-                                                                fontSize: '12px', color: '#374151', lineHeight: 1.8,
-                                                                boxShadow: '0 2px 8px rgba(124,58,237,0.07)',
+                                                                borderRadius: '8px', border: '1px solid #e9d5ff',
+                                                                fontSize: '11px', color: '#374151', lineHeight: 1.6,
                                                             }}>
                                                                 {generatedDescriptions[dayCard.id]}
                                                             </div>
@@ -2721,50 +2730,45 @@ export default function ReportGeneration() {
 
                                                     {/* Selected places with images */}
                                                     {dayCard.selectedPlaces.length > 0 && (
-                                                        <div style={{ marginBottom: '20px' }}>
+                                                        <div style={{ marginBottom: '12px' }}>
                                                             <SectionTitle color="#0369a1">Places to Visit ({dayCard.selectedPlaces.length})</SectionTitle>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                                 {dayCard.selectedPlaces.map((sp, pi) => {
-                                                                    const imgs = placeImgs(sp.place);
+                                                                    const imgs = placeImgs(sp.place).slice(0, 3);
                                                                     return (
                                                                         <div key={pi} style={{
-                                                                            background: 'white', borderRadius: '12px',
+                                                                            background: 'white', borderRadius: '8px',
                                                                             border: '1px solid #e8f4fd',
-                                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                                                                             overflow: 'hidden',
                                                                         }}>
-                                                                            {/* image strip */}
+                                                                            {/* CSS grid image strip — print-safe, no flex:1 */}
                                                                             {imgs.length > 0 && (
-                                                                                <div style={{ height: '100px', display: 'flex', overflow: 'hidden' }}>
-                                                                                    {imgs.slice(0, 4).map((src, ii) => (
+                                                                                <div style={{
+                                                                                    display: 'grid',
+                                                                                    gridTemplateColumns: `repeat(${imgs.length}, 1fr)`,
+                                                                                    height: '68px', overflow: 'hidden',
+                                                                                }}>
+                                                                                    {imgs.map((src, ii) => (
                                                                                         <img key={ii} src={src} alt=""
-                                                                                            style={{
-                                                                                                flex: 1, height: '100%', objectFit: 'cover',
-                                                                                                borderRight: ii < Math.min(imgs.length, 4) - 1 ? '2px solid #f0f0f0' : 'none',
-                                                                                            }}
-                                                                                            onError={e => { e.currentTarget.style.display = 'none'; }}
+                                                                                            style={{ width: '100%', height: '68px', objectFit: 'cover', display: 'block' }}
+                                                                                            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                                                                                         />
                                                                                     ))}
                                                                                 </div>
                                                                             )}
                                                                             {/* place info */}
-                                                                            <div style={{ padding: '10px 14px' }}>
-                                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                                                                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#0c4a6e' }}>
+                                                                            <div style={{ padding: '7px 12px' }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                                                                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#0c4a6e' }}>
                                                                                         {sp.place?.name || sp.place?.placeName || 'Place'}
                                                                                     </div>
-                                                                                    <span style={{ padding: '2px 10px', background: '#eff6ff', color: '#0369a1', borderRadius: '10px', fontSize: '10px', fontWeight: 600 }}>
+                                                                                    <span style={{ padding: '1px 8px', background: '#eff6ff', color: '#0369a1', borderRadius: '8px', fontSize: '9px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                                                                                         📍 {sp.district}
                                                                                     </span>
                                                                                 </div>
                                                                                 {(sp.place?.description || sp.place?.Description) && (
-                                                                                    <div style={{ fontSize: '11px', color: '#6b7280', lineHeight: 1.6, marginTop: '4px' }}>
-                                                                                        {(sp.place.description || sp.place.Description).slice(0, 180)}{(sp.place.description || sp.place.Description).length > 180 ? '…' : ''}
-                                                                                    </div>
-                                                                                )}
-                                                                                {sp.place?.funFact && (
-                                                                                    <div style={{ marginTop: '6px', padding: '6px 10px', background: '#fffbeb', borderRadius: '6px', border: '1px solid #fde68a', fontSize: '10px', color: '#92400e' }}>
-                                                                                        💡 {sp.place.funFact}
+                                                                                    <div style={{ fontSize: '10px', color: '#6b7280', lineHeight: 1.5 }}>
+                                                                                        {(sp.place.description || sp.place.Description).slice(0, 120)}{(sp.place.description || sp.place.Description).length > 120 ? '…' : ''}
                                                                                     </div>
                                                                                 )}
                                                                             </div>
@@ -2777,55 +2781,41 @@ export default function ReportGeneration() {
 
                                                     {/* Services booked */}
                                                     {dayCard.selectedHotels.length > 0 && (
-                                                        <div style={{ marginBottom: '20px' }}>
+                                                        <div style={{ marginBottom: '12px' }}>
                                                             <SectionTitle color="#374151">Services & Accommodations ({dayCard.selectedHotels.length})</SectionTitle>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                                                 {dayCard.selectedHotels.map((sh, si) => {
                                                                     const imgs = svcImgs(sh.hotel);
                                                                     const svcIcon: Record<string, string> = { hotel: '🏨', transport: '🚗', activity: '🎯' };
                                                                     const c = svcColors[sh.type] ?? svcColors.activity;
                                                                     return (
                                                                         <div key={si} style={{
-                                                                            background: 'white', borderRadius: '12px',
+                                                                            background: 'white', borderRadius: '8px',
                                                                             border: `1px solid ${c.border}`,
-                                                                            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-                                                                            overflow: 'hidden',
+                                                                            overflow: 'hidden', display: 'flex', alignItems: 'stretch',
                                                                         }}>
-                                                                            <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                                                                                {/* left accent */}
-                                                                                <div style={{ width: '4px', flexShrink: 0, background: c.badge }} />
-                                                                                {/* service image */}
-                                                                                {imgs.length > 0 && (
-                                                                                    <img src={imgs[0]} alt=""
-                                                                                        style={{ width: '90px', height: '80px', objectFit: 'cover', flexShrink: 0 }}
-                                                                                        onError={e => { e.currentTarget.style.display = 'none'; }}
-                                                                                    />
-                                                                                )}
-                                                                                {/* service details */}
-                                                                                <div style={{ padding: '10px 14px', flex: 1 }}>
-                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                                                                                        <span style={{ fontSize: '14px' }}>{svcIcon[sh.type] ?? '🎯'}</span>
-                                                                                        <span style={{ fontSize: '13px', fontWeight: 700, color: c.text }}>{sh.hotel?.name || 'Service'}</span>
-                                                                                        <span style={{ padding: '1px 8px', background: c.bg, color: c.text, borderRadius: '10px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', border: `1px solid ${c.border}` }}>
-                                                                                            {sh.type}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                    <div style={{ fontSize: '10px', color: '#9ca3af' }}>📍 {sh.district}</div>
-                                                                                    {sh.hotel?.description && (
-                                                                                        <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '4px', lineHeight: 1.5 }}>
-                                                                                            {sh.hotel.description.slice(0, 120)}{sh.hotel.description.length > 120 ? '…' : ''}
-                                                                                        </div>
-                                                                                    )}
+                                                                            {/* left accent bar */}
+                                                                            <div style={{ width: '4px', flexShrink: 0, background: c.badge }} />
+                                                                            {/* service image — explicit px size, no flex:1 */}
+                                                                            {imgs.length > 0 && (
+                                                                                <img src={imgs[0]} alt=""
+                                                                                    style={{ width: '70px', height: '64px', objectFit: 'cover', flexShrink: 0, display: 'block' }}
+                                                                                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                                                                />
+                                                                            )}
+                                                                            {/* service details */}
+                                                                            <div style={{ padding: '7px 12px', flex: 1, minWidth: 0 }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                                                                                    <span style={{ fontSize: '12px' }}>{svcIcon[sh.type] ?? '🎯'}</span>
+                                                                                    <span style={{ fontSize: '12px', fontWeight: 700, color: c.text }}>{sh.hotel?.name || 'Service'}</span>
+                                                                                    <span style={{ padding: '1px 6px', background: c.bg, color: c.text, borderRadius: '8px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', border: `1px solid ${c.border}` }}>
+                                                                                        {sh.type}
+                                                                                    </span>
                                                                                 </div>
-                                                                                {/* extra images */}
-                                                                                {imgs.length > 1 && (
-                                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '4px', flexShrink: 0 }}>
-                                                                                        {imgs.slice(1, 3).map((src, ii) => (
-                                                                                            <img key={ii} src={src} alt=""
-                                                                                                style={{ width: '56px', height: '37px', objectFit: 'cover', borderRadius: '4px' }}
-                                                                                                onError={e => { e.currentTarget.style.display = 'none'; }}
-                                                                                            />
-                                                                                        ))}
+                                                                                <div style={{ fontSize: '9px', color: '#9ca3af' }}>📍 {sh.district}</div>
+                                                                                {sh.hotel?.description && (
+                                                                                    <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '2px', lineHeight: 1.4 }}>
+                                                                                        {sh.hotel.description.slice(0, 100)}{sh.hotel.description.length > 100 ? '…' : ''}
                                                                                     </div>
                                                                                 )}
                                                                             </div>
