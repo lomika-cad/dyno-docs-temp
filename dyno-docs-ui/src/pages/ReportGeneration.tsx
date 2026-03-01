@@ -2298,6 +2298,53 @@ export default function ReportGeneration() {
                     };
                     const totalPages = (generatedReport.templateDesign?.pages?.length ?? 1) + 1 + formData.dayCards.length;
 
+                    // ── export as PDF ─────────────────────────────────────
+                    const handleExportPDF = () => {
+                        const content = document.getElementById('report-print-content');
+                        if (!content) return;
+                        const printWin = window.open('', '_blank');
+                        if (!printWin) { alert('Pop-ups are blocked. Please allow pop-ups for this site and try again.'); return; }
+                        printWin.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Travel Report – ${formData.customerName}</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #12121f; font-family: 'Segoe UI', Arial, sans-serif; }
+  @page { size: 700px auto; margin: 0; }
+  @media print {
+    html, body { background: white !important; }
+    @page { size: 700px auto; margin: 0; }
+    body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .rpt-page-wrap { page-break-after: always !important; break-after: page !important; margin-bottom: 0 !important; }
+    .rpt-page-label { display: none !important; }
+  }
+  .rpt-page-label { text-align: center; color: rgba(255,255,255,0.25); font-size: 11px;
+    margin-bottom: 10px; letter-spacing: 0.06em; font-family: sans-serif; }
+  .rpt-page-wrap { margin-bottom: 48px; flex-shrink: 0; }
+  #rpt-canvas { padding: 44px 24px 60px; display: flex; flex-direction: column; align-items: center; gap: 0; }
+</style>
+</head>
+<body>
+<div id="rpt-canvas">${content.innerHTML}</div>
+<script>
+  var imgs = Array.from(document.images);
+  var total = imgs.length, loaded = 0;
+  function tryPrint() { setTimeout(function(){ window.focus(); window.print(); window.close(); }, 400); }
+  if (total === 0) { tryPrint(); }
+  else {
+    imgs.forEach(function(img) {
+      if (img.complete) { if (++loaded >= total) tryPrint(); }
+      else { img.onload = img.onerror = function() { if (++loaded >= total) tryPrint(); }; }
+    });
+  }
+<\/script>
+</body>
+</html>`);
+                        printWin.document.close();
+                    };
+
                     // ── shared page shell ─────────────────────────────────
                     const PageShell = ({ children, minH = 842 }: { children: React.ReactNode; minH?: number }) => (
                         <div style={{
@@ -2351,6 +2398,27 @@ export default function ReportGeneration() {
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <button
+                                        onClick={handleExportPDF}
+                                        style={{
+                                            background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)',
+                                            border: 'none',
+                                            color: 'white', borderRadius: '8px', padding: '7px 18px',
+                                            cursor: 'pointer', fontSize: '13px', fontWeight: 700,
+                                            display: 'flex', alignItems: 'center', gap: '6px',
+                                            boxShadow: '0 4px 14px rgba(255,123,46,0.35)',
+                                            transition: 'all 0.15s',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                            <polyline points="7 10 12 15 17 10"/>
+                                            <line x1="12" y1="15" x2="12" y2="3"/>
+                                        </svg>
+                                        Export PDF
+                                    </button>
+                                    <button
                                         onClick={() => setReportModalOpen(false)}
                                         style={{
                                             background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
@@ -2365,7 +2433,7 @@ export default function ReportGeneration() {
                             </div>
 
                             {/* ── scrollable canvas ── */}
-                            <div style={{
+                            <div id="report-print-content" style={{
                                 flex: 1, overflowY: 'auto', overflowX: 'auto',
                                 padding: '44px 24px 60px',
                                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px',
@@ -2373,42 +2441,46 @@ export default function ReportGeneration() {
 
                                 {/* ════ Template pages (untouched) ════ */}
                                 {generatedReport.templateDesign?.pages?.map((page: any, pgIdx: number) => (
-                                    <div key={`tpl-${pgIdx}`} style={{ flexShrink: 0 }}>
-                                        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginBottom: '10px', letterSpacing: '0.06em' }}>
+                                    <div key={`tpl-${pgIdx}`} className="rpt-page-wrap" style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                        <div className="rpt-page-label" style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginBottom: '10px', letterSpacing: '0.06em' }}>
                                             PAGE {pgIdx + 1}
                                         </div>
+                                        {/* scale 595×842 → 700×991 */}
                                         <div style={{
-                                            width: '595px', height: '842px', position: 'relative',
-                                            background: generatedReport.templateDesign.background || '#fff',
-                                            boxShadow: '0 32px 80px rgba(0,0,0,0.75)',
-                                            overflow: 'hidden', flexShrink: 0, borderRadius: '4px',
+                                            width: '700px', height: `${Math.round(842 * 700 / 595)}px`,
+                                            position: 'relative', overflow: 'hidden', flexShrink: 0,
+                                            boxShadow: '0 32px 80px rgba(0,0,0,0.75)', borderRadius: '4px',
                                         }}>
-                                            {page.elements?.map((el: any, elIdx: number) => {
-                                                const pos: React.CSSProperties = { position: 'absolute', left: el.x, top: el.y, width: el.width, height: el.height };
-                                                if (el.type === 'image') return (
-                                                    <img key={el.id || elIdx} src={el.src || el.fallback} alt=""
-                                                        style={{ ...pos, objectFit: 'cover', objectPosition: 'center', display: 'block' }}
-                                                        onError={(e) => { if (el.fallback && e.currentTarget.src !== el.fallback) e.currentTarget.src = el.fallback; else e.currentTarget.style.display = 'none'; }}
-                                                    />
-                                                );
-                                                if (el.type === 'shape') return (
-                                                    <div key={el.id || elIdx} style={{ ...pos, background: el.fill || 'transparent', borderRadius: el.borderRadius ? `${el.borderRadius}px` : 0 }} />
-                                                );
-                                                if (el.type === 'text') {
-                                                    const ta = (el.textAlign || el.align || 'left') as React.CSSProperties['textAlign'];
-                                                    return (
-                                                        <div key={el.id || elIdx} style={{ ...pos, fontSize: el.fontSize, fontFamily: el.fontFamily, fontWeight: el.fontWeight, color: el.color || '#000', textAlign: ta, display: 'flex', alignItems: 'center', justifyContent: ta === 'center' ? 'center' : ta === 'right' ? 'flex-end' : 'flex-start', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'visible' }}>
-                                                            {el.content}
-                                                        </div>
+                                            <div style={{
+                                                width: '595px', height: '842px', position: 'absolute', top: 0, left: 0,
+                                                transform: `scale(${700 / 595})`, transformOrigin: 'top left',
+                                                background: generatedReport.templateDesign.background || '#fff',
+                                            }}>
+                                                {page.elements?.map((el: any, elIdx: number) => {
+                                                    const pos: React.CSSProperties = { position: 'absolute', left: el.x, top: el.y, width: el.width, height: el.height };
+                                                    if (el.type === 'image') return (
+                                                        <img key={el.id || elIdx} src={el.src || el.fallback} alt=""
+                                                            style={{ ...pos, objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+                                                            onError={(e) => { if (el.fallback && e.currentTarget.src !== el.fallback) e.currentTarget.src = el.fallback; else e.currentTarget.style.display = 'none'; }}
+                                                        />
                                                     );
-                                                }
-                                                return null;
-                                            })}
+                                                    if (el.type === 'shape') return (
+                                                        <div key={el.id || elIdx} style={{ ...pos, background: el.fill || 'transparent', borderRadius: el.borderRadius ? `${el.borderRadius}px` : 0 }} />
+                                                    );
+                                                    if (el.type === 'text') {
+                                                        const ta = (el.textAlign || el.align || 'left') as React.CSSProperties['textAlign'];
+                                                        return (
+                                                            <div key={el.id || elIdx} style={{ ...pos, fontSize: el.fontSize, fontFamily: el.fontFamily, fontWeight: el.fontWeight, color: el.color || '#000', textAlign: ta, display: 'flex', alignItems: 'center', justifyContent: ta === 'center' ? 'center' : ta === 'right' ? 'flex-end' : 'flex-start', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'visible' }}>
+                                                                {el.content}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
-
-                                {/* ════ Customer Information Page ════ */}
                                 {(() => {
                                     const infoPage = (generatedReport.templateDesign?.pages?.length ?? 1) + 1;
                                     const customerInitials = formData.customerName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
@@ -2421,8 +2493,8 @@ export default function ReportGeneration() {
                                         ...(formData.transportationMode ? [{ icon: '🚌', label: 'Transport', value: formData.transportationMode }] : []),
                                     ];
                                     return (
-                                        <div style={{ flexShrink: 0 }}>
-                                            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginBottom: '10px', letterSpacing: '0.06em' }}>
+                                        <div className="rpt-page-wrap" style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                            <div className="rpt-page-label" style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginBottom: '10px', letterSpacing: '0.06em' }}>
                                                 PAGE {infoPage} · CUSTOMER INFORMATION
                                             </div>
                                             <PageShell>
@@ -2575,8 +2647,8 @@ export default function ReportGeneration() {
                                         activity:  { bg: '#fff1f0', border: '#fecaca', text: '#b91c1c', badge: '#dc2626' },
                                     };
                                     return (
-                                        <div key={dayCard.id} style={{ flexShrink: 0 }}>
-                                            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginBottom: '10px', letterSpacing: '0.06em' }}>
+                                        <div key={dayCard.id} className="rpt-page-wrap" style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                            <div className="rpt-page-label" style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginBottom: '10px', letterSpacing: '0.06em' }}>
                                                 PAGE {pageNum} · DAY {dayIdx + 1}
                                             </div>
                                             <PageShell>
