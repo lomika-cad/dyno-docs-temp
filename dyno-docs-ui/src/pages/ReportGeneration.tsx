@@ -4,6 +4,7 @@ import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import { showSuccess, showError } from "../components/Toast";
 import { getDataByDistrict } from "../services/agency-data-api";
+import { getPartnershipByDistrict } from "../services/partnership-api";
 
 export default function ReportGeneration() {
     const [infoOpen, setInfoOpen] = useState(false);
@@ -12,6 +13,8 @@ export default function ReportGeneration() {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [districtData, setDistrictData] = useState<{[key: string]: any}>({});
     const [loadingDistricts, setLoadingDistricts] = useState<{[key: string]: boolean}>({});
+    const [partnershipData, setPartnershipData] = useState<{[key: string]: any}>({});
+    const [loadingPartnerships, setLoadingPartnerships] = useState<{[key: string]: boolean}>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown when clicking outside
@@ -44,7 +47,7 @@ export default function ReportGeneration() {
                 selectedDay: "",
                 visitingPlaces: [] as string[],
                 selectedPlaces: [] as Array<{district: string, place: any}>,
-                selectedHotel: "",
+                selectedHotels: [] as Array<{district: string, hotel: any}>,
                 remarks: ""
             }
         ] as Array<{
@@ -52,7 +55,7 @@ export default function ReportGeneration() {
             selectedDay: string;
             visitingPlaces: string[];
             selectedPlaces: Array<{district: string, place: any}>;
-            selectedHotel: string;
+            selectedHotels: Array<{district: string, hotel: any}>;
             remarks: string;
         }>,
         selectedTemplate: "",
@@ -144,10 +147,13 @@ export default function ReportGeneration() {
                           visitingPlaces: card.visitingPlaces.includes(location)
                               ? card.visitingPlaces.filter((l) => l !== location)
                               : [...card.visitingPlaces, location],
-                          // If unselecting a visiting place, also remove all selected places from that district
+                          // If unselecting a visiting place, also remove all selected places and hotels from that district
                           selectedPlaces: card.visitingPlaces.includes(location)
                               ? card.selectedPlaces.filter(p => p.district !== location)
-                              : card.selectedPlaces
+                              : card.selectedPlaces,
+                          selectedHotels: card.visitingPlaces.includes(location)
+                              ? card.selectedHotels.filter(h => h.district !== location)
+                              : card.selectedHotels
                       }
                     : card
             ),
@@ -157,6 +163,27 @@ export default function ReportGeneration() {
         if (!isCurrentlySelected && !districtData[location]) {
             await fetchDistrictData(location);
         }
+        
+        // Also fetch partnership data for hotels if selecting
+        if (!isCurrentlySelected && !partnershipData[location]) {
+            await fetchPartnershipData(location);
+        }
+    };
+
+    const handleHotelToggle = (cardId: number, district: string, hotel: any) => {
+        setFormData((prev) => ({
+            ...prev,
+            dayCards: prev.dayCards.map((card) =>
+                card.id === cardId
+                    ? {
+                          ...card,
+                          selectedHotels: card.selectedHotels.some(h => h.hotel === hotel)
+                              ? card.selectedHotels.filter(h => h.hotel !== hotel)
+                              : [...card.selectedHotels, { district, hotel }],
+                      }
+                    : card
+            ),
+        }));
     };
 
     const handlePlaceToggle = (cardId: number, district: string, place: any) => {
@@ -173,6 +200,31 @@ export default function ReportGeneration() {
                     : card
             ),
         }));
+    };
+
+    const fetchPartnershipData = async (district: string) => {
+        const token = sessionStorage.getItem("dd_token");
+        const tenantId = sessionStorage.getItem("dd_tenant_id");
+
+        if (!token || !tenantId) {
+            showError("Authentication required. Please log in again.");
+            return;
+        }
+
+        setLoadingPartnerships(prev => ({ ...prev, [district]: true }));
+
+        try {
+            const response = await getPartnershipByDistrict(tenantId, district, token);
+            setPartnershipData(prev => ({
+                ...prev,
+                [district]: response.data
+            }));
+        } catch (error: any) {
+            console.error(`Error fetching hotels for ${district}:`, error);
+            showError(`Failed to load hotels for ${district}. ${error.response?.data?.message || error.message}`);
+        } finally {
+            setLoadingPartnerships(prev => ({ ...prev, [district]: false }));
+        }
     };
 
     const fetchDistrictData = async (district: string) => {
@@ -210,7 +262,7 @@ export default function ReportGeneration() {
                     selectedDay: "",
                     visitingPlaces: [],
                     selectedPlaces: [],
-                    selectedHotel: "",
+                    selectedHotels: [],
                     remarks: "",
                 },
             ],
@@ -250,7 +302,7 @@ export default function ReportGeneration() {
                     formData.dayCards.every(card => 
                         card.selectedDay.trim() !== "" &&
                         card.visitingPlaces.length > 0 &&
-                        card.selectedHotel.trim() !== ""
+                        card.selectedHotels.length > 0
                     )
                 );
             case 3:
@@ -299,7 +351,7 @@ export default function ReportGeneration() {
                         selectedDay: "",
                         visitingPlaces: [],
                         selectedPlaces: [],
-                        selectedHotel: "",
+                        selectedHotels: [],
                         remarks: ""
                     }
                 ],
@@ -334,7 +386,7 @@ export default function ReportGeneration() {
                         selectedDay: "",
                         visitingPlaces: [],
                         selectedPlaces: [],
-                        selectedHotel: "",
+                        selectedHotels: [],
                         remarks: ""
                     }
                 ],
@@ -1252,21 +1304,261 @@ export default function ReportGeneration() {
                                                 {/* Hotel Selection */}
                                                 <div className="formField">
                                                     <label className="formField-label" style={{ fontSize: "12px" }}>
-                                                        Night {index + 1} - Select Hotel
+                                                        Night {index + 1} - Select Hotels
                                                     </label>
-                                                    <select
-                                                        className="formField-input"
-                                                        value={dayCard.selectedHotel}
-                                                        onChange={(e) => handleDayCardChange(dayCard.id, 'selectedHotel', e.target.value)}
-                                                        style={{ cursor: "pointer", fontSize: "13px" }}
-                                                    >
-                                                        <option value="">Select a hotel</option>
-                                                        {hotelOptions.map((hotel) => (
-                                                            <option key={hotel} value={hotel}>
-                                                                {hotel}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                    {dayCard.visitingPlaces.length === 0 ? (
+                                                        <div style={{
+                                                            padding: "12px",
+                                                            borderRadius: "6px",
+                                                            background: "#fef3f2",
+                                                            border: "1px solid #fecaca",
+                                                            textAlign: "center",
+                                                            fontSize: "11px",
+                                                            color: "#ef4444"
+                                                        }}>
+                                                            🏨 Select visiting places first to see available hotels
+                                                        </div>
+                                                    ) : (
+                                                        <div>
+                                                            {dayCard.visitingPlaces.map(district => {
+                                                                const hotels = partnershipData[district];
+                                                                if (!hotels || !Array.isArray(hotels)) return null;
+                                                                
+                                                                return (
+                                                                    <div key={district} style={{
+                                                                        marginBottom: "12px",
+                                                                        padding: "10px",
+                                                                        background: "#f8f9fa",
+                                                                        borderRadius: "6px",
+                                                                        border: "1px solid #e9ecef"
+                                                                    }}>
+                                                                        <div style={{
+                                                                            fontSize: "11px",
+                                                                            fontWeight: "600",
+                                                                            color: "#495057",
+                                                                            marginBottom: "8px",
+                                                                            display: "flex",
+                                                                            alignItems: "center",
+                                                                            gap: "4px"
+                                                                        }}>
+                                                                            🏨 Hotels in {district}
+                                                                            {loadingPartnerships[district] && (
+                                                                                <span style={{ fontSize: "10px" }}>⏳ Loading...</span>
+                                                                            )}
+                                                                        </div>
+                                                                        <div style={{
+                                                                            display: "flex",
+                                                                            flexWrap: "wrap",
+                                                                            gap: "6px"
+                                                                        }}>
+                                                                            {hotels.map((hotel: any, hotelIndex: number) => (
+                                                                                <label
+                                                                                    key={hotelIndex}
+                                                                                    style={{
+                                                                                        fontSize: "10px",
+                                                                                        padding: "6px 8px",
+                                                                                        background: dayCard.selectedHotels.some(h => h.hotel === hotel) ? "#e8f5e8" : "white",
+                                                                                        borderRadius: "4px",
+                                                                                        border: dayCard.selectedHotels.some(h => h.hotel === hotel) ? "1px solid #4ade80" : "1px solid #e5e7eb",
+                                                                                        color: "#374151",
+                                                                                        cursor: "pointer",
+                                                                                        transition: "all 0.2s",
+                                                                                        display: "flex",
+                                                                                        alignItems: "center",
+                                                                                        gap: "4px",
+                                                                                        userSelect: "none"
+                                                                                    }}
+                                                                                    onMouseEnter={(e) => {
+                                                                                        if (!dayCard.selectedHotels.some(h => h.hotel === hotel)) {
+                                                                                            e.currentTarget.style.background = "#f3f4f6";
+                                                                                        }
+                                                                                    }}
+                                                                                    onMouseLeave={(e) => {
+                                                                                        if (!dayCard.selectedHotels.some(h => h.hotel === hotel)) {
+                                                                                            e.currentTarget.style.background = "white";
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={dayCard.selectedHotels.some(h => h.hotel === hotel)}
+                                                                                        onChange={() => handleHotelToggle(dayCard.id, district, hotel)}
+                                                                                        style={{ cursor: "pointer", transform: "scale(0.8)" }}
+                                                                                    />
+                                                                                    {hotel.name || `Hotel ${hotelIndex + 1}`}
+                                                                                </label>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                            
+                                                            {/* Selected Hotels Display */}
+                                                            {dayCard.selectedHotels.length > 0 && (
+                                                                <div style={{
+                                                                    marginTop: "8px",
+                                                                    padding: "8px",
+                                                                    background: "#e0f2fe",
+                                                                    borderRadius: "6px",
+                                                                    border: "1px solid #bae6fd"
+                                                                }}>
+                                                                    <div style={{
+                                                                        fontSize: "10px",
+                                                                        fontWeight: "600",
+                                                                        color: "#0369a1",
+                                                                        marginBottom: "6px"
+                                                                    }}>
+                                                                        Selected Hotels ({dayCard.selectedHotels.length})
+                                                                    </div>
+                                                                    <div style={{
+                                                                        display: "flex",
+                                                                        flexWrap: "wrap",
+                                                                        gap: "4px"
+                                                                    }}>
+                                                                        {dayCard.selectedHotels.map((selectedHotel, idx) => (
+                                                                            <div key={idx} style={{
+                                                                                fontSize: "9px",
+                                                                                padding: "3px 6px",
+                                                                                background: "white",
+                                                                                borderRadius: "3px",
+                                                                                border: "1px solid #e5e7eb",
+                                                                                display: "flex",
+                                                                                alignItems: "center",
+                                                                                gap: "4px"
+                                                                            }}>
+                                                                                <span>🏨 {selectedHotel.hotel.name || 'Hotel'}</span>
+                                                                                <span style={{ color: "#6b7280" }}>({selectedHotel.district})</span>
+                                                                                <button
+                                                                                    onClick={() => handleHotelToggle(dayCard.id, selectedHotel.district, selectedHotel.hotel)}
+                                                                                    style={{
+                                                                                        background: "transparent",
+                                                                                        border: "none",
+                                                                                        color: "#ef4444",
+                                                                                        fontSize: "10px",
+                                                                                        cursor: "pointer",
+                                                                                        padding: "0",
+                                                                                        marginLeft: "2px"
+                                                                                    }}
+                                                                                >
+                                                                                    ×
+                                                                                </button>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {/* Hotel Images Gallery */}
+                                                            {dayCard.selectedHotels.length > 0 && dayCard.selectedHotels.some(h => h.hotel.images && h.hotel.images.length > 0) && (
+                                                                <div style={{
+                                                                    marginTop: "12px",
+                                                                    padding: "12px",
+                                                                    background: "#f0f9ff",
+                                                                    borderRadius: "8px",
+                                                                    border: "1px solid #bae6fd"
+                                                                }}>
+                                                                    <div style={{
+                                                                        fontSize: "11px",
+                                                                        fontWeight: "600",
+                                                                        color: "#0369a1",
+                                                                        marginBottom: "8px",
+                                                                        display: "flex",
+                                                                        alignItems: "center",
+                                                                        gap: "6px"
+                                                                    }}>
+                                                                        🖼️ Hotel Images
+                                                                    </div>
+                                                                    {dayCard.selectedHotels.map((selectedHotel, idx) => {
+                                                                        if (!selectedHotel.hotel.images || selectedHotel.hotel.images.length === 0) return null;
+                                                                        
+                                                                        return (
+                                                                            <div key={idx} style={{
+                                                                                marginBottom: "12px",
+                                                                                padding: "10px",
+                                                                                background: "white",
+                                                                                borderRadius: "6px",
+                                                                                border: "1px solid #e5e7eb",
+                                                                                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)"
+                                                                            }}>
+                                                                                <div style={{
+                                                                                    fontSize: "11px",
+                                                                                    fontWeight: "600",
+                                                                                    color: "#1f2937",
+                                                                                    marginBottom: "8px",
+                                                                                    display: "flex",
+                                                                                    alignItems: "center",
+                                                                                    gap: "6px"
+                                                                                }}>
+                                                                                    🏨 {selectedHotel.hotel.name || 'Hotel'}
+                                                                                    <span style={{
+                                                                                        fontSize: "10px",
+                                                                                        background: "#f3f4f6",
+                                                                                        padding: "2px 6px",
+                                                                                        borderRadius: "4px",
+                                                                                        color: "#6b7280"
+                                                                                    }}>
+                                                                                        📍 {selectedHotel.district}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div style={{
+                                                                                    display: "grid",
+                                                                                    gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+                                                                                    gap: "8px"
+                                                                                }}>
+                                                                                    {selectedHotel.hotel.images.map((image: string, imageIdx: number) => {
+                                                                                        // Handle base64 images
+                                                                                        const getImageSrc = (imgData: any) => {
+                                                                                            const imgString = typeof imgData === 'string' ? imgData : imgData.url || imgData.src || imgData.path;
+                                                                                            
+                                                                                            // Check if it's already a data URI
+                                                                                            if (imgString && imgString.startsWith('data:')) {
+                                                                                                return imgString;
+                                                                                            }
+                                                                                            
+                                                                                            // Check if it's base64 without data URI prefix
+                                                                                            if (imgString && (imgString.match(/^[A-Za-z0-9+/]*={0,2}$/) && imgString.length > 100)) {
+                                                                                                return `data:image/jpeg;base64,${imgString}`;
+                                                                                            }
+                                                                                            
+                                                                                            // Regular URL
+                                                                                            return imgString;
+                                                                                        };
+                                                                                        
+                                                                                        return (
+                                                                                            <div key={imageIdx} style={{
+                                                                                                background: "#f8f9fa",
+                                                                                                borderRadius: "6px",
+                                                                                                overflow: "hidden",
+                                                                                                border: "1px solid #dee2e6"
+                                                                                            }}>
+                                                                                                <img
+                                                                                                    src={getImageSrc(image)}
+                                                                                                    alt={`${selectedHotel.hotel.name || 'Hotel'} image ${imageIdx + 1}`}
+                                                                                                    style={{
+                                                                                                        width: "100%",
+                                                                                                        height: "80px",
+                                                                                                        objectFit: "cover",
+                                                                                                        display: "block"
+                                                                                                    }}
+                                                                                                    onError={(e) => {
+                                                                                                        e.currentTarget.style.display = 'none';
+                                                                                                        const parent = e.currentTarget.parentElement;
+                                                                                                        if (parent) {
+                                                                                                            parent.innerHTML = `<div style="padding: 8px; fontSize: 9px; color: #6c757d; textAlign: center;">Image not available</div>`;
+                                                                                                        }
+                                                                                                    }}
+                                                                                                />
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                         </div>
                                     ))}
