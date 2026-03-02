@@ -1091,7 +1091,6 @@ export default function ReportsHistory() {
                                         <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
                                             <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "12px", fontWeight: "700", color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>Customer Name</th>
                                             <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "12px", fontWeight: "700", color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>Email</th>
-                                            <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "12px", fontWeight: "700", color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>Created</th>
                                             <th style={{ textAlign: "center", padding: "12px 16px", fontSize: "12px", fontWeight: "700", color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>Actions</th>
                                         </tr>
                                     </thead>
@@ -1102,7 +1101,6 @@ export default function ReportsHistory() {
                                                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}>
                                                 <td style={{ padding: "16px", fontSize: "14px", fontWeight: "600", color: "#111827" }}>{report.customerName}</td>
                                                 <td style={{ padding: "16px", fontSize: "14px", color: "#6b7280" }}>{report.customerEmail}</td>
-                                                <td style={{ padding: "16px", fontSize: "14px", color: "#6b7280" }}>{formatDate(report.createdAt)}</td>
                                                 <td style={{ padding: "16px", textAlign: "center" }}>
                                                     <div style={{ display: "flex", gap: "8px", justifyContent: "center", position: "relative" }}>
                                                         <button onClick={() => handleViewReport(report)} style={{ border: "none", background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", color: "white", padding: "8px 12px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(59, 130, 246, 0.25)" }}>
@@ -1521,10 +1519,6 @@ export default function ReportsHistory() {
                                     <div style={{ marginBottom: '12px' }}>
                                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>Email</label>
                                         <div style={{ fontSize: '13px', fontWeight: '500', color: '#111827' }}>{selectedReport.customerEmail}</div>
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>Created</label>
-                                        <div style={{ fontSize: '13px', fontWeight: '500', color: '#111827' }}>{formatDate(selectedReport.createdAt)}</div>
                                     </div>
                                 </div>
                             </div>
