@@ -11,6 +11,7 @@ import { getPartnershipByDistrict } from "../services/partnership-api";
 import { generateDayDescription } from "../services/ai-api";
 import { getUserTemplates } from "../services/template-api";
 import { generateReport } from "../services/reports-api";
+import { validatePromoCode } from "../services/promo-codes-api";
 
 export default function ReportGeneration() {
     const navigate = useNavigate();
@@ -28,7 +29,9 @@ export default function ReportGeneration() {
     const [templates, setTemplates] = useState<any[]>([]);
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
-    const [generatedReport, setGeneratedReport] = useState<any>(null);
+    const [generatedReport] = useState<any>(null);
+    const [validatingPromoCode, setValidatingPromoCode] = useState(false);
+    const [promoCodeMessage, setPromoCodeMessage] = useState<string>("");
     const dayCardRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -91,6 +94,10 @@ export default function ReportGeneration() {
         specialRemark: "The final Detailed itinerary will be send 48 hours after the confirmation.",
         bookingPolicy: "Once booking details are completed and submitted by the client, we will proceed with booking reservations. At this stage, it is required to make a payment of 40% of the total tour package. Booking confirmation will reach you 48 hours after making the payment. The balance 60% of the payment is required to be paid 30 days prior the tour commencing date. You may proceed with Visa processing after the booking confirmation.",
         cancellationPolicy: "All travel offers listed on our travel website are discounted and all orders are non-refundable and cannot be used in conjunction with any other promotions, thus no refund for cancellations made within less than 30 days from the start of a tour and no -show.",
+        totalAmount: "",
+        promoCode: "",
+        promoCodeDiscount: 0,
+        finalAmount: 0,
     });
 
     const routeOptions = [
@@ -346,6 +353,77 @@ export default function ReportGeneration() {
         }));
     };
 
+    const handlePromoCodeValidation = async () => {
+        if (!formData.promoCode.trim()) {
+            setPromoCodeMessage("");
+            setFormData(prev => ({
+                ...prev,
+                promoCodeDiscount: 0,
+                finalAmount: parseFloat(prev.totalAmount) || 0
+            }));
+            return;
+        }
+
+        if (!formData.totalAmount) {
+            showError("Please enter the total amount first");
+            return;
+        }
+
+        setValidatingPromoCode(true);
+        setPromoCodeMessage("");
+
+        try {
+            const response = await validatePromoCode({
+                code: formData.promoCode,
+                purchaseAmount: parseFloat(formData.totalAmount)
+            });
+
+            if (response.data.isValid) {
+                const discount = response.data.calculatedDiscount || 0;
+                const finalAmount = parseFloat(formData.totalAmount) - discount;
+                
+                setFormData(prev => ({
+                    ...prev,
+                    promoCodeDiscount: discount,
+                    finalAmount: Math.max(0, finalAmount)
+                }));
+                
+                setPromoCodeMessage(`✅ Valid promo code! Discount: LKR ${discount.toFixed(2)}`);
+                showSuccess("Promo code applied successfully!");
+            } else {
+                setFormData(prev => ({
+                    ...prev,
+                    promoCodeDiscount: 0,
+                    finalAmount: parseFloat(prev.totalAmount) || 0
+                }));
+                setPromoCodeMessage(`❌ ${response.data.message || "Invalid promo code"}`);
+                showError(response.data.message || "Invalid promo code");
+            }
+        } catch (error: any) {
+            console.error("Error validating promo code:", error);
+            setFormData(prev => ({
+                ...prev,
+                promoCodeDiscount: 0,
+                finalAmount: parseFloat(prev.totalAmount) || 0
+            }));
+            setPromoCodeMessage(`❌ Failed to validate promo code`);
+            showError("Failed to validate promo code. Please try again.");
+        } finally {
+            setValidatingPromoCode(false);
+        }
+    };
+
+    const handleTotalAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        const numericValue = parseFloat(value) || 0;
+        
+        setFormData(prev => ({
+            ...prev,
+            totalAmount: value,
+            finalAmount: numericValue - prev.promoCodeDiscount
+        }));
+    };
+
     const isStepValid = (step: number): boolean => {
         switch (step) {
             case 1:
@@ -367,7 +445,7 @@ export default function ReportGeneration() {
                     formData.dayCards.every(card => !!generatedDescriptions[card.id])
                 );
             case 3:
-                return formData.selectedTemplate.trim() !== "";
+                return formData.selectedTemplate.trim() !== "" && formData.totalAmount.trim() !== "" && parseFloat(formData.totalAmount) > 0;
             default:
                 return false;
         }
@@ -459,6 +537,12 @@ export default function ReportGeneration() {
                     daysAndNights: formData.daysAndNights,
                     selectedRoutes: formData.selectedRoutes,
                     createdAt: new Date().toISOString(),
+                },
+                cost: {
+                    totalAmount: parseFloat(formData.totalAmount) || 0,
+                    promoCode: formData.promoCode,
+                    promoCodeDiscount: formData.promoCodeDiscount,
+                    finalAmount: formData.finalAmount,
                 },
                 policies: {
                     specialRemark: formData.specialRemark,
@@ -572,6 +656,10 @@ export default function ReportGeneration() {
                 specialRemark: "The final Detailed itinerary will be send 48 hours after the confirmation.",
                 bookingPolicy: "Once booking details are completed and submitted by the client, we will proceed with booking reservations. At this stage, it is required to make a payment of 40% of the total tour package. Booking confirmation will reach you 48 hours after making the payment. The balance 60% of the payment is required to be paid 30 days prior the tour commencing date. You may proceed with Visa processing after the booking confirmation.",
                 cancellationPolicy: "All travel offers listed on our travel website are discounted and all orders are non-refundable and cannot be used in conjunction with any other promotions, thus no refund for cancellations made within less than 30 days from the start of a tour and no -show.",
+                totalAmount: "",
+                promoCode: "",
+                promoCodeDiscount: 0,
+                finalAmount: 0,
             });
             setCurrentStep(1);
         }
@@ -2153,6 +2241,130 @@ export default function ReportGeneration() {
 
                                 <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #e5e7eb" }} />
 
+                                {/* Cost Section */}
+                                <h3 style={{ marginTop: 20, marginBottom: 20 }}>
+                                    Cost Information
+                                </h3>
+
+                                {/* Total Amount Field */}
+                                <div style={{ marginBottom: "20px" }}>
+                                    <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: "600", color: "#1f2937" }}>
+                                        Total Amount (LKR) *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="totalAmount"
+                                        value={formData.totalAmount}
+                                        onChange={handleTotalAmountChange}
+                                        placeholder="Enter total amount in LKR..."
+                                        step="0.01"
+                                        min="0"
+                                        required
+                                        style={{
+                                            width: "100%",
+                                            padding: "12px",
+                                            border: "1px solid #d1d5db",
+                                            borderRadius: "8px",
+                                            fontSize: "13px",
+                                            fontFamily: "inherit",
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Promo Code Field */}
+                                <div style={{ marginBottom: "20px" }}>
+                                    <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: "600", color: "#1f2937" }}>
+                                        Promo Code (Optional)
+                                    </label>
+                                    <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                                        <input
+                                            type="text"
+                                            name="promoCode"
+                                            value={formData.promoCode}
+                                            onChange={handleInputChange}
+                                            placeholder="Enter promo code..."
+                                            style={{
+                                                flex: 1,
+                                                padding: "12px",
+                                                border: "1px solid #d1d5db",
+                                                borderRadius: "8px",
+                                                fontSize: "13px",
+                                                fontFamily: "inherit",
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handlePromoCodeValidation}
+                                            disabled={validatingPromoCode || !formData.promoCode.trim()}
+                                            style={{
+                                                padding: "12px 16px",
+                                                backgroundColor: validatingPromoCode || !formData.promoCode.trim() ? "#9ca3af" : "var(--color-primary)",
+                                                color: "white",
+                                                border: "none",
+                                                borderRadius: "8px",
+                                                fontSize: "13px",
+                                                fontWeight: "600",
+                                                cursor: validatingPromoCode || !formData.promoCode.trim() ? "not-allowed" : "pointer",
+                                                whiteSpace: "nowrap",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "6px"
+                                            }}
+                                        >
+                                            {validatingPromoCode ? (
+                                                <>
+                                                    <CircularProgress size={14} sx={{ color: "white" }} />
+                                                    Validating...
+                                                </>
+                                            ) : (
+                                                "Apply"
+                                            )}
+                                        </button>
+                                    </div>
+                                    {promoCodeMessage && (
+                                        <div style={{
+                                            marginTop: "8px",
+                                            padding: "8px 12px",
+                                            backgroundColor: promoCodeMessage.includes("✅") ? "#f0f9ff" : "#fef2f2",
+                                            border: `1px solid ${promoCodeMessage.includes("✅") ? "#bfdbfe" : "#fecaca"}`,
+                                            borderRadius: "6px",
+                                            fontSize: "12px",
+                                            color: promoCodeMessage.includes("✅") ? "#1d4ed8" : "#dc2626"
+                                        }}>
+                                            {promoCodeMessage}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Final Amount Display */}
+                                {formData.totalAmount && (
+                                    <div style={{
+                                        background: "linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)",
+                                        border: "1px solid rgba(16, 185, 129, 0.2)",
+                                        borderRadius: "12px",
+                                        padding: "16px",
+                                        marginBottom: "20px"
+                                    }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                                            <span style={{ fontSize: "13px", color: "#6b7280" }}>Subtotal:</span>
+                                            <span style={{ fontSize: "13px", fontWeight: "600" }}>LKR {parseFloat(formData.totalAmount).toFixed(2)}</span>
+                                        </div>
+                                        {formData.promoCodeDiscount > 0 && (
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                                                <span style={{ fontSize: "13px", color: "#6b7280" }}>Discount:</span>
+                                                <span style={{ fontSize: "13px", fontWeight: "600", color: "#10b981" }}>-LKR {formData.promoCodeDiscount.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                        <hr style={{ margin: "8px 0", border: "none", borderTop: "1px solid rgba(16, 185, 129, 0.2)" }} />
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                            <span style={{ fontSize: "15px", fontWeight: "700", color: "#10b981" }}>Final Amount:</span>
+                                            <span style={{ fontSize: "18px", fontWeight: "700", color: "#10b981" }}>LKR {formData.finalAmount.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #e5e7eb" }} />
+
                                 <h3 style={{ marginTop: 20, marginBottom: 20 }}>
                                     Select Template
                                 </h3>
@@ -2527,6 +2739,12 @@ export default function ReportGeneration() {
                                     daysAndNights: formData.daysAndNights,
                                     selectedRoutes: formData.selectedRoutes,
                                     createdAt: new Date().toISOString(),
+                                },
+                                cost: {
+                                    totalAmount: parseFloat(formData.totalAmount) || 0,
+                                    promoCode: formData.promoCode,
+                                    promoCodeDiscount: formData.promoCodeDiscount,
+                                    finalAmount: formData.finalAmount,
                                 },
                                 policies: {
                                     specialRemark: formData.specialRemark,
