@@ -14,6 +14,7 @@ import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
 import CodeRoundedIcon from "@mui/icons-material/CodeRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import HeightRoundedIcon from "@mui/icons-material/HeightRounded";
+import TextFieldsRoundedIcon from "@mui/icons-material/TextFieldsRounded";
 import CircularProgress from '@mui/material/CircularProgress';
 import { getReports, updateReport } from "../services/reports-api";
 import { showError, showSuccess } from "../components/Toast";
@@ -24,6 +25,10 @@ import {
     type ReportData,
     type ReportPage,
     getImgSrc,
+    processReportPagesForOverflow,
+    placeImgs,
+    svcImgs,
+    svcColors,
 } from "../components/ReportPageRenderer";
 
 interface Report {
@@ -323,6 +328,56 @@ export default function ReportsHistory() {
         });
     };
 
+    // Update page content for non-template pages
+    const updatePageContent = (pageIndex: number, field: string, value: any) => {
+        setEditableReportData(prev => {
+            if (!prev?.pages?.[pageIndex]) return prev;
+
+            const pages = [...prev.pages];
+            const page = pages[pageIndex];
+
+            pages[pageIndex] = {
+                ...page,
+                content: { ...page.content, [field]: value }
+            };
+
+            return { ...prev, pages };
+        });
+    };
+
+    // Update metadata
+    const updateMetadata = (field: string, value: string) => {
+        setEditableReportData(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                metadata: { ...prev.metadata, [field]: value }
+            };
+        });
+    };
+
+    // Update policies
+    const updatePolicies = (field: string, value: string) => {
+        setEditableReportData(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                policies: { ...prev.policies, [field]: value }
+            };
+        });
+    };
+
+    // Update cost
+    const updateCost = (field: string, value: number) => {
+        setEditableReportData(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                cost: { ...prev.cost, [field]: value }
+            };
+        });
+    };
+
     const handleTextContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (selectedElementIndex === null) return;
         const newValue = event.target.value;
@@ -360,10 +415,10 @@ export default function ReportsHistory() {
         setIsSaving(true);
         try {
             const payload = {
-                id: selectedReport.id,
+                reportId: selectedReport.id,
                 customerName: selectedReport.customerName,
                 customerEmail: selectedReport.customerEmail,
-                generatedReport: JSON.stringify(editableReportData),
+                newReportContent: JSON.stringify(editableReportData),
             };
 
             await updateReport(payload, token);
@@ -380,7 +435,7 @@ export default function ReportsHistory() {
 
     // Export functions
     const generateReportHTML = (reportData: ReportData): string => {
-        const pages = reportData.pages || [];
+        const pages = processReportPagesForOverflow(reportData);
         let html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -413,10 +468,22 @@ export default function ReportsHistory() {
                 (page.content?.elements || []).forEach((el: any) => {
                     if (el.type === 'text') {
                         html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width ? el.width + 'px' : 'auto'}; font-size: ${el.fontSize || 14}px; font-family: ${el.fontFamily || 'Arial'}; font-weight: ${el.fontWeight || 400}; color: ${el.color || '#000'}; line-height: ${el.lineHeight || 1.4};">${el.content || ''}</div>`;
-                    } else if (el.type === 'shape' && el.shape === 'rectangle') {
-                        html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; background: ${el.fill || 'transparent'}; border-radius: ${el.borderRadius || 0}px;"></div>`;
+                    } else if (el.type === 'shape') {
+                        if (el.shape === 'polygon' && el.points?.length) {
+                            const polygonPoints = el.points.map((p: any) => `${(p.x / 595) * 100}% ${(p.y / 842) * 100}%`).join(', ');
+                            html += `<div style="position: absolute; left: 0; top: 0; width: 595px; height: 842px; background: ${el.fill || '#111827'}; clip-path: polygon(${polygonPoints});"></div>`;
+                        } else if (el.shape === 'circle') {
+                            html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.width || el.height || 100}px; background: ${el.fill || '#f3f4f6'}; border-radius: 50%;"></div>`;
+                        } else if (el.shape === 'line') {
+                            html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${Math.max(1, el.height || 1)}px; background: ${el.stroke || el.fill || '#e5e7eb'}; border-radius: 999px;"></div>`;
+                        } else {
+                            html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; background: ${el.fill || 'transparent'}; border-radius: ${el.borderRadius || 0}px;"></div>`;
+                        }
                     } else if (el.type === 'image') {
-                        html += `<img src="${el.src || ''}" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px;" />`;
+                        const imgSrc = getImgSrc(el.src);
+                        html += `<img src="${imgSrc}" crossorigin="anonymous" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px;" />`;
+                    } else if (el.type === 'pill') {
+                        html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; padding: 14px 18px; border-radius: 18px; background: ${el.colors?.bg || '#ffffff'}; color: ${el.colors?.text || '#111827'}; border: 1px solid ${(el.colors?.text || '#111827')}30; display: flex; flex-direction: column; gap: 4px; min-width: 130px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);"><span style="font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;">${el.label || ''}</span><span style="font-size: 16px; font-weight: 600;">${el.value || ''}</span></div>`;
                     }
                 });
                 html += `</div>`;
@@ -448,30 +515,86 @@ export default function ReportsHistory() {
         </div>
     </div>
 </div>`;
-            } else if (page.type === 'dayDetail') {
+            } else if (page.type === 'dayDetail' || page.type === 'dayDetailContinued') {
+                const isContinuation = page.type === 'dayDetailContinued' || page.isOverflow;
+                const heroImgs: string[] = [];
+                (page.content?.selectedPlaces || []).forEach((sp: any) => {
+                    placeImgs(sp.place).slice(0, 2).forEach((u: string) => heroImgs.push(u));
+                });
+                
                 html += `
 <div class="page">
-    <div style="height: 130px; background: linear-gradient(135deg, #1E293B 0%, #334155 100%); position: relative; display: flex; align-items: center; justify-content: center;">
-        <div style="text-align: center;">
-            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #1E293B; margin: 0 auto 8px;">${page.dayNumber || idx}</div>
-            <div style="font-size: 15px; font-weight: 700; color: white;">${page.content?.selectedDay || 'Date TBD'}</div>
+    ${!isContinuation ? `
+    <div style="height: 130px; background: linear-gradient(135deg, #1E293B 0%, #334155 100%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+        ${heroImgs.length > 0 ? `
+        <div style="position: absolute; inset: 0; display: flex;">
+            ${heroImgs.slice(0, 4).map((img: string) => `<div style="flex: 1; position: relative; overflow: hidden;"><img src="${img}" style="width: 100%; height: 100%; object-fit: cover;" /><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.3);"></div></div>`).join('')}
+        </div>
+        ` : ''}
+        <div style="text-align: center; position: relative; z-index: 10;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #1E293B; margin: 0 auto 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">${page.dayNumber || idx}</div>
+            <div style="font-size: 15px; font-weight: 700; color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.5);">${page.content?.selectedDay || 'Date TBD'}</div>
         </div>
     </div>
+    ` : `
+    <div style="height: 60px; background: linear-gradient(135deg, #1E293B 0%, #334155 100%); display: flex; align-items: center; padding: 0 32px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white;">${page.dayNumber || ''}</div>
+            <div>
+                <div style="font-size: 13px; font-weight: 700; color: white;">Day ${page.dayNumber || ''} (Continued)</div>
+                <div style="font-size: 10px; color: rgba(255,255,255,0.7);">${page.content?.selectedDay || ''}</div>
+            </div>
+        </div>
+    </div>
+    `}
     <div style="padding: 20px 32px;">
-        ${page.content?.description ? `
+        ${page.content?.description && !isContinuation ? `
         <div class="section-title"><div class="section-title-bar" style="background: #8B5CF6;"></div><div class="section-title-text" style="color: #8B5CF6;">Daily Itinerary</div></div>
         <div style="font-size: 12px; line-height: 1.6; color: #374151; background: #F9FAFB; padding: 14px; border-radius: 8px; margin-bottom: 20px;">${page.content.description}</div>
         ` : ''}
         ${(page.content?.selectedPlaces || []).length > 0 ? `
-        <div class="section-title"><div class="section-title-bar" style="background: #10B981;"></div><div class="section-title-text" style="color: #10B981;">Visiting Places</div></div>
+        <div class="section-title"><div class="section-title-bar" style="background: #10B981;"></div><div class="section-title-text" style="color: #10B981;">${isContinuation ? 'More Visiting Places' : 'Visiting Places'}</div></div>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
-            ${(page.content.selectedPlaces || []).map((sp: any) => `
-                <div style="background: white; border-radius: 10px; border: 1px solid #E5E7EB; padding: 10px;">
-                    <div style="font-size: 12px; font-weight: 700; color: #111827;">${sp.place?.name || sp.place?.placeName || 'Unknown'}</div>
-                    <div style="font-size: 10px; color: #6B7280;">📍 ${sp.district}</div>
+            ${(page.content.selectedPlaces || []).map((sp: any) => {
+                const imgs = placeImgs(sp.place);
+                return `
+                <div style="background: white; border-radius: 10px; border: 1px solid #E5E7EB; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                    ${imgs[0] ? `<div style="height: 60px; overflow: hidden;"><img src="${imgs[0]}" style="width: 100%; height: 100%; object-fit: cover;" /></div>` : ''}
+                    <div style="padding: 10px;">
+                        <div style="font-size: 12px; font-weight: 700; color: #111827;">${sp.place?.name || sp.place?.placeName || 'Unknown'}</div>
+                        <div style="font-size: 10px; color: #6B7280;">📍 ${sp.district}</div>
+                    </div>
                 </div>
-            `).join('')}
+            `}).join('')}
         </div>
+        ` : ''}
+        ${(page.content?.selectedHotels || []).length > 0 ? `
+        <div class="section-title"><div class="section-title-bar" style="background: #F59E0B;"></div><div class="section-title-text" style="color: #F59E0B;">${isContinuation ? 'More Services' : 'Services & Accommodations'}</div></div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+            ${(page.content.selectedHotels || []).map((sh: any) => {
+                const imgs = svcImgs(sh.hotel);
+                const theme = svcColors[sh.type] || svcColors.hotel;
+                return `
+                <div style="display: flex; gap: 10px; background: ${theme.bg}; padding: 10px; border-radius: 8px; border: 1px solid ${theme.border};">
+                    ${imgs[0] ? `<img src="${imgs[0]}" style="width: 60px; height: 50px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" />` : ''}
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                            <div style="padding: 2px 8px; border-radius: 4px; background: ${theme.badge}; color: white; font-size: 8px; font-weight: 700; text-transform: uppercase;">
+                                ${sh.type === 'hotel' ? '🏨 Hotel' : sh.type === 'transport' ? '🚗 Transport' : '🎯 Activity'}
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; font-weight: 700; color: ${theme.text}; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            ${sh.hotel?.name || sh.hotel?.serviceName || 'Service'}
+                        </div>
+                        <div style="font-size: 9px; color: #6B7280;">📍 ${sh.district}</div>
+                    </div>
+                </div>
+            `}).join('')}
+        </div>
+        ` : ''}
+        ${page.content?.remarks ? `
+        <div class="section-title"><div class="section-title-bar" style="background: #EC4899;"></div><div class="section-title-text" style="color: #EC4899;">Additional Notes</div></div>
+        <div style="font-size: 10px; line-height: 1.5; color: #6B7280; background: #FDF2F8; padding: 12px; border-radius: 8px; border: 1px solid #FBCFE8; font-style: italic;">${page.content.remarks}</div>
         ` : ''}
     </div>
 </div>`;
@@ -906,13 +1029,13 @@ export default function ReportsHistory() {
                                 <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>✈️</div>
                                 <div>
                                     <div style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(255,255,255,0.95)', letterSpacing: '-0.3px' }}>{reportData.metadata?.customerName || selectedReport.customerName}</div>
-                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>{reportData.pages?.length || 0} pages • {reportData.metadata?.daysAndNights || 'N/A'}</div>
+                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>{processReportPagesForOverflow(reportData).length} pages • {reportData.metadata?.daysAndNights || 'N/A'}</div>
                                 </div>
                             </div>
                             <button onClick={() => setViewModalOpen(false)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', borderRadius: '8px', padding: '7px 18px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>✕ Close</button>
                         </div>
                         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: '44px 24px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px' }}>
-                            {reportData.pages?.map((page, idx) => (
+                            {processReportPagesForOverflow(reportData).map((page, idx) => (
                                 <div key={idx} style={{ flexShrink: 0 }}>
                                     <ReportPageRenderer page={page} reportData={reportData} scale={1} />
                                 </div>
@@ -999,8 +1122,9 @@ export default function ReportsHistory() {
                         </section>
 
                         <aside className="template-customize-panel template-customize-panel--right">
-                            <div className="template-customize-panel-card">
-                                <h3>Edit selected</h3>
+                            <div className="template-customize-panel-card" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                                <h3>Edit Page Content</h3>
+                                {/* Template page editing */}
                                 {selectedElement && editableReportData.pages?.[selectedPageIndex]?.type === 'template' ? (
                                     <div className="template-customize-controls">
                                         <div className="template-customize-control">
@@ -1032,12 +1156,195 @@ export default function ReportsHistory() {
                                             <p className="template-customize-hint">Drag elements on the canvas to reposition them.</p>
                                         )}
                                     </div>
-                                ) : (
-                                    <p className="template-customize-hint">
-                                        {editableReportData.pages?.[selectedPageIndex]?.type === 'template'
-                                            ? 'Select an element from the canvas or the layer list to edit.'
-                                            : 'Template cover pages can be customized. Select a cover page to edit elements.'}
-                                    </p>
+                                ) : editableReportData.pages?.[selectedPageIndex]?.type === 'template' && !selectedElement ? (
+                                    <p className="template-customize-hint">Select an element from the canvas or the layer list to edit.</p>
+                                ) : null}
+
+                                {/* Customer Info page editing */}
+                                {editableReportData.pages?.[selectedPageIndex]?.type === 'customerInfo' && (
+                                    <div className="template-customize-controls">
+                                        <div className="template-customize-control">
+                                            <label><TextFieldsRoundedIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: '4px' }} />Customer Name</label>
+                                            <input 
+                                                type="text" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.customerName || ''} 
+                                                onChange={(e) => updateMetadata('customerName', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Country</label>
+                                            <input 
+                                                type="text" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.country || ''} 
+                                                onChange={(e) => updateMetadata('country', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Mobile Number</label>
+                                            <input 
+                                                type="text" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.mobileNo || ''} 
+                                                onChange={(e) => updateMetadata('mobileNo', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Email</label>
+                                            <input 
+                                                type="email" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.customerEmail || ''} 
+                                                onChange={(e) => updateMetadata('customerEmail', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Duration (Days & Nights)</label>
+                                            <input 
+                                                type="text" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.daysAndNights || ''} 
+                                                onChange={(e) => updateMetadata('daysAndNights', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Number of Passengers</label>
+                                            <input 
+                                                type="text" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.numberOfPassengers || ''} 
+                                                onChange={(e) => updateMetadata('numberOfPassengers', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Transportation Mode</label>
+                                            <input 
+                                                type="text" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.transportationMode || ''} 
+                                                onChange={(e) => updateMetadata('transportationMode', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Day Detail page editing */}
+                                {(editableReportData.pages?.[selectedPageIndex]?.type === 'dayDetail' || editableReportData.pages?.[selectedPageIndex]?.type === 'dayDetailContinued') && (
+                                    <div className="template-customize-controls">
+                                        <div className="template-customize-control">
+                                            <label><TextFieldsRoundedIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: '4px' }} />Date</label>
+                                            <input 
+                                                type="text" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.selectedDay || ''} 
+                                                onChange={(e) => updatePageContent(selectedPageIndex, 'selectedDay', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Daily Itinerary Description</label>
+                                            <textarea 
+                                                rows={6} 
+                                                className="template-customize-textarea" 
+                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.description || ''} 
+                                                onChange={(e) => updatePageContent(selectedPageIndex, 'description', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', resize: 'vertical' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Additional Remarks</label>
+                                            <textarea 
+                                                rows={3} 
+                                                className="template-customize-textarea" 
+                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.remarks || ''} 
+                                                onChange={(e) => updatePageContent(selectedPageIndex, 'remarks', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', resize: 'vertical' }}
+                                            />
+                                        </div>
+                                        <p className="template-customize-hint" style={{ marginTop: '8px', fontSize: '11px', color: '#6b7280' }}>
+                                            💡 Places and services are displayed from the original report data.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Cost page editing */}
+                                {editableReportData.pages?.[selectedPageIndex]?.type === 'cost' && (
+                                    <div className="template-customize-controls">
+                                        <div className="template-customize-control">
+                                            <label><TextFieldsRoundedIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: '4px' }} />Total Amount (LKR)</label>
+                                            <input 
+                                                type="number" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.cost?.totalAmount || 0} 
+                                                onChange={(e) => updateCost('totalAmount', parseFloat(e.target.value) || 0)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Promo Code Discount (LKR)</label>
+                                            <input 
+                                                type="number" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.cost?.promoCodeDiscount || 0} 
+                                                onChange={(e) => updateCost('promoCodeDiscount', parseFloat(e.target.value) || 0)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Final Amount (LKR)</label>
+                                            <input 
+                                                type="number" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.cost?.finalAmount || 0} 
+                                                onChange={(e) => updateCost('finalAmount', parseFloat(e.target.value) || 0)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Policies page editing */}
+                                {editableReportData.pages?.[selectedPageIndex]?.type === 'policies' && (
+                                    <div className="template-customize-controls">
+                                        <div className="template-customize-control">
+                                            <label><TextFieldsRoundedIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: '4px' }} />Special Remark</label>
+                                            <textarea 
+                                                rows={3} 
+                                                className="template-customize-textarea" 
+                                                value={editableReportData.policies?.specialRemark || ''} 
+                                                onChange={(e) => updatePolicies('specialRemark', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', resize: 'vertical' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Booking Policy</label>
+                                            <textarea 
+                                                rows={4} 
+                                                className="template-customize-textarea" 
+                                                value={editableReportData.policies?.bookingPolicy || ''} 
+                                                onChange={(e) => updatePolicies('bookingPolicy', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', resize: 'vertical' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label>Cancellation Policy</label>
+                                            <textarea 
+                                                rows={4} 
+                                                className="template-customize-textarea" 
+                                                value={editableReportData.policies?.cancellationPolicy || ''} 
+                                                onChange={(e) => updatePolicies('cancellationPolicy', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', resize: 'vertical' }}
+                                            />
+                                        </div>
+                                    </div>
                                 )}
                             </div>
 

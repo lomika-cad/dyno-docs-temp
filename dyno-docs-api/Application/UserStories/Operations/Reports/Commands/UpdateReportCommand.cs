@@ -23,7 +23,8 @@ public class UpdateReportCommandHandler(IApplicationDbContext context) : IReques
 
         report.GeneratedReport = request.NewReportContent;
         report.LastModifiedAt = DateTime.Now;
-
+        
+        context.Report.Update(report);
         await context.SaveChangesAsync(cancellationToken);
         return Result.Success("Report updated successfully.");
     }

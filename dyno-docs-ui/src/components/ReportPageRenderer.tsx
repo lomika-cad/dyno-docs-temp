@@ -4,14 +4,22 @@ import React from 'react';
 export const A4_WIDTH = 595;
 export const A4_HEIGHT = 842;
 
+// Content area height (excluding header)
+const HEADER_HEIGHT = 130;
+const PADDING_TOP = 20;
+const PADDING_BOTTOM = 32;
+const CONTENT_HEIGHT = A4_HEIGHT - HEADER_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
+
 // Type definitions
-export type ReportPageType = 'template' | 'customerInfo' | 'dayDetail' | 'cost' | 'policies';
+export type ReportPageType = 'template' | 'customerInfo' | 'dayDetail' | 'dayDetailContinued' | 'cost' | 'policies';
 
 export interface ReportPage {
     type: ReportPageType;
     pageNumber: number;
     dayNumber?: number;
     content: any;
+    isOverflow?: boolean;
+    overflowContent?: any;
 }
 
 export interface ReportData {
@@ -353,35 +361,156 @@ interface DayDetailPageProps {
     scale?: number;
 }
 
+// Helper to split day content across pages if needed
+export const splitDayContentForPages = (dayPage: ReportPage): ReportPage[] => {
+    const content = dayPage.content;
+    const places = content?.selectedPlaces || [];
+    const hotels = content?.selectedHotels || [];
+    
+    // Estimate content height (rough calculation)
+    const descriptionHeight = content?.description ? 100 : 0;
+    const placesHeight = Math.ceil(places.length / 2) * 100; // 2 columns, ~100px per row
+    const hotelsHeight = hotels.length * 80; // ~80px per hotel
+    const remarksHeight = content?.remarks ? 60 : 0;
+    const totalContentHeight = descriptionHeight + placesHeight + hotelsHeight + remarksHeight;
+    
+    // If content fits in one page, return as is
+    if (totalContentHeight <= CONTENT_HEIGHT) {
+        return [dayPage];
+    }
+    
+    // Split content across pages
+    const pages: ReportPage[] = [];
+    const maxPlacesPerPage = 4;
+    const maxHotelsPerPage = 3;
+    
+    // First page with description and some places/hotels
+    const firstPagePlaces = places.slice(0, maxPlacesPerPage);
+    const firstPageHotels = hotels.slice(0, maxHotelsPerPage);
+    const remainingPlaces = places.slice(maxPlacesPerPage);
+    const remainingHotels = hotels.slice(maxHotelsPerPage);
+    
+    pages.push({
+        ...dayPage,
+        content: {
+            ...content,
+            selectedPlaces: firstPagePlaces,
+            selectedHotels: firstPageHotels,
+            remarks: remainingPlaces.length === 0 && remainingHotels.length === 0 ? content?.remarks : undefined,
+        }
+    });
+    
+    // Additional pages for overflow content
+    let currentPlaces = remainingPlaces;
+    let currentHotels = remainingHotels;
+    let pageCount = 1;
+    
+    while (currentPlaces.length > 0 || currentHotels.length > 0) {
+        const pagePlaces = currentPlaces.slice(0, maxPlacesPerPage + 2); // More space without header
+        const pageHotels = currentHotels.slice(0, maxHotelsPerPage + 2);
+        
+        currentPlaces = currentPlaces.slice(maxPlacesPerPage + 2);
+        currentHotels = currentHotels.slice(maxHotelsPerPage + 2);
+        
+        const isLast = currentPlaces.length === 0 && currentHotels.length === 0;
+        
+        pages.push({
+            type: 'dayDetailContinued',
+            pageNumber: dayPage.pageNumber + pageCount,
+            dayNumber: dayPage.dayNumber,
+            isOverflow: true,
+            content: {
+                selectedDay: content?.selectedDay,
+                selectedPlaces: pagePlaces,
+                selectedHotels: pageHotels,
+                remarks: isLast ? content?.remarks : undefined,
+            }
+        });
+        pageCount++;
+    }
+    
+    return pages;
+};
+
 export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scale = 1 }) => {
     const heroImgs: string[] = [];
     (page.content?.selectedPlaces || []).forEach((sp: any) => placeImgs(sp.place).slice(0, 2).forEach((u: string) => heroImgs.push(u)));
 
+    // Check if this is a continuation page
+    const isContinuationPage = page.type === 'dayDetailContinued' || page.isOverflow;
+
     return (
         <PageShell scale={scale}>
-            <div style={{ height: `${130 * scale}px`, background: '#1E293B', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                {heroImgs.length > 0 ? (
-                    <div style={{ display: 'flex', height: '100%' }}>
-                        {heroImgs.slice(0, 4).map((src, i) => (
-                            <div key={i} style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                                <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
-                            </div>
-                        ))}
+            {/* Only show header on main day page, not continuation */}
+            {!isContinuationPage && (
+                <div style={{ height: `${130 * scale}px`, background: '#1E293B', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                    {heroImgs.length > 0 ? (
+                        <div style={{ display: 'flex', height: '100%' }}>
+                            {heroImgs.slice(0, 4).map((src, i) => (
+                                <div key={i} style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                                    <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)' }} />
+                    )}
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', zIndex: 10 }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: `${56 * scale}px`, height: `${56 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', fontSize: `${20 * scale}px`, fontWeight: 700, color: '#1E293B', marginBottom: `${8 * scale}px`, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+                            {page.dayNumber}
+                        </div>
+                        <div style={{ fontSize: `${15 * scale}px`, fontWeight: 700, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{page.content?.selectedDay || 'Date TBD'}</div>
                     </div>
-                ) : (
-                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)' }} />
-                )}
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', zIndex: 10 }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: `${56 * scale}px`, height: `${56 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', fontSize: `${20 * scale}px`, fontWeight: 700, color: '#1E293B', marginBottom: `${8 * scale}px`, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-                        {page.dayNumber}
-                    </div>
-                    <div style={{ fontSize: `${15 * scale}px`, fontWeight: 700, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{page.content?.selectedDay || 'Date TBD'}</div>
                 </div>
-            </div>
-            <div style={{ padding: `${20 * scale}px ${32 * scale}px ${32 * scale}px`, flex: 1, overflow: 'hidden' }}>
-                {page.content?.description && (
-                    <div style={{ marginBottom: `${20 * scale}px` }}>
+            )}
+            
+            {/* Continuation header - smaller */}
+            {isContinuationPage && (
+                <div style={{ 
+                    height: `${60 * scale}px`, 
+                    background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    padding: `0 ${32 * scale}px`,
+                    flexShrink: 0 
+                }}>
+                    <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: `${12 * scale}px` 
+                    }}>
+                        <div style={{ 
+                            width: `${36 * scale}px`, 
+                            height: `${36 * scale}px`, 
+                            borderRadius: '50%', 
+                            background: 'rgba(255,255,255,0.15)', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            fontSize: `${14 * scale}px`,
+                            fontWeight: 700,
+                            color: 'white'
+                        }}>
+                            {page.dayNumber}
+                        </div>
+                        <div>
+                            <div style={{ fontSize: `${13 * scale}px`, fontWeight: 700, color: 'white' }}>Day {page.dayNumber} (Continued)</div>
+                            <div style={{ fontSize: `${10 * scale}px`, color: 'rgba(255,255,255,0.7)' }}>{page.content?.selectedDay || ''}</div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            <div style={{ 
+                padding: `${20 * scale}px ${32 * scale}px ${32 * scale}px`, 
+                flex: 1, 
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
+            }}>
+                {page.content?.description && !isContinuationPage && (
+                    <div style={{ marginBottom: `${20 * scale}px`, flexShrink: 0 }}>
                         <SectionTitle color="#8B5CF6" scale={scale}>Daily Itinerary</SectionTitle>
                         <div style={{ fontSize: `${12 * scale}px`, lineHeight: 1.6, color: '#374151', background: '#F9FAFB', padding: `${14 * scale}px`, borderRadius: `${8 * scale}px`, border: '1px solid #E5E7EB' }}>
                             {page.content.description}
@@ -389,10 +518,12 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
                     </div>
                 )}
                 {(page.content?.selectedPlaces || []).length > 0 && (
-                    <div style={{ marginBottom: `${20 * scale}px` }}>
-                        <SectionTitle color="#10B981" scale={scale}>Visiting Places</SectionTitle>
-                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${180 * scale}px, 1fr))`, gap: `${12 * scale}px` }}>
-                            {(page.content.selectedPlaces || []).slice(0, 4).map((sp: any, i: number) => {
+                    <div style={{ marginBottom: `${20 * scale}px`, flexShrink: 0 }}>
+                        <SectionTitle color="#10B981" scale={scale}>
+                            {isContinuationPage ? 'More Visiting Places' : 'Visiting Places'}
+                        </SectionTitle>
+                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(2, 1fr)`, gap: `${12 * scale}px` }}>
+                            {(page.content.selectedPlaces || []).map((sp: any, i: number) => {
                                 const imgs = placeImgs(sp.place);
                                 return (
                                     <div key={i} style={{ background: 'white', borderRadius: `${10 * scale}px`, overflow: 'hidden', border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
@@ -417,10 +548,12 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
                     </div>
                 )}
                 {(page.content?.selectedHotels || []).length > 0 && (
-                    <div style={{ marginBottom: `${20 * scale}px` }}>
-                        <SectionTitle color="#F59E0B" scale={scale}>Services & Accommodations</SectionTitle>
+                    <div style={{ marginBottom: `${20 * scale}px`, flexShrink: 0 }}>
+                        <SectionTitle color="#F59E0B" scale={scale}>
+                            {isContinuationPage ? 'More Services' : 'Services & Accommodations'}
+                        </SectionTitle>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: `${8 * scale}px` }}>
-                            {(page.content.selectedHotels || []).slice(0, 3).map((sh: any, i: number) => {
+                            {(page.content.selectedHotels || []).map((sh: any, i: number) => {
                                 const imgs = svcImgs(sh.hotel);
                                 const theme = svcColors[sh.type] || svcColors.hotel;
                                 return (
@@ -446,7 +579,7 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
                     </div>
                 )}
                 {page.content?.remarks && (
-                    <div>
+                    <div style={{ flexShrink: 0 }}>
                         <SectionTitle color="#EC4899" scale={scale}>Additional Notes</SectionTitle>
                         <div style={{ fontSize: `${10 * scale}px`, lineHeight: 1.5, color: '#6B7280', background: '#FDF2F8', padding: `${12 * scale}px`, borderRadius: `${8 * scale}px`, border: '1px solid #FBCFE8', fontStyle: 'italic' }}>
                             {page.content.remarks}
@@ -666,6 +799,7 @@ export const ReportPageRenderer: React.FC<ReportPageRendererProps> = ({ page, re
         case 'customerInfo':
             return <CustomerInfoPageRenderer page={page} reportData={reportData} scale={scale} />;
         case 'dayDetail':
+        case 'dayDetailContinued':
             return <DayDetailPageRenderer page={page} scale={scale} />;
         case 'cost':
             return <CostPageRenderer page={page} reportData={reportData} scale={scale} />;
@@ -674,6 +808,27 @@ export const ReportPageRenderer: React.FC<ReportPageRendererProps> = ({ page, re
         default:
             return null;
     }
+};
+
+// Helper function to process report data and split pages with overflow content
+export const processReportPagesForOverflow = (reportData: ReportData): ReportPage[] => {
+    const pages = reportData.pages || [];
+    const processedPages: ReportPage[] = [];
+    
+    pages.forEach((page) => {
+        if (page.type === 'dayDetail') {
+            const splitPages = splitDayContentForPages(page);
+            processedPages.push(...splitPages);
+        } else {
+            processedPages.push(page);
+        }
+    });
+    
+    // Renumber pages
+    return processedPages.map((page, idx) => ({
+        ...page,
+        pageNumber: idx + 1
+    }));
 };
 
 export default ReportPageRenderer;
