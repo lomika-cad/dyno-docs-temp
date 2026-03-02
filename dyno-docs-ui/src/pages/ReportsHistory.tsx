@@ -1286,6 +1286,332 @@ export default function ReportsHistory() {
                                                         );
                                                     }
 
+                                                    if (page.type === 'dayDetail') {
+                                                        const placeImgs = (place: any): string[] => {
+                                                            const urls: string[] = [];
+                                                            let idx = 1;
+                                                            while (place[`image${idx}Url`]) { urls.push(getImgSrc(place[`image${idx}Url`])); idx++; }
+                                                            if (urls.length === 0) {
+                                                                const fb = place.images ?? place.Images ?? place.image ?? place.Image;
+                                                                if (fb) (Array.isArray(fb) ? fb : [fb]).forEach((u: any) => urls.push(getImgSrc(u)));
+                                                            }
+                                                            return urls.filter(Boolean);
+                                                        };
+
+                                                        const svcImgs = (hotel: any): string[] => {
+                                                            const raw = hotel.images ?? hotel.Images ?? hotel.image ?? hotel.Image ?? [];
+                                                            return (Array.isArray(raw) ? raw : [raw]).map(getImgSrc).filter(Boolean);
+                                                        };
+
+                                                        const heroImgs: string[] = [];
+                                                        (page.content?.selectedPlaces || []).forEach((sp: any) => placeImgs(sp.place).slice(0, 2).forEach((u: string) => heroImgs.push(u)));
+                                                        const svcColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+                                                            hotel: { bg: '#f5f0ff', border: '#ddd6fe', text: '#5b21b6', badge: '#7c3aed' },
+                                                            transport: { bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8', badge: '#2563eb' },
+                                                            activity: { bg: '#fff1f0', border: '#fecaca', text: '#b91c1c', badge: '#dc2626' },
+                                                        };
+
+                                                        return (
+                                                            <div key={`day-${idx}`} style={{ marginBottom: '30px' }}>
+                                                                <PageShell>
+                                                                    <div style={{ height: '130px', background: '#1E293B', position: 'relative', overflow: 'hidden' }}>
+                                                                        {heroImgs.length > 0 ? (
+                                                                            <div style={{ display: 'flex', height: '100%' }}>
+                                                                                {heroImgs.slice(0, 4).map((src, i) => (
+                                                                                    <div key={i} style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                                                                                        <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)' }} />
+                                                                        )}
+                                                                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', zIndex: 10 }}>
+                                                                            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(255,255,255,0.95)', fontSize: '20px', fontWeight: 700, color: '#1E293B', marginBottom: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+                                                                                {page.dayNumber}
+                                                                            </div>
+                                                                            <div style={{ fontSize: '15px', fontWeight: 700, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{page.content?.selectedDay || 'Date TBD'}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div style={{ padding: '20px 32px 32px' }}>
+                                                                        {page.content?.description && (
+                                                                            <div style={{ marginBottom: '20px' }}>
+                                                                                <SectionTitle color="#8B5CF6">Daily Itinerary</SectionTitle>
+                                                                                <div style={{ fontSize: '12px', lineHeight: 1.6, color: '#374151', background: '#F9FAFB', padding: '14px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                                                                                    {page.content.description}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        {(page.content?.selectedPlaces || []).length > 0 && (
+                                                                            <div style={{ marginBottom: '20px' }}>
+                                                                                <SectionTitle color="#10B981">Visiting Places</SectionTitle>
+                                                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                                                                                    {(page.content.selectedPlaces || []).map((sp: any, i: number) => {
+                                                                                        const imgs = placeImgs(sp.place);
+                                                                                        return (
+                                                                                            <div key={i} style={{ background: 'white', borderRadius: '10px', overflow: 'hidden', border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                                                                                                <div style={{ display: 'grid', gridTemplateColumns: imgs.length >= 2 ? 'repeat(2, 68px)' : '68px', gridTemplateRows: imgs.length > 2 ? 'repeat(2, 68px)' : '68px', gap: '0' }}>
+                                                                                                    {imgs.slice(0, 4).map((src, j) => (
+                                                                                                        <img key={j} src={src} alt="" style={{ width: '68px', height: '68px', objectFit: 'cover' }} />
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                                <div style={{ padding: '10px' }}>
+                                                                                                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#111827', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                                                        {sp.place?.name || sp.place?.placeName || 'Unknown'}
+                                                                                                    </div>
+                                                                                                    <div style={{ fontSize: '10px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                                                        <span>📍</span>
+                                                                                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.district}</span>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        {(page.content?.selectedHotels || []).length > 0 && (
+                                                                            <div style={{ marginBottom: '20px' }}>
+                                                                                <SectionTitle color="#F59E0B">Services & Accommodations</SectionTitle>
+                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                                                    {(page.content.selectedHotels || []).map((sh: any, i: number) => {
+                                                                                        const imgs = svcImgs(sh.hotel);
+                                                                                        const theme = svcColors[sh.type] || svcColors.hotel;
+                                                                                        return (
+                                                                                            <div key={i} style={{ display: 'flex', gap: '10px', background: theme.bg, padding: '10px', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
+                                                                                                {imgs[0] && (
+                                                                                                    <img src={imgs[0]} alt="" style={{ width: '70px', height: '64px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />
+                                                                                                )}
+                                                                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                                                                                                        <div style={{ padding: '2px 8px', borderRadius: '4px', background: theme.badge, color: 'white', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>
+                                                                                                            {sh.type === 'hotel' ? '🏨 Hotel' : sh.type === 'transport' ? '🚗 Transport' : '🎯 Activity'}
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    <div style={{ fontSize: '12px', fontWeight: 700, color: theme.text, marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                                                        {sh.hotel?.name || sh.hotel?.serviceName || 'Service'}
+                                                                                                    </div>
+                                                                                                    <div style={{ fontSize: '10px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {sh.district}</div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        {page.content?.remarks && (
+                                                                            <div>
+                                                                                <SectionTitle color="#EC4899">Additional Notes</SectionTitle>
+                                                                                <div style={{ fontSize: '11px', lineHeight: 1.5, color: '#6B7280', background: '#FDF2F8', padding: '12px', borderRadius: '8px', border: '1px solid #FBCFE8', fontStyle: 'italic' }}>
+                                                                                    {page.content.remarks}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </PageShell>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    if (page.type === 'cost') {
+                                                        const costData = page.content || {};
+                                                        const reportCostData = reportData.cost || {};
+                                                        const totalAmount = costData.totalAmount || reportCostData.totalAmount || 0;
+                                                        const promoCode = costData.promoCode || reportCostData.promoCode || '';
+                                                        const promoCodeDiscount = costData.promoCodeDiscount || reportCostData.promoCodeDiscount || 0;
+                                                        const finalAmount = costData.finalAmount || reportCostData.finalAmount || totalAmount;
+
+                                                        return (
+                                                            <div key={`cost-${idx}`} style={{ marginBottom: '30px' }}>
+                                                                <PageShell>
+                                                                    {/* Hero Section */}
+                                                                    <div style={{
+                                                                        height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
+                                                                        background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 25%, #14b8a6 75%, #5eead4 100%)',
+                                                                    }}>
+                                                                        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                                                                        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                                                                        <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                                                                <div style={{
+                                                                                    width: '40px', height: '40px', borderRadius: '50%',
+                                                                                    background: 'rgba(255,255,255,0.15)', display: 'flex',
+                                                                                    alignItems: 'center', justifyContent: 'center', fontSize: '18px'
+                                                                                }}>💰</div>
+                                                                                <div>
+                                                                                    <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Cost Summary</div>
+                                                                                    <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
+                                                                                        Package pricing & discounts
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Content */}
+                                                                    <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
+                                                                        {/* Cost Breakdown Card */}
+                                                                        <div style={{
+                                                                            background: 'white', borderRadius: '16px', padding: '28px',
+                                                                            boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid #f1f5f9',
+                                                                            marginBottom: '24px'
+                                                                        }}>
+                                                                            <div style={{ marginBottom: '20px' }}>
+                                                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '16px' }}>Package Details</div>
+                                                                            </div>
+
+                                                                            {/* Subtotal */}
+                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                                                                <span style={{ fontSize: '13px', color: '#64748b' }}>Tour Package Amount</span>
+                                                                                <span style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>LKR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                                            </div>
+
+                                                                            {/* Promo Code Discount */}
+                                                                            {promoCodeDiscount > 0 && (
+                                                                                <>
+                                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                            <span style={{ fontSize: '13px', color: '#64748b' }}>Promo Code Discount</span>
+                                                                                            {promoCode && (
+                                                                                                <span style={{
+                                                                                                    fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
+                                                                                                    background: '#dcfce7', color: '#15803d', fontWeight: 600
+                                                                                                }}>
+                                                                                                    {promoCode}
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <span style={{ fontSize: '14px', fontWeight: 600, color: '#dc2626' }}>-LKR {promoCodeDiscount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                                                    </div>
+                                                                                </>
+                                                                            )}
+
+                                                                            {/* Final Amount */}
+                                                                            <div style={{
+                                                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                                                marginTop: '12px',
+                                                                                background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                                                                                margin: '16px -28px -28px',
+                                                                                padding: '20px 28px',
+                                                                                borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px'
+                                                                            }}>
+                                                                                <span style={{ fontSize: '16px', fontWeight: 700, color: '#15803d' }}>Total Amount</span>
+                                                                                <span style={{ fontSize: '20px', fontWeight: 700, color: '#15803d' }}>
+                                                                                    LKR {finalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Payment Terms */}
+                                                                        <div style={{
+                                                                            background: 'white', borderRadius: '12px', padding: '20px',
+                                                                            boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                                                                        }}>
+                                                                            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '12px' }}>💳 Payment Information</div>
+                                                                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
+                                                                                • 40% advance payment required to confirm booking<br />
+                                                                                • Balance 60% due 30 days before tour commencement<br />
+                                                                                • All amounts are in Sri Lankan Rupees (LKR)
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </PageShell>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    if (page.type === 'policies') {
+                                                        const policiesData = page.content || {};
+                                                        const reportPoliciesData = reportData.policies || {};
+                                                        const specialRemark = policiesData.specialRemark || reportPoliciesData.specialRemark || '';
+                                                        const bookingPolicy = policiesData.bookingPolicy || reportPoliciesData.bookingPolicy || '';
+                                                        const cancellationPolicy = policiesData.cancellationPolicy || reportPoliciesData.cancellationPolicy || '';
+
+                                                        return (
+                                                            <div key={`policies-${idx}`} style={{ marginBottom: '30px' }}>
+                                                                <PageShell>
+                                                                    {/* Hero Section */}
+                                                                    <div style={{
+                                                                        height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
+                                                                        background: 'linear-gradient(135deg, #7c2d12 0%, #dc2626 25%, #ef4444 75%, #fca5a5 100%)',
+                                                                    }}>
+                                                                        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                                                                        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                                                                        <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                                                                <div style={{
+                                                                                    width: '40px', height: '40px', borderRadius: '50%',
+                                                                                    background: 'rgba(255,255,255,0.15)', display: 'flex',
+                                                                                    alignItems: 'center', justifyContent: 'center', fontSize: '18px'
+                                                                                }}>📋</div>
+                                                                                <div>
+                                                                                    <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Terms & Policies</div>
+                                                                                    <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
+                                                                                        Important information & conditions
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Content */}
+                                                                    <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
+                                                                        {/* Special Remark */}
+                                                                        {specialRemark && (
+                                                                            <div style={{
+                                                                                background: 'white', borderRadius: '12px', padding: '20px',
+                                                                                boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                                                                                marginBottom: '20px'
+                                                                            }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                                                                    <div style={{ fontSize: '16px' }}>⚡</div>
+                                                                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Important Notice</div>
+                                                                                </div>
+                                                                                <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.6, padding: '12px', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fbbf24' }}>
+                                                                                    {specialRemark}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Booking Policy */}
+                                                                        {bookingPolicy && (
+                                                                            <div style={{
+                                                                                background: 'white', borderRadius: '12px', padding: '20px',
+                                                                                boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                                                                                marginBottom: '20px'
+                                                                            }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                                                                    <div style={{ fontSize: '16px' }}>📅</div>
+                                                                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Booking Policy</div>
+                                                                                </div>
+                                                                                <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
+                                                                                    {bookingPolicy}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Cancellation Policy */}
+                                                                        {cancellationPolicy && (
+                                                                            <div style={{
+                                                                                background: 'white', borderRadius: '12px', padding: '20px',
+                                                                                boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                                                                            }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                                                                    <div style={{ fontSize: '16px' }}>❌</div>
+                                                                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Cancellation Policy</div>
+                                                                                </div>
+                                                                                <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
+                                                                                    {cancellationPolicy}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </PageShell>
+                                                            </div>
+                                                        );
+                                                    }
+
                                                     return null;
                                                 }).filter(Boolean)}
                                             </div>
