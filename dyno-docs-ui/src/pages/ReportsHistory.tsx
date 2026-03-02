@@ -1406,16 +1406,6 @@ export default function ReportsHistory() {
                                                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
                                             />
                                         </div>
-                                        <div className="template-customize-control">
-                                            <label>Transportation Mode</label>
-                                            <input 
-                                                type="text" 
-                                                className="template-customize-input" 
-                                                value={editableReportData.metadata?.transportationMode || ''} 
-                                                onChange={(e) => updateMetadata('transportationMode', e.target.value)}
-                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
-                                            />
-                                        </div>
                                     </div>
                                 )}
 

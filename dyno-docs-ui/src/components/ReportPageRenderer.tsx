@@ -290,7 +290,6 @@ export const CustomerInfoPageRenderer: React.FC<CustomerInfoPageProps> = ({ page
         { icon: '📧', label: 'Email', value: metadata?.customerEmail || page.content?.email },
         { icon: '🗓️', label: 'Duration', value: metadata?.daysAndNights },
         { icon: '👥', label: 'Passengers', value: metadata?.numberOfPassengers },
-        ...(metadata?.transportationMode ? [{ icon: '🚌', label: 'Transport', value: metadata.transportationMode }] : []),
     ];
 
     return (
