@@ -220,15 +220,6 @@ export default function ReportsHistory() {
                                                 textTransform: "uppercase"
                                             }}>Email</th>
                                             <th style={{
-                                                textAlign: "left",
-                                                padding: "12px 16px",
-                                                fontSize: "12px",
-                                                fontWeight: "700",
-                                                color: "#6b7280",
-                                                letterSpacing: "0.5px",
-                                                textTransform: "uppercase"
-                                            }}>Created At</th>
-                                            <th style={{
                                                 textAlign: "center",
                                                 padding: "12px 16px",
                                                 fontSize: "12px",
@@ -258,11 +249,6 @@ export default function ReportsHistory() {
                                                     fontSize: "14px",
                                                     color: "#6b7280"
                                                 }}>{report.customerEmail}</td>
-                                                <td style={{
-                                                    padding: "16px",
-                                                    fontSize: "13px",
-                                                    color: "#6b7280"
-                                                }}>{formatDate(report.createdAt)}</td>
                                                 <td style={{
                                                     padding: "16px",
                                                     textAlign: "center"
