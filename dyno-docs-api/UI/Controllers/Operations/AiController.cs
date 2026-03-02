@@ -119,12 +119,11 @@ Keep it concise.";
                 return StatusCode(500, "Groq API key not configured in appsettings.");
 
             var systemPrompt =
-@"You are a professional travel itinerary writer for a tourism agency.
-Generate an engaging day description for a travel itinerary as bullet points.
-Use '•' for each bullet point. Each bullet should be concise and informative (1-2 sentences max).
+                @"You are a professional travel itinerary writer for a tourism agency.
+Generate an engaging day description for a travel itinerary in a single paragraph of approximately 75 words.
 Focus on: places to explore, scenic highlights, activities, transport arrangements, and accommodation.
 Keep the tone professional, exciting, and enticing for travellers.
-Generate exactly 6-9 bullet points. Do not include headings or extra formatting — just the bullet points.";
+Do not use bullet points, headings, or extra formatting — return only the paragraph.";
 
             var placesInfo = request.Places?.Length > 0
                 ? string.Join(", ", request.Places)
@@ -136,13 +135,14 @@ Generate exactly 6-9 bullet points. Do not include headings or extra formatting 
                 ? string.Join(", ", request.Services)
                 : "None";
 
-            var userMessage = $@"Generate bullet point descriptions for Day {request.DayNumber}{(string.IsNullOrWhiteSpace(request.Date) ? "" : $" ({request.Date})")} of the travel itinerary.
+            var userMessage =
+                $@"Write Day {request.DayNumber}{(string.IsNullOrWhiteSpace(request.Date) ? "" : $" ({request.Date})")} itinerary description.
 
 Regions/Districts visited: {regionsInfo}
 Places to visit: {placesInfo}
 Transport & activity services: {servicesInfo}
 
-Write 6-9 engaging bullet points for this day.";
+Return ONE single paragraph of about 75 words (no bullets, no headings).";
 
             var groqRequest = new GroqChatRequest(
                 model,
