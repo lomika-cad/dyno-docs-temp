@@ -28,7 +28,7 @@ export default function ReportGeneration() {
     const [templates, setTemplates] = useState<any[]>([]);
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
-    const [generatedReport, setGeneratedReport] = useState<{ templateDesign: any; template: any } | null>(null);
+    const [generatedReport, setGeneratedReport] = useState<any>(null);
     const dayCardRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -413,13 +413,23 @@ export default function ReportGeneration() {
             return;
         }
 
+        const token = sessionStorage.getItem('dd_token');
+        const tenantId = sessionStorage.getItem('dd_tenant_id');
+        if (!token) {
+            showError('Authentication required. Please log in.');
+            return;
+        }
+
         setIsLoading(true);
+        setSavingReport(true);
         try {
             const selected = templates.find(
                 (t) => (t.id ?? t.templateId)?.toString() === formData.selectedTemplate
             );
             if (!selected) {
                 showError("Selected template not found");
+                setIsLoading(false);
+                setSavingReport(false);
                 return;
             }
             let templateDesign: any;
@@ -428,15 +438,89 @@ export default function ReportGeneration() {
                 templateDesign = typeof raw === "string" ? JSON.parse(raw) : raw;
             } catch {
                 showError("Failed to parse template design.");
+                setIsLoading(false);
+                setSavingReport(false);
                 return;
             }
-            setGeneratedReport({ templateDesign, template: selected });
-            setReportModalOpen(true);
-            showSuccess("Report generated successfully!");
-        } catch (error) {
-            showError("Failed to generate report. Please try again.");
+
+            // Build complete report structure with all pages
+            const completeReport = {
+                version: "1.0",
+                metadata: {
+                    customerName: formData.customerName,
+                    customerEmail: formData.email,
+                    country: formData.country,
+                    mobileNo: formData.mobileNo,
+                    transportationMode: formData.transportationMode,
+                    numberOfPassengers: formData.numberOfPassengers,
+                    daysAndNights: formData.daysAndNights,
+                    selectedRoutes: formData.selectedRoutes,
+                    createdAt: new Date().toISOString(),
+                },
+                template: {
+                    id: selected.id ?? selected.templateId,
+                    name: selected.templateName ?? selected.name,
+                    thumbnail: selected.templateThumbnail,
+                },
+                templateDesign: templateDesign,
+                pages: [
+                    // Template cover pages
+                    ...(templateDesign?.pages || []).map((page: any, idx: number) => ({
+                        type: 'template',
+                        pageNumber: idx + 1,
+                        content: page,
+                    })),
+                    // Customer info page
+                    {
+                        type: 'customerInfo',
+                        pageNumber: (templateDesign?.pages?.length ?? 1) + 1,
+                        content: {
+                            customerName: formData.customerName,
+                            country: formData.country,
+                            mobileNo: formData.mobileNo,
+                            email: formData.email,
+                            transportationMode: formData.transportationMode,
+                            numberOfPassengers: formData.numberOfPassengers,
+                            daysAndNights: formData.daysAndNights,
+                            selectedRoutes: formData.selectedRoutes,
+                        },
+                    },
+                    // Day pages
+                    ...formData.dayCards.map((dayCard, dayIdx) => ({
+                        type: 'dayDetail',
+                        pageNumber: (templateDesign?.pages?.length ?? 1) + 2 + dayIdx,
+                        dayNumber: dayIdx + 1,
+                        content: {
+                            selectedDay: dayCard.selectedDay,
+                            visitingPlaces: dayCard.visitingPlaces,
+                            selectedPlaces: dayCard.selectedPlaces,
+                            selectedHotels: dayCard.selectedHotels,
+                            remarks: dayCard.remarks,
+                            description: generatedDescriptions[dayCard.id] || '',
+                        },
+                    })),
+                ],
+                totalPages: (templateDesign?.pages?.length ?? 1) + 1 + formData.dayCards.length,
+            };
+
+            const reportPayload = {
+                tenantId: tenantId!,
+                customerName: formData.customerName,
+                customerEmail: formData.email,
+                generatedReport: JSON.stringify(completeReport),
+            };
+
+            await generateReport(reportPayload, token);
+            showSuccess('Report generated and saved successfully!');
+            setTimeout(() => {
+                navigate('/report-history');
+            }, 1500);
+        } catch (error: any) {
+            console.error('Error generating report:', error);
+            showError(error?.response?.data?.message || 'Failed to generate report. Please try again.');
         } finally {
             setIsLoading(false);
+            setSavingReport(false);
         }
     };
 
@@ -2161,15 +2245,23 @@ export default function ReportGeneration() {
                                 ) : (
                                     <button
                                         onClick={handleGenerate}
-                                        disabled={isLoading}
+                                        disabled={isLoading || savingReport}
                                         className="btn btn--success"
                                         style={{
-                                            opacity: isLoading ? 0.7 : 1,
+                                            opacity: (isLoading || savingReport) ? 0.7 : 1,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
                                         }}
                                     >
-                                        {isLoading
-                                            ? "Generating..."
-                                            : "Generate"}
+                                        {(isLoading || savingReport) ? (
+                                            <>
+                                                <CircularProgress size={14} sx={{ color: "white" }} />
+                                                <span>Saving...</span>
+                                            </>
+                                        ) : (
+                                            "Generate & Save"
+                                        )}
                                     </button>
                                 )}
                             </div>
@@ -2292,11 +2384,9 @@ export default function ReportGeneration() {
                     </div>
                 )}
 
-                {/* ───────────── Report Preview Modal ───────────── */}
-                {reportModalOpen && generatedReport && (() => {
-                    // ── helpers ──────────────────────────────────────────
-                    const getImgSrc = (raw: any): string => {
-                        const s = typeof raw === 'string' ? raw : raw?.url ?? raw?.src ?? raw?.path ?? '';
+                {/* Report Preview Modal */}
+                {reportModalOpen && (() => {
+                    const getImgSrc = (s: string): string => {
                         if (!s) return '';
                         if (s.startsWith('data:')) return s;
                         if (s.length > 200 && /^[A-Za-z0-9+/]+=*$/.test(s)) return `data:image/jpeg;base64,${s}`;
