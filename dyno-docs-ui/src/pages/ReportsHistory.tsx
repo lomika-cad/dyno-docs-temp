@@ -481,7 +481,7 @@ export default function ReportsHistory() {
                         }
                     } else if (el.type === 'image') {
                         const imgSrc = getImgSrc(el.src);
-                        html += `<img src="${imgSrc}" crossorigin="anonymous" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px;" />`;
+                        html += `<img src="${imgSrc}" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px;" />`;
                     } else if (el.type === 'pill') {
                         html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; padding: 14px 18px; border-radius: 18px; background: ${el.colors?.bg || '#ffffff'}; color: ${el.colors?.text || '#111827'}; border: 1px solid ${(el.colors?.text || '#111827')}30; display: flex; flex-direction: column; gap: 4px; min-width: 130px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);"><span style="font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;">${el.label || ''}</span><span style="font-size: 16px; font-weight: 600;">${el.value || ''}</span></div>`;
                     }
