@@ -90,6 +90,7 @@ export default function ReportsHistory() {
     const [selectedElementIndex, setSelectedElementIndex] = useState<number | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [canvasScale, setCanvasScale] = useState(1);
+    const [bookingGradientColor, setBookingGradientColor] = useState('#0284C7');
 
     // Drag state
     const dragRef = useRef<{
@@ -588,15 +589,15 @@ export default function ReportsHistory() {
                 const initials = metadata?.customerName?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'N/A';
                 html += `
 <div class="page">
-    <div style="height: 170px; background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%); position: relative; display: flex; align-items: center; justify-content: center;">
+    <div style="height: 170px; background: linear-gradient(135deg, ${reportData.metadata?.bookingGradientColor || '#0284C7'} 0%, ${reportData.metadata?.bookingGradientColor ? reportData.metadata.bookingGradientColor + 'CC' : '#0EA5E9'} 100%); position: relative; display: flex; align-items: center; justify-content: center;">
         <div style="text-align: center;">
-            <div style="width: 60px; height: 60px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #0284C7; margin: 0 auto 12px;">${initials}</div>
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: ${reportData.metadata?.bookingGradientColor || '#0284C7'}; margin: 0 auto 12px;">${initials}</div>
             <div style="font-size: 20px; font-weight: 700; color: white;">Booking Information</div>
             <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Complete travel itinerary details</div>
         </div>
     </div>
     <div style="padding: 32px 36px;">
-        <div class="section-title"><div class="section-title-bar" style="background: #0284C7;"></div><div class="section-title-text" style="color: #0284C7;">Customer Details</div></div>
+        <div class="section-title"><div class="section-title-bar" style="background: ${reportData.metadata?.bookingGradientColor || '#0284C7'};"></div><div class="section-title-text" style="color: ${reportData.metadata?.bookingGradientColor || '#0284C7'};">Customer Details</div></div>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 28px;">
             <div class="info-card"><div style="font-size: 10px; font-weight: 700; color: #64748B; margin-bottom: 6px;">👤 FULL NAME</div><div style="font-size: 13px; font-weight: 600; color: #0F172A;">${metadata?.customerName || 'N/A'}</div></div>
             <div class="info-card"><div style="font-size: 10px; font-weight: 700; color: #64748B; margin-bottom: 6px;">🌍 COUNTRY</div><div style="font-size: 13px; font-weight: 600; color: #0F172A;">${metadata?.country || 'N/A'}</div></div>
@@ -1392,6 +1393,16 @@ export default function ReportsHistory() {
                                                 value={editableReportData.metadata?.daysAndNights || ''} 
                                                 onChange={(e) => updateMetadata('daysAndNights', e.target.value)}
                                                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Booking Info Gradient Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.bookingGradientColor || '#0284C7'} 
+                                                onChange={(e) => updateMetadata('bookingGradientColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
                                             />
                                         </div>
                                         <div className="template-customize-control">

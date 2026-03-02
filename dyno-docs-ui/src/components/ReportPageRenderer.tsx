@@ -34,6 +34,7 @@ export interface ReportData {
         daysAndNights?: string;
         selectedRoutes?: string[];
         createdAt?: string;
+        bookingGradientColor?: string;
     };
     cost?: {
         totalAmount?: number;
@@ -283,6 +284,7 @@ interface CustomerInfoPageProps {
 export const CustomerInfoPageRenderer: React.FC<CustomerInfoPageProps> = ({ page, reportData, scale = 1 }) => {
     const metadata = reportData.metadata || page.content;
     const customerInitials = metadata?.customerName?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'N/A';
+    const gradientColor = metadata?.bookingGradientColor || '#0284C7';
     const infoFields = [
         { icon: '👤', label: 'Full Name', value: metadata?.customerName },
         { icon: '🌍', label: 'Country', value: metadata?.country },
@@ -294,11 +296,11 @@ export const CustomerInfoPageRenderer: React.FC<CustomerInfoPageProps> = ({ page
 
     return (
         <PageShell scale={scale}>
-            <div style={{ height: `${170 * scale}px`, background: 'linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ height: `${170 * scale}px`, background: `linear-gradient(135deg, ${gradientColor} 0%, ${gradientColor}dd 100%)`, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                 <div style={{ position: 'absolute', top: `${-30 * scale}px`, right: `${-30 * scale}px`, width: `${180 * scale}px`, height: `${180 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
                 <div style={{ position: 'absolute', bottom: `${-40 * scale}px`, left: `${-40 * scale}px`, width: `${200 * scale}px`, height: `${200 * scale}px`, borderRadius: '50%', background: 'rgba(0,0,0,0.08)' }} />
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                    <div style={{ width: `${60 * scale}px`, height: `${60 * scale}px`, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: `${24 * scale}px`, fontWeight: 700, color: '#0284C7', margin: '0 auto', marginBottom: `${12 * scale}px`, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+                    <div style={{ width: `${60 * scale}px`, height: `${60 * scale}px`, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: `${24 * scale}px`, fontWeight: 700, color: gradientColor, margin: '0 auto', marginBottom: `${12 * scale}px`, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
                         {customerInitials}
                     </div>
                     <div style={{ fontSize: `${20 * scale}px`, fontWeight: 700, color: 'white', marginBottom: `${4 * scale}px` }}>Booking Information</div>
@@ -306,7 +308,7 @@ export const CustomerInfoPageRenderer: React.FC<CustomerInfoPageProps> = ({ page
                 </div>
             </div>
             <div style={{ padding: `${32 * scale}px ${36 * scale}px`, flex: 1, overflow: 'hidden' }}>
-                <SectionTitle color="#0284C7" scale={scale}>Customer Details</SectionTitle>
+                <SectionTitle color={gradientColor} scale={scale}>Customer Details</SectionTitle>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: `${16 * scale}px`, marginBottom: `${28 * scale}px` }}>
                     {infoFields.map((field, i) => (
                         <div key={i} style={{ padding: `${14 * scale}px`, background: '#F8FAFC', borderRadius: `${10 * scale}px`, border: '1px solid #E2E8F0' }}>
