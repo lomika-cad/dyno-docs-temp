@@ -1015,7 +1015,7 @@ export default function ReportsHistory() {
                                 <div style={{ fontSize: "14px" }}>{searchTerm ? "Try adjusting your search" : "Generated reports will appear here"}</div>
                             </div>
                         ) : (
-                            <div style={{ overflowX: "auto" }}>
+                            <div style={{ overflowX: "auto", position: "relative" }}>
                                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                                     <thead>
                                         <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
@@ -1044,12 +1044,42 @@ export default function ReportsHistory() {
                                                             Customize
                                                         </button>
                                                         <div style={{ position: "relative" }} ref={exportDropdownOpen === report.id ? exportDropdownRef : null}>
-                                                            <button onClick={() => setExportDropdownOpen(exportDropdownOpen === report.id ? null : report.id)} style={{ border: "none", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "white", padding: "8px 12px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)" }}>
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    const isOpening = exportDropdownOpen !== report.id;
+                                                                    setExportDropdownOpen(isOpening ? report.id : null);
+                                                                    
+                                                                    if (isOpening) {
+                                                                        // Wait for next frame to ensure dropdown is rendered
+                                                                        setTimeout(() => {
+                                                                            const dropdown = exportDropdownRef.current;
+                                                                            if (dropdown) {
+                                                                                const buttonRect = e.currentTarget.getBoundingClientRect();
+                                                                                dropdown.style.top = `${buttonRect.bottom + 4}px`;
+                                                                                dropdown.style.left = `${buttonRect.right - dropdown.offsetWidth}px`;
+                                                                            }
+                                                                        }, 0);
+                                                                    }
+                                                                }} 
+                                                                style={{ border: "none", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "white", padding: "8px 12px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)" }}
+                                                            >
                                                                 <FileDownloadRoundedIcon style={{ fontSize: "16px" }} />
                                                                 Export
                                                             </button>
                                                             {exportDropdownOpen === report.id && (
-                                                                <div style={{ position: "absolute", top: "100%", right: 0, marginTop: "4px", background: "white", borderRadius: "8px", boxShadow: "0 10px 40px rgba(0,0,0,0.15)", border: "1px solid #e5e7eb", overflow: "hidden", zIndex: 100, minWidth: "140px" }}>
+                                                                <div 
+                                                                    style={{ 
+                                                                        position: "fixed", 
+                                                                        background: "white", 
+                                                                        borderRadius: "8px", 
+                                                                        boxShadow: "0 10px 40px rgba(0,0,0,0.15)", 
+                                                                        border: "1px solid #e5e7eb", 
+                                                                        overflow: "hidden", 
+                                                                        zIndex: 9999, 
+                                                                        minWidth: "140px"
+                                                                    }}
+                                                                    ref={exportDropdownRef}
+                                                                >
                                                                     <button onClick={() => handleExportPDF(report)} style={{ width: "100%", padding: "10px 16px", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#374151", transition: "background 0.15s" }}
                                                                         onMouseEnter={(e) => e.currentTarget.style.background = "#f3f4f6"}
                                                                         onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
