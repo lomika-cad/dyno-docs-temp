@@ -1259,16 +1259,6 @@ export default function ReportsHistory() {
                                                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', resize: 'vertical' }}
                                             />
                                         </div>
-                                        <div className="template-customize-control">
-                                            <label>Additional Remarks</label>
-                                            <textarea 
-                                                rows={3} 
-                                                className="template-customize-textarea" 
-                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.remarks || ''} 
-                                                onChange={(e) => updatePageContent(selectedPageIndex, 'remarks', e.target.value)}
-                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', resize: 'vertical' }}
-                                            />
-                                        </div>
                                         <p className="template-customize-hint" style={{ marginTop: '8px', fontSize: '11px', color: '#6b7280' }}>
                                             💡 Places and services are displayed from the original report data.
                                         </p>

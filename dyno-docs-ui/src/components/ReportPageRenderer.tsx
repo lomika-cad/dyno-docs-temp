@@ -335,21 +335,6 @@ export const CustomerInfoPageRenderer: React.FC<CustomerInfoPageProps> = ({ page
                         ))}
                     </div>
                 </div>
-                <SectionTitle color="#F59E0B" scale={scale}>Trip Summary</SectionTitle>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: `${12 * scale}px` }}>
-                    <div style={{ textAlign: 'center', padding: `${14 * scale}px`, background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)', borderRadius: `${10 * scale}px`, border: '1px solid #FCD34D' }}>
-                        <div style={{ fontSize: `${22 * scale}px`, fontWeight: 700, color: '#B45309', marginBottom: `${4 * scale}px` }}>{reportData.pages?.filter((p: any) => p.type === 'dayDetail').length || 0}</div>
-                        <div style={{ fontSize: `${10 * scale}px`, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Days</div>
-                    </div>
-                    <div style={{ textAlign: 'center', padding: `${14 * scale}px`, background: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)', borderRadius: `${10 * scale}px`, border: '1px solid #93C5FD' }}>
-                        <div style={{ fontSize: `${22 * scale}px`, fontWeight: 700, color: '#1E40AF', marginBottom: `${4 * scale}px` }}>{(metadata?.selectedRoutes || []).length}</div>
-                        <div style={{ fontSize: `${10 * scale}px`, fontWeight: 700, color: '#1E3A8A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Locations</div>
-                    </div>
-                    <div style={{ textAlign: 'center', padding: `${14 * scale}px`, background: 'linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%)', borderRadius: `${10 * scale}px`, border: '1px solid #F87171' }}>
-                        <div style={{ fontSize: `${22 * scale}px`, fontWeight: 700, color: '#991B1B', marginBottom: `${4 * scale}px` }}>{metadata?.numberOfPassengers || 0}</div>
-                        <div style={{ fontSize: `${10 * scale}px`, fontWeight: 700, color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Guests</div>
-                    </div>
-                </div>
             </div>
         </PageShell>
     );
