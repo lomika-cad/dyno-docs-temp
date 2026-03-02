@@ -12,7 +12,7 @@ import { getUserTemplates } from "../services/template-api";
 
 export default function ReportGeneration() {
     const [infoOpen, setInfoOpen] = useState(false);
-    const [currentStep, setCurrentStep] = useState(3);
+    const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [districtData, setDistrictData] = useState<{ [key: string]: any }>({});

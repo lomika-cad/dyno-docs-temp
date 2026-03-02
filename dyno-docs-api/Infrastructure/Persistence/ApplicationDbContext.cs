@@ -34,6 +34,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<UserSubscription> UserSubscription => Set<UserSubscription>();
     public DbSet<Customer> Customer => Set<Customer>();
+    public DbSet<Report> Report => Set<Report>();
     
     #endregion
 
