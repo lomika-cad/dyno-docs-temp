@@ -15,7 +15,7 @@ import { generateReport } from "../services/reports-api";
 export default function ReportGeneration() {
     const navigate = useNavigate();
     const [infoOpen, setInfoOpen] = useState(false);
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState(3);
     const [savingReport, setSavingReport] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -88,6 +88,9 @@ export default function ReportGeneration() {
             remarks: string;
         }>,
         selectedTemplate: "",
+        specialRemark: "The final Detailed itinerary will be send 48 hours after the confirmation.",
+        bookingPolicy: "Once booking details are completed and submitted by the client, we will proceed with booking reservations. At this stage, it is required to make a payment of 40% of the total tour package. Booking confirmation will reach you 48 hours after making the payment. The balance 60% of the payment is required to be paid 30 days prior the tour commencing date. You may proceed with Visa processing after the booking confirmation.",
+        cancellationPolicy: "All travel offers listed on our travel website are discounted and all orders are non-refundable and cannot be used in conjunction with any other promotions, thus no refund for cancellations made within less than 30 days from the start of a tour and no -show.",
     });
 
     const routeOptions = [
@@ -457,6 +460,11 @@ export default function ReportGeneration() {
                     selectedRoutes: formData.selectedRoutes,
                     createdAt: new Date().toISOString(),
                 },
+                policies: {
+                    specialRemark: formData.specialRemark,
+                    bookingPolicy: formData.bookingPolicy,
+                    cancellationPolicy: formData.cancellationPolicy,
+                },
                 template: {
                     id: selected.id ?? selected.templateId,
                     name: selected.templateName ?? selected.name,
@@ -499,8 +507,18 @@ export default function ReportGeneration() {
                             description: generatedDescriptions[dayCard.id] || '',
                         },
                     })),
+                    // Policies page
+                    {
+                        type: 'policies',
+                        pageNumber: (templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
+                        content: {
+                            specialRemark: formData.specialRemark,
+                            bookingPolicy: formData.bookingPolicy,
+                            cancellationPolicy: formData.cancellationPolicy,
+                        },
+                    },
                 ],
-                totalPages: (templateDesign?.pages?.length ?? 1) + 1 + formData.dayCards.length,
+                totalPages: (templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
             };
 
             const reportPayload = {
@@ -551,6 +569,9 @@ export default function ReportGeneration() {
                     }
                 ],
                 selectedTemplate: "",
+                specialRemark: "The final Detailed itinerary will be send 48 hours after the confirmation.",
+                bookingPolicy: "Once booking details are completed and submitted by the client, we will proceed with booking reservations. At this stage, it is required to make a payment of 40% of the total tour package. Booking confirmation will reach you 48 hours after making the payment. The balance 60% of the payment is required to be paid 30 days prior the tour commencing date. You may proceed with Visa processing after the booking confirmation.",
+                cancellationPolicy: "All travel offers listed on our travel website are discounted and all orders are non-refundable and cannot be used in conjunction with any other promotions, thus no refund for cancellations made within less than 30 days from the start of a tour and no -show.",
             });
             setCurrentStep(1);
         }
@@ -2058,6 +2079,81 @@ export default function ReportGeneration() {
                         {currentStep === 3 && (
                             <div className="formGroup">
                                 <h3 style={{ marginTop: 0, marginBottom: 20 }}>
+                                    Policies & Template
+                                </h3>
+
+                                {/* Special Remark Field */}
+                                <div style={{ marginBottom: "20px" }}>
+                                    <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: "600", color: "#1f2937" }}>
+                                        Special Remark
+                                    </label>
+                                    <textarea
+                                        name="specialRemark"
+                                        value={formData.specialRemark}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter special remark..."
+                                        style={{
+                                            width: "100%",
+                                            padding: "12px",
+                                            border: "1px solid #d1d5db",
+                                            borderRadius: "8px",
+                                            fontSize: "13px",
+                                            fontFamily: "inherit",
+                                            minHeight: "80px",
+                                            resize: "vertical",
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Booking Policy Field */}
+                                <div style={{ marginBottom: "20px" }}>
+                                    <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: "600", color: "#1f2937" }}>
+                                        Booking Policy
+                                    </label>
+                                    <textarea
+                                        name="bookingPolicy"
+                                        value={formData.bookingPolicy}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter booking policy..."
+                                        style={{
+                                            width: "100%",
+                                            padding: "12px",
+                                            border: "1px solid #d1d5db",
+                                            borderRadius: "8px",
+                                            fontSize: "13px",
+                                            fontFamily: "inherit",
+                                            minHeight: "100px",
+                                            resize: "vertical",
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Cancellation Policy Field */}
+                                <div style={{ marginBottom: "20px" }}>
+                                    <label style={{ display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: "600", color: "#1f2937" }}>
+                                        Cancellation Policy
+                                    </label>
+                                    <textarea
+                                        name="cancellationPolicy"
+                                        value={formData.cancellationPolicy}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter cancellation policy..."
+                                        style={{
+                                            width: "100%",
+                                            padding: "12px",
+                                            border: "1px solid #d1d5db",
+                                            borderRadius: "8px",
+                                            fontSize: "13px",
+                                            fontFamily: "inherit",
+                                            minHeight: "100px",
+                                            resize: "vertical",
+                                        }}
+                                    />
+                                </div>
+
+                                <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #e5e7eb" }} />
+
+                                <h3 style={{ marginTop: 20, marginBottom: 20 }}>
                                     Select Template
                                 </h3>
                                 <p
@@ -2432,6 +2528,11 @@ export default function ReportGeneration() {
                                     selectedRoutes: formData.selectedRoutes,
                                     createdAt: new Date().toISOString(),
                                 },
+                                policies: {
+                                    specialRemark: formData.specialRemark,
+                                    bookingPolicy: formData.bookingPolicy,
+                                    cancellationPolicy: formData.cancellationPolicy,
+                                },
                                 template: {
                                     id: generatedReport.template.id ?? generatedReport.template.templateId,
                                     name: generatedReport.template.templateName ?? generatedReport.template.name,
@@ -2474,8 +2575,18 @@ export default function ReportGeneration() {
                                             description: generatedDescriptions[dayCard.id] || '',
                                         },
                                     })),
+                                    // Policies page
+                                    {
+                                        type: 'policies',
+                                        pageNumber: (generatedReport.templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
+                                        content: {
+                                            specialRemark: formData.specialRemark,
+                                            bookingPolicy: formData.bookingPolicy,
+                                            cancellationPolicy: formData.cancellationPolicy,
+                                        },
+                                    },
                                 ],
-                                totalPages: (generatedReport.templateDesign?.pages?.length ?? 1) + 1 + formData.dayCards.length,
+                                totalPages: (generatedReport.templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
                             };
 
                             const reportPayload = {
