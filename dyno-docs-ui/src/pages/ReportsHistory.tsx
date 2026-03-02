@@ -454,7 +454,17 @@ export default function ReportsHistory() {
             -webkit-filter: blur(0px);
             filter: blur(0px);
         }
-        .page { width: 595px; min-height: 842px; background: white; margin: 20px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1); page-break-after: always; overflow: hidden; }
+        .page { 
+            width: 595px; 
+            min-height: 842px; 
+            background: white; 
+            margin: 20px auto; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+            page-break-after: always; 
+            overflow: hidden; 
+            position: relative;
+            transform-origin: top left;
+        }
         .page:last-child { page-break-after: auto; }
         @media print {
             @page {
@@ -486,9 +496,26 @@ export default function ReportsHistory() {
                 page-break-inside: avoid !important;
                 overflow: hidden !important;
                 position: relative !important;
+                transform-origin: top left !important;
+                transform: scale(1) !important;
             }
             .page:last-child {
                 page-break-after: auto !important;
+            }
+            /* Cover page specific styles */
+            .page:first-child {
+                display: block !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                max-width: 210mm !important;
+                max-height: 297mm !important;
+                overflow: hidden !important;
+                position: relative !important;
+            }
+            .page:first-child > * {
+                max-width: 100% !important;
+                max-height: 100% !important;
+                overflow: hidden !important;
             }
             img { 
                 display: block !important; 
@@ -514,30 +541,45 @@ export default function ReportsHistory() {
 
         pages.forEach((page, idx) => {
             if (page.type === 'template') {
-                html += `<div class="page" style="position: relative;">`;
+                html += `<div class="page" style="position: relative; transform-origin: top left;">`;
                 (page.content?.elements || []).forEach((el: any) => {
                     if (el.type === 'text') {
-                        html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width ? el.width + 'px' : 'auto'}; font-size: ${el.fontSize || 14}px; font-family: ${el.fontFamily || 'Arial'}; font-weight: ${el.fontWeight || 400}; color: ${el.color || '#000'}; line-height: ${el.lineHeight || 1.4};">${el.content || ''}</div>`;
+                        // Convert pixels to percentage for better print scaling
+                        const leftPercent = ((el.x || 0) / 595) * 100;
+                        const topPercent = ((el.y || 0) / 842) * 100;
+                        const widthPercent = el.width ? ((el.width / 595) * 100) : 'auto';
+                        html += `<div style="position: absolute; left: ${leftPercent}%; top: ${topPercent}%; width: ${typeof widthPercent === 'number' ? widthPercent + '%' : widthPercent}; font-size: ${(el.fontSize || 14) * 0.75}px; font-family: ${el.fontFamily || 'Arial'}; font-weight: ${el.fontWeight || 400}; color: ${el.color || '#000'}; line-height: ${el.lineHeight || 1.4};">${el.content || ''}</div>`;
                     } else if (el.type === 'shape') {
+                        const leftPercent = ((el.x || 0) / 595) * 100;
+                        const topPercent = ((el.y || 0) / 842) * 100;
+                        const widthPercent = ((el.width || 100) / 595) * 100;
+                        const heightPercent = ((el.height || 100) / 842) * 100;
+                        
                         if (el.shape === 'polygon' && el.points?.length) {
                             const polygonPoints = el.points.map((p: any) => `${(p.x / 595) * 100}% ${(p.y / 842) * 100}%`).join(', ');
-                            html += `<div style="position: absolute; left: 0; top: 0; width: 595px; height: 842px; background: ${el.fill || '#111827'}; clip-path: polygon(${polygonPoints});"></div>`;
+                            html += `<div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: ${el.fill || '#111827'}; clip-path: polygon(${polygonPoints});"></div>`;
                         } else if (el.shape === 'circle') {
-                            html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.width || el.height || 100}px; background: ${el.fill || '#f3f4f6'}; border-radius: 50%;"></div>`;
+                            html += `<div style="position: absolute; left: ${leftPercent}%; top: ${topPercent}%; width: ${widthPercent}%; height: ${heightPercent}%; background: ${el.fill || '#f3f4f6'}; border-radius: 50%;"></div>`;
                         } else if (el.shape === 'line') {
-                            html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${Math.max(1, el.height || 1)}px; background: ${el.stroke || el.fill || '#e5e7eb'}; border-radius: 999px;"></div>`;
+                            html += `<div style="position: absolute; left: ${leftPercent}%; top: ${topPercent}%; width: ${widthPercent}%; height: ${Math.max(0.1, heightPercent)}%; background: ${el.stroke || el.fill || '#e5e7eb'}; border-radius: 999px;"></div>`;
                         } else {
-                            html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; background: ${el.fill || 'transparent'}; border-radius: ${el.borderRadius || 0}px;"></div>`;
+                            html += `<div style="position: absolute; left: ${leftPercent}%; top: ${topPercent}%; width: ${widthPercent}%; height: ${heightPercent}%; background: ${el.fill || 'transparent'}; border-radius: ${el.borderRadius || 0}px;"></div>`;
                         }
                     } else if (el.type === 'image') {
                         const imgSrc = getImgSrc(el.src);
+                        const leftPercent = ((el.x || 0) / 595) * 100;
+                        const topPercent = ((el.y || 0) / 842) * 100;
+                        const widthPercent = ((el.width || 100) / 595) * 100;
+                        const heightPercent = ((el.height || 100) / 842) * 100;
                         console.log('Template image src:', el.src, '->', imgSrc);
                         if (!imgSrc || imgSrc.trim() === '') {
                             console.warn('Empty image src for template element:', el);
                         }
-                        html += `<img src="${imgSrc}" alt="" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" />`;
+                        html += `<img src="${imgSrc}" alt="" style="position: absolute; left: ${leftPercent}%; top: ${topPercent}%; width: ${widthPercent}%; height: ${heightPercent}%; object-fit: cover; border-radius: ${el.borderRadius || 0}px; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" />`;
                     } else if (el.type === 'pill') {
-                        html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; padding: 14px 18px; border-radius: 18px; background: ${el.colors?.bg || '#ffffff'}; color: ${el.colors?.text || '#111827'}; border: 1px solid ${(el.colors?.text || '#111827')}30; display: flex; flex-direction: column; gap: 4px; min-width: 130px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);"><span style="font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;">${el.label || ''}</span><span style="font-size: 16px; font-weight: 600;">${el.value || ''}</span></div>`;
+                        const leftPercent = ((el.x || 0) / 595) * 100;
+                        const topPercent = ((el.y || 0) / 842) * 100;
+                        html += `<div style="position: absolute; left: ${leftPercent}%; top: ${topPercent}%; padding: 14px 18px; border-radius: 18px; background: ${el.colors?.bg || '#ffffff'}; color: ${el.colors?.text || '#111827'}; border: 1px solid ${(el.colors?.text || '#111827')}30; display: flex; flex-direction: column; gap: 4px; min-width: 130px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);"><span style="font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;">${el.label || ''}</span><span style="font-size: 16px; font-weight: 600;">${el.value || ''}</span></div>`;
                     }
                 });
                 html += `</div>`;
