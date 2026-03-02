@@ -3,10 +3,10 @@ import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
-import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+
 import CircularProgress from '@mui/material/CircularProgress';
 import { getReports } from "../services/reports-api";
-import { showError, showSuccess } from "../components/Toast";
+import { showError } from "../components/Toast";
 
 interface Report {
     id: string;
@@ -765,6 +765,204 @@ export default function ReportsHistory() {
                                                             <SectionTitle color="#EC4899">Additional Notes</SectionTitle>
                                                             <div style={{ fontSize: '11px', lineHeight: 1.5, color: '#6B7280', background: '#FDF2F8', padding: '12px', borderRadius: '8px', border: '1px solid #FBCFE8', fontStyle: 'italic' }}>
                                                                 {page.content.remarks}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </PageShell>
+                                        </div>
+                                    );
+                                }
+
+                                if (page.type === 'cost') {
+                                    const costData = page.content || {};
+                                    const reportCostData = reportData.cost || {};
+                                    const totalAmount = costData.totalAmount || reportCostData.totalAmount || 0;
+                                    const promoCode = costData.promoCode || reportCostData.promoCode || '';
+                                    const promoCodeDiscount = costData.promoCodeDiscount || reportCostData.promoCodeDiscount || 0;
+                                    const finalAmount = costData.finalAmount || reportCostData.finalAmount || totalAmount;
+
+                                    return (
+                                        <div key={`cost-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                            <PageShell>
+                                                {/* Hero Section */}
+                                                <div style={{
+                                                    height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
+                                                    background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 25%, #14b8a6 75%, #5eead4 100%)',
+                                                }}>
+                                                    <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                                                    <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                                                    <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                                            <div style={{
+                                                                width: '40px', height: '40px', borderRadius: '50%',
+                                                                background: 'rgba(255,255,255,0.15)', display: 'flex',
+                                                                alignItems: 'center', justifyContent: 'center', fontSize: '18px'
+                                                            }}>💰</div>
+                                                            <div>
+                                                                <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Cost Summary</div>
+                                                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
+                                                                    Package pricing & discounts
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Content */}
+                                                <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
+                                                    {/* Cost Breakdown Card */}
+                                                    <div style={{
+                                                        background: 'white', borderRadius: '16px', padding: '28px',
+                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid #f1f5f9',
+                                                        marginBottom: '24px'
+                                                    }}>
+                                                        <div style={{ marginBottom: '20px' }}>
+                                                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '16px' }}>Package Details</div>
+                                                        </div>
+
+                                                        {/* Subtotal */}
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                                            <span style={{ fontSize: '13px', color: '#64748b' }}>Tour Package Amount</span>
+                                                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>LKR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                        </div>
+
+                                                        {/* Promo Code Discount */}
+                                                        {promoCodeDiscount > 0 && (
+                                                            <>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                        <span style={{ fontSize: '13px', color: '#64748b' }}>Promo Code Discount</span>
+                                                                        {promoCode && (
+                                                                            <span style={{
+                                                                                fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
+                                                                                background: '#dcfce7', color: '#15803d', fontWeight: 600
+                                                                            }}>
+                                                                                {promoCode}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#dc2626' }}>-LKR {promoCodeDiscount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                                </div>
+                                                            </>
+                                                        )}
+
+                                                        {/* Final Amount */}
+                                                        <div style={{
+                                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                            marginTop: '12px',
+                                                            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                                                            margin: '16px -28px -28px',
+                                                            padding: '20px 28px',
+                                                            borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px'
+                                                        }}>
+                                                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#15803d' }}>Total Amount</span>
+                                                            <span style={{ fontSize: '20px', fontWeight: 700, color: '#15803d' }}>
+                                                                LKR {finalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Payment Terms */}
+                                                    <div style={{
+                                                        background: 'white', borderRadius: '12px', padding: '20px',
+                                                        boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                                                    }}>
+                                                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '12px' }}>💳 Payment Information</div>
+                                                        <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
+                                                            • 40% advance payment required to confirm booking<br />
+                                                            • Balance 60% due 30 days before tour commencement<br />
+                                                            • All amounts are in Sri Lankan Rupees (LKR)
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </PageShell>
+                                        </div>
+                                    );
+                                }
+
+                                if (page.type === 'policies') {
+                                    const policiesData = page.content || {};
+                                    const reportPoliciesData = reportData.policies || {};
+                                    const specialRemark = policiesData.specialRemark || reportPoliciesData.specialRemark || '';
+                                    const bookingPolicy = policiesData.bookingPolicy || reportPoliciesData.bookingPolicy || '';
+                                    const cancellationPolicy = policiesData.cancellationPolicy || reportPoliciesData.cancellationPolicy || '';
+
+                                    return (
+                                        <div key={`policies-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                            <PageShell>
+                                                {/* Hero Section */}
+                                                <div style={{
+                                                    height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
+                                                    background: 'linear-gradient(135deg, #7c2d12 0%, #dc2626 25%, #ef4444 75%, #fca5a5 100%)',
+                                                }}>
+                                                    <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                                                    <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                                                    <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                                            <div style={{
+                                                                width: '40px', height: '40px', borderRadius: '50%',
+                                                                background: 'rgba(255,255,255,0.15)', display: 'flex',
+                                                                alignItems: 'center', justifyContent: 'center', fontSize: '18px'
+                                                            }}>📋</div>
+                                                            <div>
+                                                                <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Terms & Policies</div>
+                                                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
+                                                                    Important information & conditions
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Content */}
+                                                <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
+                                                    {/* Special Remark */}
+                                                    {specialRemark && (
+                                                        <div style={{
+                                                            background: 'white', borderRadius: '12px', padding: '20px',
+                                                            boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                                                            marginBottom: '20px'
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                                                <div style={{ fontSize: '16px' }}>⚡</div>
+                                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Important Notice</div>
+                                                            </div>
+                                                            <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.6, padding: '12px', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fbbf24' }}>
+                                                                {specialRemark}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Booking Policy */}
+                                                    {bookingPolicy && (
+                                                        <div style={{
+                                                            background: 'white', borderRadius: '12px', padding: '20px',
+                                                            boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                                                            marginBottom: '20px'
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                                                <div style={{ fontSize: '16px' }}>📅</div>
+                                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Booking Policy</div>
+                                                            </div>
+                                                            <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
+                                                                {bookingPolicy}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Cancellation Policy */}
+                                                    {cancellationPolicy && (
+                                                        <div style={{
+                                                            background: 'white', borderRadius: '12px', padding: '20px',
+                                                            boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                                                <div style={{ fontSize: '16px' }}>❌</div>
+                                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Cancellation Policy</div>
+                                                            </div>
+                                                            <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
+                                                                {cancellationPolicy}
                                                             </div>
                                                         </div>
                                                     )}

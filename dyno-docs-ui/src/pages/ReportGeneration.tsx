@@ -16,7 +16,7 @@ import { validatePromoCode } from "../services/promo-codes-api";
 export default function ReportGeneration() {
     const navigate = useNavigate();
     const [infoOpen, setInfoOpen] = useState(false);
-    const [currentStep, setCurrentStep] = useState(3);
+    const [currentStep, setCurrentStep] = useState(1);
     const [savingReport, setSavingReport] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -490,7 +490,7 @@ export default function ReportGeneration() {
 
     const handleGenerate = async () => {
         if (!isStepValid(3)) {
-            showError("Please select a template");
+            showError("Please fill in all required fields and ensure total amount is greater than 0 before generating the report");
             return;
         }
 
@@ -591,10 +591,21 @@ export default function ReportGeneration() {
                             description: generatedDescriptions[dayCard.id] || '',
                         },
                     })),
+                    // Cost page
+                    {
+                        type: 'cost',
+                        pageNumber: (templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
+                        content: {
+                            totalAmount: parseFloat(formData.totalAmount) || 0,
+                            promoCode: formData.promoCode,
+                            promoCodeDiscount: formData.promoCodeDiscount,
+                            finalAmount: formData.finalAmount,
+                        },
+                    },
                     // Policies page
                     {
                         type: 'policies',
-                        pageNumber: (templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
+                        pageNumber: (templateDesign?.pages?.length ?? 1) + 3 + formData.dayCards.length,
                         content: {
                             specialRemark: formData.specialRemark,
                             bookingPolicy: formData.bookingPolicy,
@@ -602,7 +613,7 @@ export default function ReportGeneration() {
                         },
                     },
                 ],
-                totalPages: (templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
+                totalPages: (templateDesign?.pages?.length ?? 1) + 3 + formData.dayCards.length,
             };
 
             const reportPayload = {
@@ -2714,7 +2725,7 @@ export default function ReportGeneration() {
                         const raw = hotel.images ?? hotel.Images ?? hotel.image ?? hotel.Image ?? [];
                         return (Array.isArray(raw) ? raw : [raw]).map(getImgSrc).filter(Boolean);
                     };
-                    const totalPages = (generatedReport.templateDesign?.pages?.length ?? 1) + 1 + formData.dayCards.length;
+                    const totalPages = (generatedReport.templateDesign?.pages?.length ?? 1) + 3 + formData.dayCards.length;
 
                     // ── save report to database ───────────────────────────
                     const handleSaveReport = async () => {
@@ -2793,10 +2804,21 @@ export default function ReportGeneration() {
                                             description: generatedDescriptions[dayCard.id] || '',
                                         },
                                     })),
+                                    // Cost page
+                                    {
+                                        type: 'cost',
+                                        pageNumber: (generatedReport.templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
+                                        content: {
+                                            totalAmount: parseFloat(formData.totalAmount) || 0,
+                                            promoCode: formData.promoCode,
+                                            promoCodeDiscount: formData.promoCodeDiscount,
+                                            finalAmount: formData.finalAmount,
+                                        },
+                                    },
                                     // Policies page
                                     {
                                         type: 'policies',
-                                        pageNumber: (generatedReport.templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
+                                        pageNumber: (generatedReport.templateDesign?.pages?.length ?? 1) + 3 + formData.dayCards.length,
                                         content: {
                                             specialRemark: formData.specialRemark,
                                             bookingPolicy: formData.bookingPolicy,
@@ -2804,7 +2826,7 @@ export default function ReportGeneration() {
                                         },
                                     },
                                 ],
-                                totalPages: (generatedReport.templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length,
+                                totalPages: (generatedReport.templateDesign?.pages?.length ?? 1) + 3 + formData.dayCards.length,
                             };
 
                             const reportPayload = {
@@ -3337,6 +3359,207 @@ export default function ReportGeneration() {
                                         </div>
                                     );
                                 })}
+
+                                {/* ════ Cost Summary Page ════ */}
+                                {(() => {
+                                    const costPageNum = (generatedReport.templateDesign?.pages?.length ?? 1) + 2 + formData.dayCards.length;
+                                    return (
+                                        <div className="rpt-page-wrap" style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                            <div className="rpt-page-label" style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginBottom: '10px', letterSpacing: '0.06em' }}>
+                                                PAGE {costPageNum} · COST SUMMARY
+                                            </div>
+                                            <PageShell>
+                                                {/* Hero Section */}
+                                                <div style={{
+                                                    height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
+                                                    background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 25%, #14b8a6 75%, #5eead4 100%)',
+                                                }}>
+                                                    <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                                                    <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                                                    <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                                            <div style={{
+                                                                width: '40px', height: '40px', borderRadius: '50%',
+                                                                background: 'rgba(255,255,255,0.15)', display: 'flex',
+                                                                alignItems: 'center', justifyContent: 'center', fontSize: '18px'
+                                                            }}>💰</div>
+                                                            <div>
+                                                                <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Cost Summary</div>
+                                                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
+                                                                    Package pricing & discounts
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Content */}
+                                                <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
+                                                    {/* Cost Breakdown Card */}
+                                                    <div style={{
+                                                        background: 'white', borderRadius: '16px', padding: '28px',
+                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid #f1f5f9',
+                                                        marginBottom: '24px'
+                                                    }}>
+                                                        <div style={{ marginBottom: '20px' }}>
+                                                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '16px' }}>Package Details</div>
+                                                        </div>
+
+                                                        {/* Subtotal */}
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                                            <span style={{ fontSize: '13px', color: '#64748b' }}>Tour Package Amount</span>
+                                                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>LKR {(parseFloat(formData.totalAmount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                        </div>
+
+                                                        {/* Promo Code Discount */}
+                                                        {formData.promoCodeDiscount > 0 && (
+                                                            <>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                        <span style={{ fontSize: '13px', color: '#64748b' }}>Promo Code Discount</span>
+                                                                        {formData.promoCode && (
+                                                                            <span style={{
+                                                                                fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
+                                                                                background: '#dcfce7', color: '#15803d', fontWeight: 600
+                                                                            }}>
+                                                                                {formData.promoCode}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#dc2626' }}>-LKR {formData.promoCodeDiscount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                                </div>
+                                                            </>
+                                                        )}
+
+                                                        {/* Final Amount */}
+                                                        <div style={{
+                                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                            marginTop: '12px',
+                                                            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                                                            margin: '16px -28px -28px',
+                                                            padding: '20px 28px',
+                                                            borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px'
+                                                        }}>
+                                                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#15803d' }}>Total Amount</span>
+                                                            <span style={{ fontSize: '20px', fontWeight: 700, color: '#15803d' }}>
+                                                                LKR {formData.finalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Payment Terms */}
+                                                    <div style={{
+                                                        background: 'white', borderRadius: '12px', padding: '20px',
+                                                        boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                                                    }}>
+                                                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '12px' }}>💳 Payment Information</div>
+                                                        <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
+                                                            • 40% advance payment required to confirm booking<br />
+                                                            • Balance 60% due 30 days before tour commencement<br />
+                                                            • All amounts are in Sri Lankan Rupees (LKR)
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Footer */}
+                                                <div style={{ padding: '12px 48px', borderTop: '1px solid #efefef', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, background: 'white' }}>
+                                                    <span style={{ fontSize: '10px', color: '#c0c0c0', fontWeight: 600, letterSpacing: '0.05em' }}>DYNODOCS · TRAVEL REPORT</span>
+                                                    <span style={{ fontSize: '10px', color: '#c0c0c0' }}>Cost Summary · Page {costPageNum} of {totalPages + 1}</span>
+                                                </div>
+                                            </PageShell>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* ════ Policies & Terms Page ════ */}
+                                {(() => {
+                                    const policiesPageNum = (generatedReport.templateDesign?.pages?.length ?? 1) + 3 + formData.dayCards.length;
+                                    return (
+                                        <div className="rpt-page-wrap" style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                            <div className="rpt-page-label" style={{ textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '11px', marginBottom: '10px', letterSpacing: '0.06em' }}>
+                                                PAGE {policiesPageNum} · POLICIES & TERMS
+                                            </div>
+                                            <PageShell>
+                                                {/* Hero Section */}
+                                                <div style={{
+                                                    height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
+                                                    background: 'linear-gradient(135deg, #7c2d12 0%, #dc2626 25%, #ef4444 75%, #fca5a5 100%)',
+                                                }}>
+                                                    <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                                                    <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                                                    <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                                            <div style={{
+                                                                width: '40px', height: '40px', borderRadius: '50%',
+                                                                background: 'rgba(255,255,255,0.15)', display: 'flex',
+                                                                alignItems: 'center', justifyContent: 'center', fontSize: '18px'
+                                                            }}>📋</div>
+                                                            <div>
+                                                                <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Terms & Policies</div>
+                                                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
+                                                                    Important information & conditions
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Content */}
+                                                <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
+                                                    {/* Special Remark */}
+                                                    <div style={{
+                                                        background: 'white', borderRadius: '12px', padding: '20px',
+                                                        boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                                                        marginBottom: '20px'
+                                                    }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                                            <div style={{ fontSize: '16px' }}>⚡</div>
+                                                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Important Notice</div>
+                                                        </div>
+                                                        <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.6, padding: '12px', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fbbf24' }}>
+                                                            {formData.specialRemark}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Booking Policy */}
+                                                    <div style={{
+                                                        background: 'white', borderRadius: '12px', padding: '20px',
+                                                        boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                                                        marginBottom: '20px'
+                                                    }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                                            <div style={{ fontSize: '16px' }}>📅</div>
+                                                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Booking Policy</div>
+                                                        </div>
+                                                        <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
+                                                            {formData.bookingPolicy}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Cancellation Policy */}
+                                                    <div style={{
+                                                        background: 'white', borderRadius: '12px', padding: '20px',
+                                                        boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                                                    }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                                            <div style={{ fontSize: '16px' }}>❌</div>
+                                                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Cancellation Policy</div>
+                                                        </div>
+                                                        <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
+                                                            {formData.cancellationPolicy}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Footer */}
+                                                <div style={{ padding: '12px 48px', borderTop: '1px solid #efefef', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, background: 'white' }}>
+                                                    <span style={{ fontSize: '10px', color: '#c0c0c0', fontWeight: 600, letterSpacing: '0.05em' }}>DYNODOCS · TRAVEL REPORT</span>
+                                                    <span style={{ fontSize: '10px', color: '#c0c0c0' }}>Terms & Policies · Page {policiesPageNum} of {totalPages + 2}</span>
+                                                </div>
+                                            </PageShell>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
                     );

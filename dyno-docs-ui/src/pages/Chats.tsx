@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import SendIcon from "@mui/icons-material/Send";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import PersonIcon from "@mui/icons-material/Person";
 import CircularProgress from "@mui/material/CircularProgress";
