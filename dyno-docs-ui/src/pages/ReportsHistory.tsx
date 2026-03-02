@@ -30,6 +30,7 @@ import {
     svcImgs,
     svcColors,
 } from "../components/ReportPageRenderer";
+import { DocumentScanner, Report } from "@mui/icons-material";
 
 interface Report {
     id: string;
@@ -1207,7 +1208,9 @@ export default function ReportsHistory() {
                     <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'linear-gradient(160deg, #0a0a18 0%, #12121f 100%)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', height: '58px', flexShrink: 0, background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>✈️</div>
+                                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                                    <DocumentScanner style={{ color: 'white' }} />
+                                </div>
                                 <div>
                                     <div style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(255,255,255,0.95)', letterSpacing: '-0.3px' }}>{reportData.metadata?.customerName || selectedReport.customerName}</div>
                                     <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>{processReportPagesForOverflow(reportData).length} pages • {reportData.metadata?.daysAndNights || 'N/A'}</div>
