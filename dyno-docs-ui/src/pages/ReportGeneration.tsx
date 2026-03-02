@@ -2329,16 +2329,70 @@ export default function ReportGeneration() {
                                 return;
                             }
 
+                            const completeReport = {
+                                version: "1.0",
+                                metadata: {
+                                    customerName: formData.customerName,
+                                    customerEmail: formData.email,
+                                    country: formData.country,
+                                    mobileNo: formData.mobileNo,
+                                    transportationMode: formData.transportationMode,
+                                    numberOfPassengers: formData.numberOfPassengers,
+                                    daysAndNights: formData.daysAndNights,
+                                    selectedRoutes: formData.selectedRoutes,
+                                    createdAt: new Date().toISOString(),
+                                },
+                                template: {
+                                    id: generatedReport.template.id ?? generatedReport.template.templateId,
+                                    name: generatedReport.template.templateName ?? generatedReport.template.name,
+                                    thumbnail: generatedReport.template.templateThumbnail,
+                                },
+                                templateDesign: generatedReport.templateDesign,
+                                pages: [
+                                    // Template cover pages
+                                    ...(generatedReport.templateDesign?.pages || []).map((page: any, idx: number) => ({
+                                        type: 'template',
+                                        pageNumber: idx + 1,
+                                        content: page,
+                                    })),
+                                    // Customer info page
+                                    {
+                                        type: 'customerInfo',
+                                        pageNumber: (generatedReport.templateDesign?.pages?.length ?? 1) + 1,
+                                        content: {
+                                            customerName: formData.customerName,
+                                            country: formData.country,
+                                            mobileNo: formData.mobileNo,
+                                            email: formData.email,
+                                            transportationMode: formData.transportationMode,
+                                            numberOfPassengers: formData.numberOfPassengers,
+                                            daysAndNights: formData.daysAndNights,
+                                            selectedRoutes: formData.selectedRoutes,
+                                        },
+                                    },
+                                    // Day pages
+                                    ...formData.dayCards.map((dayCard, dayIdx) => ({
+                                        type: 'dayDetail',
+                                        pageNumber: (generatedReport.templateDesign?.pages?.length ?? 1) + 2 + dayIdx,
+                                        dayNumber: dayIdx + 1,
+                                        content: {
+                                            selectedDay: dayCard.selectedDay,
+                                            visitingPlaces: dayCard.visitingPlaces,
+                                            selectedPlaces: dayCard.selectedPlaces,
+                                            selectedHotels: dayCard.selectedHotels,
+                                            remarks: dayCard.remarks,
+                                            description: generatedDescriptions[dayCard.id] || '',
+                                        },
+                                    })),
+                                ],
+                                totalPages: (generatedReport.templateDesign?.pages?.length ?? 1) + 1 + formData.dayCards.length,
+                            };
+
                             const reportPayload = {
                                 tenantId: tenantId!,
                                 customerName: formData.customerName,
                                 customerEmail: formData.email,
-                                generatedReport: JSON.stringify({
-                                    formData,
-                                    generatedDescriptions,
-                                    template: generatedReport.template,
-                                    templateDesign: generatedReport.templateDesign,
-                                }),
+                                generatedReport: JSON.stringify(completeReport),
                             };
 
                             await generateReport(reportPayload, token);

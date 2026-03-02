@@ -402,144 +402,384 @@ export default function ReportsHistory() {
             </div>
 
             {/* View Report Modal */}
-            {viewModalOpen && selectedReport && (
-                <div style={{
-                    position: "fixed",
-                    inset: 0,
-                    background: "rgba(0, 0, 0, 0.5)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 1000,
-                    padding: "20px"
-                }} onClick={() => setViewModalOpen(false)}>
-                    <div style={{
-                        background: "white",
-                        borderRadius: "16px",
-                        maxWidth: "600px",
-                        width: "100%",
-                        maxHeight: "80vh",
-                        overflow: "auto",
-                        boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
-                    }} onClick={(e) => e.stopPropagation()}>
+            {viewModalOpen && selectedReport && (() => {
+                let reportData: any = null;
+                try {
+                    reportData = JSON.parse(selectedReport.generatedReport);
+                } catch (e) {
+                    console.error('Failed to parse report data:', e);
+                }
+
+                if (!reportData) {
+                    return (
                         <div style={{
-                            padding: "24px",
-                            borderBottom: "1px solid #e5e7eb",
+                            position: "fixed",
+                            inset: 0,
+                            background: "rgba(0, 0, 0, 0.5)",
                             display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center"
-                        }}>
-                            <h2 style={{
-                                fontSize: "20px",
-                                fontWeight: "700",
-                                color: "#111827",
-                                margin: 0
-                            }}>Report Details</h2>
-                            <button
-                                onClick={() => setViewModalOpen(false)}
-                                style={{
-                                    border: "none",
-                                    background: "transparent",
-                                    cursor: "pointer",
-                                    padding: "8px",
-                                    borderRadius: "8px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    color: "#6b7280",
-                                    transition: "all 0.2s"
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = "#f3f4f6";
-                                    e.currentTarget.style.color = "#111827";
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = "transparent";
-                                    e.currentTarget.style.color = "#6b7280";
-                                }}
-                            >
-                                <DeleteRoundedIcon />
-                            </button>
-                        </div>
-                        <div style={{
-                            padding: "24px"
-                        }}>
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 1000,
+                            padding: "20px"
+                        }} onClick={() => setViewModalOpen(false)}>
                             <div style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "20px"
+                                background: "white",
+                                borderRadius: "16px",
+                                padding: "40px",
+                                textAlign: "center"
                             }}>
+                                <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+                                <div style={{ fontSize: "16px", color: "#6b7280" }}>Failed to load report data</div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                const getImgSrc = (raw: any): string => {
+                    const s = typeof raw === 'string' ? raw : raw?.url ?? raw?.src ?? raw?.path ?? '';
+                    if (!s) return '';
+                    if (s.startsWith('data:')) return s;
+                    if (s.length > 200 && /^[A-Za-z0-9+/]+=*$/.test(s)) return `data:image/jpeg;base64,${s}`;
+                    return s;
+                };
+
+                const placeImgs = (place: any): string[] => {
+                    const urls: string[] = [];
+                    let idx = 1;
+                    while (place[`image${idx}Url`]) { urls.push(getImgSrc(place[`image${idx}Url`])); idx++; }
+                    if (urls.length === 0) {
+                        const fb = place.images ?? place.Images ?? place.image ?? place.Image;
+                        if (fb) (Array.isArray(fb) ? fb : [fb]).forEach((u: any) => urls.push(getImgSrc(u)));
+                    }
+                    return urls.filter(Boolean);
+                };
+
+                const svcImgs = (hotel: any): string[] => {
+                    const raw = hotel.images ?? hotel.Images ?? hotel.image ?? hotel.Image ?? [];
+                    return (Array.isArray(raw) ? raw : [raw]).map(getImgSrc).filter(Boolean);
+                };
+
+                const PageShell = ({ children }: { children: React.ReactNode }) => (
+                    <div style={{
+                        width: '700px', height: '991px', background: '#FAFAFA',
+                        boxShadow: '0 32px 80px rgba(0,0,0,0.75)',
+                        fontFamily: '"Inter", "Segoe UI", Arial, sans-serif',
+                        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                        borderRadius: '4px',
+                    }}>
+                        {children}
+                    </div>
+                );
+
+                const SectionTitle = ({ color, children }: { color: string; children: React.ReactNode }) => (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        marginBottom: '10px',
+                    }}>
+                        <div style={{ width: '3px', height: '16px', background: color, borderRadius: '2px', flexShrink: 0 }} />
+                        <div style={{ fontSize: '10px', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{children}</div>
+                    </div>
+                );
+
+                return (
+                    <div style={{
+                        position: 'fixed', inset: 0, zIndex: 10000,
+                        background: 'linear-gradient(160deg, #0a0a18 0%, #12121f 100%)',
+                        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                    }}>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '0 28px', height: '58px', flexShrink: 0,
+                            background: 'rgba(255,255,255,0.03)',
+                            borderBottom: '1px solid rgba(255,255,255,0.07)',
+                            backdropFilter: 'blur(12px)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                <div style={{
+                                    width: '34px', height: '34px', borderRadius: '8px',
+                                    background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px',
+                                }}>✈️</div>
                                 <div>
-                                    <div style={{
-                                        fontSize: "12px",
-                                        fontWeight: "700",
-                                        color: "#6b7280",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.5px",
-                                        marginBottom: "8px"
-                                    }}>Customer Name</div>
-                                    <div style={{
-                                        fontSize: "16px",
-                                        fontWeight: "600",
-                                        color: "#111827"
-                                    }}>{selectedReport.customerName}</div>
-                                </div>
-                                <div>
-                                    <div style={{
-                                        fontSize: "12px",
-                                        fontWeight: "700",
-                                        color: "#6b7280",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.5px",
-                                        marginBottom: "8px"
-                                    }}>Email</div>
-                                    <div style={{
-                                        fontSize: "16px",
-                                        color: "#3b82f6"
-                                    }}>{selectedReport.customerEmail}</div>
-                                </div>
-                                <div>
-                                    <div style={{
-                                        fontSize: "12px",
-                                        fontWeight: "700",
-                                        color: "#6b7280",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.5px",
-                                        marginBottom: "8px"
-                                    }}>Created At</div>
-                                    <div style={{
-                                        fontSize: "14px",
-                                        color: "#6b7280"
-                                    }}>{formatDate(selectedReport.createdAt)}</div>
-                                </div>
-                                <div>
-                                    <div style={{
-                                        fontSize: "12px",
-                                        fontWeight: "700",
-                                        color: "#6b7280",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.5px",
-                                        marginBottom: "8px"
-                                    }}>Report Data</div>
-                                    <div style={{
-                                        background: "#f9fafb",
-                                        padding: "16px",
-                                        borderRadius: "8px",
-                                        fontSize: "13px",
-                                        color: "#374151",
-                                        fontFamily: "monospace",
-                                        maxHeight: "300px",
-                                        overflow: "auto",
-                                        border: "1px solid #e5e7eb"
-                                    }}>
-                                        {selectedReport.generatedReport}
+                                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(255,255,255,0.95)', letterSpacing: '-0.3px' }}>
+                                        {reportData.metadata?.customerName || selectedReport.customerName}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
+                                        {reportData.totalPages || 0} pages • {reportData.metadata?.daysAndNights || 'N/A'}
                                     </div>
                                 </div>
                             </div>
+                            <button
+                                onClick={() => setViewModalOpen(false)}
+                                style={{
+                                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                                    color: 'rgba(255,255,255,0.8)', borderRadius: '8px', padding: '7px 18px',
+                                    cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+                                    transition: 'all 0.15s',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                            >✕ Close</button>
+                        </div>
+
+                        <div style={{
+                            flex: 1, overflowY: 'auto', overflowX: 'auto',
+                            padding: '44px 24px 60px',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px',
+                        }}>
+                            {reportData.pages?.map((page: any, idx: number) => {
+                                if (page.type === 'template') {
+                                    return (
+                                        <div key={`tpl-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                            <PageShell>
+                                                <div style={{ width: '595px', height: '842px', transform: 'scale(1.176)', transformOrigin: 'top left', position: 'relative' }}>
+                                                    {page.content?.elements?.map((el: any, i: number) => {
+                                                        if (el.type === 'text') {
+                                                            return (
+                                                                <div key={i} style={{
+                                                                    position: 'absolute',
+                                                                    left: `${el.x ?? 0}px`,
+                                                                    top: `${el.y ?? 0}px`,
+                                                                    width: el.width ? `${el.width}px` : 'auto',
+                                                                    fontSize: `${el.fontSize ?? 14}px`,
+                                                                    fontFamily: el.fontFamily ?? 'Arial',
+                                                                    fontWeight: el.fontWeight ?? 400,
+                                                                    color: el.color ?? '#000',
+                                                                    lineHeight: el.lineHeight ?? 1.4,
+                                                                }}>
+                                                                    {el.content}
+                                                                </div>
+                                                            );
+                                                        }
+                                                        if (el.type === 'shape' && el.shape === 'rectangle') {
+                                                            return (
+                                                                <div key={i} style={{
+                                                                    position: 'absolute',
+                                                                    left: `${el.x ?? 0}px`,
+                                                                    top: `${el.y ?? 0}px`,
+                                                                    width: `${el.width ?? 100}px`,
+                                                                    height: `${el.height ?? 100}px`,
+                                                                    background: el.fill ?? 'transparent',
+                                                                    borderRadius: `${el.borderRadius ?? 0}px`,
+                                                                }} />
+                                                            );
+                                                        }
+                                                        if (el.type === 'image') {
+                                                            return (
+                                                                <img key={i} src={getImgSrc(el.src)} alt="" style={{
+                                                                    position: 'absolute',
+                                                                    left: `${el.x ?? 0}px`,
+                                                                    top: `${el.y ?? 0}px`,
+                                                                    width: `${el.width ?? 100}px`,
+                                                                    height: `${el.height ?? 100}px`,
+                                                                    objectFit: 'cover',
+                                                                    borderRadius: `${el.borderRadius ?? 0}px`,
+                                                                }} />
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })}
+                                                </div>
+                                            </PageShell>
+                                        </div>
+                                    );
+                                }
+
+                                if (page.type === 'customerInfo') {
+                                    const metadata = reportData.metadata || page.content;
+                                    const customerInitials = metadata.customerName?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'N/A';
+                                    const infoFields = [
+                                        { icon: '👤', label: 'Full Name', value: metadata.customerName },
+                                        { icon: '🌍', label: 'Country', value: metadata.country },
+                                        { icon: '📱', label: 'Mobile', value: metadata.mobileNo },
+                                        { icon: '📧', label: 'Email', value: metadata.customerEmail },
+                                        { icon: '🗓️', label: 'Duration', value: metadata.daysAndNights },
+                                        { icon: '👥', label: 'Passengers', value: metadata.numberOfPassengers },
+                                        ...(metadata.transportationMode ? [{ icon: '🚌', label: 'Transport', value: metadata.transportationMode }] : []),
+                                    ];
+
+                                    return (
+                                        <div key={`info-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                            <PageShell>
+                                                <div style={{ height: '170px', background: 'linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%)', position: 'relative', overflow: 'hidden' }}>
+                                                    <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                                                    <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(0,0,0,0.08)' }} />
+                                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 700, color: '#0284C7', margin: '0 auto 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+                                                            {customerInitials}
+                                                        </div>
+                                                        <div style={{ fontSize: '20px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>Booking Information</div>
+                                                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>Complete travel itinerary details</div>
+                                                    </div>
+                                                </div>
+                                                <div style={{ padding: '32px 36px' }}>
+                                                    <SectionTitle color="#0284C7">Customer Details</SectionTitle>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '28px' }}>
+                                                        {infoFields.map((field, i) => (
+                                                            <div key={i} style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                                                    <span style={{ fontSize: '16px' }}>{field.icon}</span>
+                                                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{field.label}</span>
+                                                                </div>
+                                                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', paddingLeft: '24px' }}>{field.value || 'N/A'}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <SectionTitle color="#10B981">Selected Route</SectionTitle>
+                                                    <div style={{ background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)', padding: '16px', borderRadius: '10px', border: '1px solid #A7F3D0', marginBottom: '28px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                                            {(metadata.selectedRoutes || []).map((route: string, i: number) => (
+                                                                <div key={i}>
+                                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'white', borderRadius: '6px', fontSize: '12px', fontWeight: 600, color: '#047857', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                                                                        <span>📍</span>
+                                                                        <span>{route}</span>
+                                                                    </div>
+                                                                    {i < (metadata.selectedRoutes || []).length - 1 && (
+                                                                        <span style={{ margin: '0 4px', color: '#10B981', fontSize: '12px' }}>→</span>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <SectionTitle color="#F59E0B">Trip Summary</SectionTitle>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                                                        <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)', borderRadius: '10px', border: '1px solid #FCD34D' }}>
+                                                            <div style={{ fontSize: '22px', fontWeight: 700, color: '#B45309', marginBottom: '4px' }}>{reportData.pages?.filter((p: any) => p.type === 'dayDetail').length || 0}</div>
+                                                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Days</div>
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)', borderRadius: '10px', border: '1px solid #93C5FD' }}>
+                                                            <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E40AF', marginBottom: '4px' }}>{(metadata.selectedRoutes || []).length}</div>
+                                                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#1E3A8A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Locations</div>
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%)', borderRadius: '10px', border: '1px solid #F87171' }}>
+                                                            <div style={{ fontSize: '22px', fontWeight: 700, color: '#991B1B', marginBottom: '4px' }}>{metadata.numberOfPassengers || 0}</div>
+                                                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Guests</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </PageShell>
+                                        </div>
+                                    );
+                                }
+
+                                if (page.type === 'dayDetail') {
+                                    const heroImgs: string[] = [];
+                                    (page.content?.selectedPlaces || []).forEach((sp: any) => placeImgs(sp.place).slice(0, 2).forEach((u: string) => heroImgs.push(u)));
+                                    const svcColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+                                        hotel: { bg: '#f5f0ff', border: '#ddd6fe', text: '#5b21b6', badge: '#7c3aed' },
+                                        transport: { bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8', badge: '#2563eb' },
+                                        activity: { bg: '#fff1f0', border: '#fecaca', text: '#b91c1c', badge: '#dc2626' },
+                                    };
+
+                                    return (
+                                        <div key={`day-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
+                                            <PageShell>
+                                                <div style={{ height: '130px', background: '#1E293B', position: 'relative', overflow: 'hidden' }}>
+                                                    {heroImgs.length > 0 ? (
+                                                        <div style={{ display: 'flex', height: '100%' }}>
+                                                            {heroImgs.slice(0, 4).map((src, i) => (
+                                                                <div key={i} style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                                                                    <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)' }} />
+                                                    )}
+                                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', zIndex: 10 }}>
+                                                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(255,255,255,0.95)', fontSize: '20px', fontWeight: 700, color: '#1E293B', marginBottom: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+                                                            {page.dayNumber}
+                                                        </div>
+                                                        <div style={{ fontSize: '15px', fontWeight: 700, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{page.content?.selectedDay || 'Date TBD'}</div>
+                                                    </div>
+                                                </div>
+                                                <div style={{ padding: '20px 32px 32px' }}>
+                                                    {page.content?.description && (
+                                                        <div style={{ marginBottom: '20px' }}>
+                                                            <SectionTitle color="#8B5CF6">Daily Itinerary</SectionTitle>
+                                                            <div style={{ fontSize: '12px', lineHeight: 1.6, color: '#374151', background: '#F9FAFB', padding: '14px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                                                                {page.content.description}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {(page.content?.selectedPlaces || []).length > 0 && (
+                                                        <div style={{ marginBottom: '20px' }}>
+                                                            <SectionTitle color="#10B981">Visiting Places</SectionTitle>
+                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                                                                {(page.content.selectedPlaces || []).map((sp: any, i: number) => {
+                                                                    const imgs = placeImgs(sp.place);
+                                                                    return (
+                                                                        <div key={i} style={{ background: 'white', borderRadius: '10px', overflow: 'hidden', border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                                                                            <div style={{ display: 'grid', gridTemplateColumns: imgs.length >= 2 ? 'repeat(2, 68px)' : '68px', gridTemplateRows: imgs.length > 2 ? 'repeat(2, 68px)' : '68px', gap: '0' }}>
+                                                                                {imgs.slice(0, 4).map((src, j) => (
+                                                                                    <img key={j} src={src} alt="" style={{ width: '68px', height: '68px', objectFit: 'cover' }} />
+                                                                                ))}
+                                                                            </div>
+                                                                            <div style={{ padding: '10px' }}>
+                                                                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#111827', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                                    {sp.place?.name || sp.place?.placeName || 'Unknown'}
+                                                                                </div>
+                                                                                <div style={{ fontSize: '10px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                                    <span>📍</span>
+                                                                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.district}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {(page.content?.selectedHotels || []).length > 0 && (
+                                                        <div style={{ marginBottom: '20px' }}>
+                                                            <SectionTitle color="#F59E0B">Services & Accommodations</SectionTitle>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                                {(page.content.selectedHotels || []).map((sh: any, i: number) => {
+                                                                    const imgs = svcImgs(sh.hotel);
+                                                                    const theme = svcColors[sh.type] || svcColors.hotel;
+                                                                    return (
+                                                                        <div key={i} style={{ display: 'flex', gap: '10px', background: theme.bg, padding: '10px', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
+                                                                            {imgs[0] && (
+                                                                                <img src={imgs[0]} alt="" style={{ width: '70px', height: '64px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />
+                                                                            )}
+                                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                                                                                    <div style={{ padding: '2px 8px', borderRadius: '4px', background: theme.badge, color: 'white', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>
+                                                                                        {sh.type === 'hotel' ? '🏨 Hotel' : sh.type === 'transport' ? '🚗 Transport' : '🎯 Activity'}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div style={{ fontSize: '12px', fontWeight: 700, color: theme.text, marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                                    {sh.hotel?.name || sh.hotel?.serviceName || 'Service'}
+                                                                                </div>
+                                                                                <div style={{ fontSize: '10px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {sh.district}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {page.content?.remarks && (
+                                                        <div>
+                                                            <SectionTitle color="#EC4899">Additional Notes</SectionTitle>
+                                                            <div style={{ fontSize: '11px', lineHeight: 1.5, color: '#6B7280', background: '#FDF2F8', padding: '12px', borderRadius: '8px', border: '1px solid #FBCFE8', fontStyle: 'italic' }}>
+                                                                {page.content.remarks}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </PageShell>
+                                        </div>
+                                    );
+                                }
+
+                                return null;
+                            })}
                         </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
         </Navbar>
     );
 }
