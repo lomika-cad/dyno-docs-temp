@@ -503,7 +503,11 @@ export default function ReportsHistory() {
                         }
                     } else if (el.type === 'image') {
                         const imgSrc = getImgSrc(el.src);
-                        html += `<img src="${imgSrc}" alt="" crossorigin="anonymous" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" />`;
+                        console.log('Template image src:', el.src, '->', imgSrc);
+                        if (!imgSrc || imgSrc.trim() === '') {
+                            console.warn('Empty image src for template element:', el);
+                        }
+                        html += `<img src="${imgSrc}" alt="" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" />`;
                     } else if (el.type === 'pill') {
                         html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; padding: 14px 18px; border-radius: 18px; background: ${el.colors?.bg || '#ffffff'}; color: ${el.colors?.text || '#111827'}; border: 1px solid ${(el.colors?.text || '#111827')}30; display: flex; flex-direction: column; gap: 4px; min-width: 130px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);"><span style="font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;">${el.label || ''}</span><span style="font-size: 16px; font-weight: 600;">${el.value || ''}</span></div>`;
                     }
@@ -550,7 +554,7 @@ export default function ReportsHistory() {
     <div style="height: 130px; background: linear-gradient(135deg, #1E293B 0%, #334155 100%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden;">
         ${heroImgs.length > 0 ? `
         <div style="position: absolute; inset: 0; display: flex;">
-            ${heroImgs.slice(0, 4).map((img: string) => `<div style="flex: 1; position: relative; overflow: hidden;"><img src="${img}" alt="" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" /><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.3);"></div></div>`).join('')}
+            ${heroImgs.slice(0, 4).map((img: string) => `<div style="flex: 1; position: relative; overflow: hidden;"><img src="${img}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" /><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.3);"></div></div>`).join('')}
         </div>
         ` : ''}
         <div style="text-align: center; position: relative; z-index: 10;">
@@ -581,7 +585,7 @@ export default function ReportsHistory() {
                 const imgs = placeImgs(sp.place);
                 return `
                 <div style="background: white; border-radius: 10px; border: 1px solid #E5E7EB; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                    ${imgs[0] ? `<div style="height: 60px; overflow: hidden;"><img src="${imgs[0]}" alt="" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" /></div>` : ''}
+                    ${imgs[0] ? `<div style="height: 60px; overflow: hidden;"><img src="${imgs[0]}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" /></div>` : ''}
                     <div style="padding: 10px;">
                         <div style="font-size: 12px; font-weight: 700; color: #111827;">${sp.place?.name || sp.place?.placeName || 'Unknown'}</div>
                         <div style="font-size: 10px; color: #6B7280;">📍 ${sp.district}</div>
@@ -598,7 +602,7 @@ export default function ReportsHistory() {
                 const theme = svcColors[sh.type] || svcColors.hotel;
                 return `
                 <div style="display: flex; gap: 10px; background: ${theme.bg}; padding: 10px; border-radius: 8px; border: 1px solid ${theme.border};">
-                    ${imgs[0] ? `<img src="${imgs[0]}" alt="" crossorigin="anonymous" style="width: 60px; height: 50px; border-radius: 6px; object-fit: cover; flex-shrink: 0; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" />` : ''}
+                    ${imgs[0] ? `<img src="${imgs[0]}" alt="" style="width: 60px; height: 50px; border-radius: 6px; object-fit: cover; flex-shrink: 0; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" />` : ''}
                     <div style="flex: 1; min-width: 0;">
                         <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                             <div style="padding: 2px 8px; border-radius: 4px; background: ${theme.badge}; color: white; font-size: 8px; font-weight: 700; text-transform: uppercase;">
@@ -726,6 +730,8 @@ export default function ReportsHistory() {
                 let loadedImages = 0;
                 const totalImages = images.length;
                 
+                console.log(`Found ${totalImages} images in PDF`);
+                
                 if (totalImages === 0) {
                     // No images to load, print immediately
                     setTimeout(() => {
@@ -736,7 +742,9 @@ export default function ReportsHistory() {
                 
                 const checkAllImagesLoaded = () => {
                     loadedImages++;
+                    console.log(`Loaded ${loadedImages}/${totalImages} images`);
                     if (loadedImages === totalImages) {
+                        console.log('All images loaded, printing...');
                         setTimeout(() => {
                             printWindow.print();
                         }, 1000); // Extra delay to ensure rendering
@@ -744,15 +752,26 @@ export default function ReportsHistory() {
                 };
                 
                 // Add load event listeners to all images
-                Array.from(images).forEach((img) => {
-                    if (img.complete) {
+                Array.from(images).forEach((img, index) => {
+                    console.log(`Image ${index}: ${img.src.substring(0, 100)}...`);
+                    if (img.complete && img.naturalWidth > 0) {
+                        console.log(`Image ${index} already loaded`);
                         checkAllImagesLoaded();
                     } else {
-                        img.onload = checkAllImagesLoaded;
-                        img.onerror = () => {
-                            console.warn('Image failed to load:', img.src);
+                        img.onload = () => {
+                            console.log(`Image ${index} loaded successfully`);
                             checkAllImagesLoaded();
                         };
+                        img.onerror = (e) => {
+                            console.warn(`Image ${index} failed to load:`, img.src, e);
+                            checkAllImagesLoaded();
+                        };
+                        
+                        // Force reload if image has not started loading
+                        if (!img.src || img.src === 'about:blank') {
+                            console.warn(`Image ${index} has invalid src, skipping`);
+                            checkAllImagesLoaded();
+                        }
                     }
                 });
                 
