@@ -8,12 +8,13 @@ namespace Application.UserStories.Operations.Reports.Commands;
 
 public class CreateReportCommand : IRequest<Result>
 {
+    public Guid TenantId { get; set; }
     public required string CustomerName { get; set; }
     public required string CustomerEmail { get; set; }
     public required string GeneratedReport { get; set; }
 }
 
-public class CreateReportCommandHandler(IApplicationDbContext context) : IRequestHandler<CreateReportCommand, Result>
+public class CreateReportCommandHandler(IApplicationDbContext context, ITenantService tenantService) : IRequestHandler<CreateReportCommand, Result>
 {
     public async Task<Result> Handle(CreateReportCommand request, CancellationToken cancellationToken)
     {
@@ -29,7 +30,7 @@ public class CreateReportCommandHandler(IApplicationDbContext context) : IReques
         context.Report.Add(report);
         
         var existingUserSubscriptions = await context.UserSubscription
-            .Where(us => us.TenantId == report.TenantId)
+            .Where(us => us.TenantId == request.TenantId)
             .FirstOrDefaultAsync(cancellationToken);
         
         if (existingUserSubscriptions == null)

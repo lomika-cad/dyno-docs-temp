@@ -2,6 +2,7 @@ import { InfoOutline, NavigateNext, NavigateBefore } from "@mui/icons-material";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import { showSuccess, showError } from "../components/Toast";
@@ -9,10 +10,13 @@ import { getDataByDistrict } from "../services/agency-data-api";
 import { getPartnershipByDistrict } from "../services/partnership-api";
 import { generateDayDescription } from "../services/ai-api";
 import { getUserTemplates } from "../services/template-api";
+import { generateReport } from "../services/reports-api";
 
 export default function ReportGeneration() {
+    const navigate = useNavigate();
     const [infoOpen, setInfoOpen] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
+    const [savingReport, setSavingReport] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [districtData, setDistrictData] = useState<{ [key: string]: any }>({});
@@ -25,7 +29,6 @@ export default function ReportGeneration() {
     const [loadingTemplates, setLoadingTemplates] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [generatedReport, setGeneratedReport] = useState<{ templateDesign: any; template: any } | null>(null);
-    const [exportMenuOpen, setExportMenuOpen] = useState(false);
     const dayCardRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -2315,118 +2318,41 @@ export default function ReportGeneration() {
                     };
                     const totalPages = (generatedReport.templateDesign?.pages?.length ?? 1) + 1 + formData.dayCards.length;
 
-                    // ── shared HTML builder ───────────────────────────────
-                    const buildReportHTML = (bodyExtra = '') => {
-                        const content = document.getElementById('report-print-content');
-                        if (!content) return '';
-                        return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8"/>
-<title>Travel Report – ${formData.customerName}</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #fff; font-family: 'Segoe UI', Arial, sans-serif; }
-  @page { size: 700px 991px; margin: 0; }
-  @media print {
-    html, body { background: white !important; }
-    @page { size: 700px 991px; margin: 0; }
-    body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    .rpt-page-wrap { page-break-after: always !important; break-after: page !important;
-      margin-bottom: 0 !important; height: 991px !important; overflow: hidden !important;
-      display: block !important; }
-    .rpt-page-label { display: none !important; }
-    #rpt-canvas { padding: 0 !important; gap: 0 !important; }
-    img { max-width: 100% !important; display: block !important; }
-  }
-  .rpt-page-label { text-align: center; color: rgba(80,80,80,0.5); font-size: 11px;
-    margin-bottom: 10px; letter-spacing: 0.06em; font-family: sans-serif; }
-  .rpt-page-wrap { margin-bottom: 48px; flex-shrink: 0; }
-  #rpt-canvas { padding: 44px 24px 60px; display: flex; flex-direction: column; align-items: center; gap: 0; }
-  .rpt-img-grid { display: grid; }
-  .rpt-img-grid img { width: 100%; height: 70px; object-fit: cover; display: block; }
-  .rpt-hero-img { position: absolute; top: 0; height: 100%; object-fit: cover; filter: brightness(0.45); display: block; }
-</style>
-</head>
-<body>
-<div id="rpt-canvas">${content.innerHTML}</div>
-${bodyExtra}
-</body>
-</html>`;
-                    };
+                    // ── save report to database ───────────────────────────
+                    const handleSaveReport = async () => {
+                        setSavingReport(true);
+                        try {
+                            const token = sessionStorage.getItem('dd_token');
+                            const tenantId = sessionStorage.getItem('dd_tenant_id');
+                            if (!token) {
+                                showError('Authentication required. Please log in.');
+                                return;
+                            }
 
-                    // ── shared filename helper ────────────────────────────
-                    const reportFilename = (() => {
-                        const name = formData.customerName.trim().replace(/\s+/g, '_') || 'TravelReport';
-                        const digits = (formData.mobileNo ?? '').replace(/\D/g, '');
-                        const last4 = digits.length > 0 ? digits.slice(-4).padStart(4, '0') : '0000';
-                        return `${name}_${last4}`;
-                    })();
+                            const reportPayload = {
+                                tenantId: tenantId!,
+                                customerName: formData.customerName,
+                                customerEmail: formData.email,
+                                generatedReport: JSON.stringify({
+                                    formData,
+                                    generatedDescriptions,
+                                    template: generatedReport.template,
+                                    templateDesign: generatedReport.templateDesign,
+                                }),
+                            };
 
-                    // ── export as PDF (print dialog) ──────────────────────
-                    const handleExportPDF = () => {
-                        setExportMenuOpen(false);
-                        const content = document.getElementById('report-print-content');
-                        if (!content) return;
-                        const printWin = window.open('', '_blank');
-                        if (!printWin) { alert('Pop-ups are blocked. Please allow pop-ups for this site.'); return; }
-
-                        const scriptTag = '<' + 'script>' +
-                            'var imgs=Array.from(document.images),total=imgs.length,loaded=0;' +
-                            'function tryPrint(){setTimeout(function(){window.focus();window.print();},600);}' +
-                            'if(total===0){tryPrint();}' +
-                            'else{imgs.forEach(function(img){' +
-                            '  if(img.complete){if(++loaded>=total)tryPrint();}' +
-                            '  else{img.onload=img.onerror=function(){if(++loaded>=total)tryPrint();};}' +
-                            '});}' +
-                            '</' + 'script>';
-
-                        const css = [
-                            '*, *::before, *::after { box-sizing: border-box; }',
-                            'html, body { margin: 0; padding: 0; background: #fff; }',
-                            '@page { size: 700px 991px; margin: 0; }',
-                            '@media print {',
-                            '  @page { size: 700px 991px; margin: 0; }',
-                            '  body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
-                            '  .rpt-page-label { display: none !important; }',
-                            '  .rpt-page-wrap { page-break-after: always !important; break-after: page !important;',
-                            '    height: 991px !important; overflow: hidden !important;',
-                            '    margin: 0 !important; padding: 0 !important; display: block !important; }',
-                            '  #rpt-canvas { padding: 0 !important; gap: 0 !important; background: white !important; }',
-                            '  img { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
-                            '}',
-                            '.rpt-page-wrap { margin-bottom: 48px; }',
-                            '#rpt-canvas { padding: 44px 24px 60px; display: flex; flex-direction: column; align-items: center; gap: 0; }',
-                            '.rpt-img-grid { display: grid; }',
-                            '.rpt-hero-img { position: absolute; top: 0; height: 100%; object-fit: cover; filter: brightness(0.45); display: block; }',
-                        ].join('\n');
-
-                        printWin.document.write(
-                            '<!DOCTYPE html><html><head><meta charset="utf-8"/>' +
-                            '<title>' + reportFilename + '</title>' +
-                            '<style>' + css + '</style>' +
-                            '</head><body>' +
-                            '<div id="rpt-canvas">' + content.innerHTML + '</div>' +
-                            scriptTag +
-                            '</body></html>'
-                        );
-                        printWin.document.close();
-                    };
-
-                    // ── export as HTML ────────────────────────────────────
-                    const handleExportHTML = () => {
-                        setExportMenuOpen(false);
-                        const html = buildReportHTML();
-                        if (!html) return;
-                        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${reportFilename}.html`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
+                            await generateReport(reportPayload, token);
+                            showSuccess('Report saved successfully!');
+                            setTimeout(() => {
+                                setReportModalOpen(false);
+                                navigate('/report-history');
+                            }, 1500);
+                        } catch (error: any) {
+                            console.error('Error saving report:', error);
+                            showError(error?.response?.data?.message || 'Failed to save report. Please try again.');
+                        } finally {
+                            setSavingReport(false);
+                        }
                     };
 
                     // ── shared page shell ─────────────────────────────────
@@ -2482,108 +2408,40 @@ ${bodyExtra}
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    {/* ── Export split button ── */}
-                                    <div style={{ position: 'relative' }}>
-                                        {/* main + chevron row */}
-                                        <div style={{
-                                            display: 'flex', borderRadius: '8px', overflow: 'visible',
-                                            boxShadow: '0 4px 14px rgba(255,123,46,0.35)',
-                                        }}>
-                                            {/* main action — Export PDF */}
-                                            <button
-                                                onClick={handleExportPDF}
-                                                style={{
-                                                    background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)',
-                                                    border: 'none', borderRadius: '8px 0 0 8px',
-                                                    color: 'white', padding: '7px 16px',
-                                                    cursor: 'pointer',
-                                                    fontSize: '13px', fontWeight: 700,
-                                                    display: 'flex', alignItems: 'center', gap: '6px',
-                                                    transition: 'opacity 0.15s',
-                                                }}
-                                                onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-                                            >
-                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                                    <polyline points="7 10 12 15 17 10" />
-                                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                    {/* ── Save Report button ── */}
+                                    <button
+                                        onClick={handleSaveReport}
+                                        disabled={savingReport}
+                                        style={{
+                                            background: savingReport ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                            border: 'none',
+                                            color: 'white', borderRadius: '8px', padding: '7px 20px',
+                                            cursor: savingReport ? 'not-allowed' : 'pointer',
+                                            fontSize: '13px', fontWeight: 700,
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            boxShadow: '0 4px 14px rgba(16,185,129,0.35)',
+                                            transition: 'all 0.15s',
+                                            opacity: savingReport ? 0.7 : 1,
+                                        }}
+                                        onMouseEnter={e => { if (!savingReport) { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+                                        onMouseLeave={e => { if (!savingReport) { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; } }}
+                                    >
+                                        {savingReport ? (
+                                            <>
+                                                <CircularProgress size={13} style={{ color: 'white' }} />
+                                                <span>Saving...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                                    <polyline points="17 21 17 13 7 13 7 21"/>
+                                                    <polyline points="7 3 7 8 15 8"/>
                                                 </svg>
-                                                Export PDF
-                                            </button>
-                                            {/* divider */}
-                                            <div style={{ width: '1px', background: 'rgba(255,255,255,0.3)', flexShrink: 0, alignSelf: 'stretch' }} />
-                                            {/* chevron toggle */}
-                                            <button
-                                                onClick={() => setExportMenuOpen(o => !o)}
-                                                style={{
-                                                    background: 'linear-gradient(135deg, #F0A94D 0%, #FF7B2E 100%)',
-                                                    border: 'none', borderRadius: '0 8px 8px 0',
-                                                    color: 'white', padding: '7px 9px',
-                                                    cursor: 'pointer', display: 'flex', alignItems: 'center',
-                                                    transition: 'opacity 0.15s',
-                                                }}
-                                                onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-                                            >
-                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"
-                                                    style={{ transform: exportMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.18s' }}>
-                                                    <polyline points="6 9 12 15 18 9" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        {/* dropdown menu */}
-                                        {exportMenuOpen && (
-                                            <div style={{
-                                                position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-                                                background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)',
-                                                borderRadius: '10px', overflow: 'hidden',
-                                                boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
-                                                minWidth: '170px', zIndex: 100,
-                                            }}>
-                                                {/* PDF option */}
-                                                <button
-                                                    onClick={handleExportPDF}
-                                                    style={{
-                                                        width: '100%', background: 'none', border: 'none',
-                                                        color: 'rgba(255,255,255,0.88)', padding: '10px 16px',
-                                                        cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-                                                        display: 'flex', alignItems: 'center', gap: '10px',
-                                                        textAlign: 'left', transition: 'background 0.12s',
-                                                    }}
-                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,123,46,0.15)'; }}
-                                                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-                                                >
-                                                    <span style={{ fontSize: '16px' }}>📄</span>
-                                                    <div>
-                                                        <div>Export as PDF</div>
-                                                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>Print / save via browser</div>
-                                                    </div>
-                                                </button>
-                                                {/* divider */}
-                                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '0 8px' }} />
-                                                {/* HTML option */}
-                                                <button
-                                                    onClick={handleExportHTML}
-                                                    style={{
-                                                        width: '100%', background: 'none', border: 'none',
-                                                        color: 'rgba(255,255,255,0.88)', padding: '10px 16px',
-                                                        cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-                                                        display: 'flex', alignItems: 'center', gap: '10px',
-                                                        textAlign: 'left', transition: 'background 0.12s',
-                                                    }}
-                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,179,237,0.15)'; }}
-                                                    onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-                                                >
-                                                    <span style={{ fontSize: '16px' }}>🌐</span>
-                                                    <div>
-                                                        <div>Export as HTML</div>
-                                                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>Download .html file</div>
-                                                    </div>
-                                                </button>
-                                            </div>
+                                                <span>Save Report</span>
+                                            </>
                                         )}
-                                    </div>
+                                    </button>
                                     <button
                                         onClick={() => setReportModalOpen(false)}
                                         style={{
