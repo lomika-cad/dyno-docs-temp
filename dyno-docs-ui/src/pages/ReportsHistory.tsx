@@ -3,6 +3,7 @@ import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 
 import CircularProgress from '@mui/material/CircularProgress';
 import { getReports } from "../services/reports-api";
@@ -106,6 +107,13 @@ export default function ReportsHistory() {
     const handleViewReport = (report: Report) => {
         setSelectedReport(report);
         setViewModalOpen(true);
+    };
+
+    const handleCustomizeTemplate = (report: Report) => {
+        // TODO: Implement template customization logic
+        console.log('Customizing template for report:', report.id);
+        // You can add navigation to a template customization page or open a modal
+        // Example: navigate(`/template/customize/${report.id}`);
     };
 
     return (
@@ -286,6 +294,35 @@ export default function ReportsHistory() {
                                                         >
                                                             <VisibilityRoundedIcon style={{ fontSize: "16px" }} />
                                                             View
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleCustomizeTemplate(report)}
+                                                            style={{
+                                                                border: "none",
+                                                                background: "linear-gradient(135deg, #eed920 0%, #ea7e02 100%)",
+                                                                color: "white",
+                                                                padding: "8px 12px",
+                                                                borderRadius: "8px",
+                                                                cursor: "pointer",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: "6px",
+                                                                fontSize: "13px",
+                                                                fontWeight: "600",
+                                                                transition: "all 0.2s",
+                                                                boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)"
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.transform = "translateY(-2px)";
+                                                                e.currentTarget.style.boxShadow = "0 4px 12px rgba(185, 112, 16, 0.35)";
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.transform = "translateY(0)";
+                                                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(185, 143, 16, 0.25)";
+                                                            }}
+                                                        >
+                                                            <EditRoundedIcon style={{ fontSize: "16px" }} />
+                                                            Customize
                                                         </button>
                                                     </div>
                                                 </td>
