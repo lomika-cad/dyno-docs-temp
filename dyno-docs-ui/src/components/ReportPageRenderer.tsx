@@ -1,0 +1,679 @@
+import React from 'react';
+
+// A4 dimensions at 96 DPI
+export const A4_WIDTH = 595;
+export const A4_HEIGHT = 842;
+
+// Type definitions
+export type ReportPageType = 'template' | 'customerInfo' | 'dayDetail' | 'cost' | 'policies';
+
+export interface ReportPage {
+    type: ReportPageType;
+    pageNumber: number;
+    dayNumber?: number;
+    content: any;
+}
+
+export interface ReportData {
+    version?: string;
+    metadata?: {
+        customerName?: string;
+        customerEmail?: string;
+        country?: string;
+        mobileNo?: string;
+        transportationMode?: string;
+        numberOfPassengers?: string;
+        daysAndNights?: string;
+        selectedRoutes?: string[];
+        createdAt?: string;
+    };
+    cost?: {
+        totalAmount?: number;
+        promoCode?: string;
+        promoCodeDiscount?: number;
+        finalAmount?: number;
+    };
+    policies?: {
+        specialRemark?: string;
+        bookingPolicy?: string;
+        cancellationPolicy?: string;
+    };
+    template?: {
+        id?: string;
+        name?: string;
+        thumbnail?: string;
+    };
+    templateDesign?: any;
+    pages?: ReportPage[];
+    totalPages?: number;
+}
+
+// Utility functions for images
+export const getImgSrc = (raw: any): string => {
+    const s = typeof raw === 'string' ? raw : raw?.url ?? raw?.src ?? raw?.path ?? '';
+    if (!s) return '';
+    if (s.startsWith('data:')) return s;
+    if (s.length > 200 && /^[A-Za-z0-9+/]+=*$/.test(s)) return `data:image/jpeg;base64,${s}`;
+    return s;
+};
+
+export const placeImgs = (place: any): string[] => {
+    const urls: string[] = [];
+    let idx = 1;
+    while (place[`image${idx}Url`]) { urls.push(getImgSrc(place[`image${idx}Url`])); idx++; }
+    if (urls.length === 0) {
+        const fb = place.images ?? place.Images ?? place.image ?? place.Image;
+        if (fb) (Array.isArray(fb) ? fb : [fb]).forEach((u: any) => urls.push(getImgSrc(u)));
+    }
+    return urls.filter(Boolean);
+};
+
+export const svcImgs = (hotel: any): string[] => {
+    const raw = hotel.images ?? hotel.Images ?? hotel.image ?? hotel.Image ?? [];
+    return (Array.isArray(raw) ? raw : [raw]).map(getImgSrc).filter(Boolean);
+};
+
+// Service color themes
+export const svcColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+    hotel: { bg: '#f5f0ff', border: '#ddd6fe', text: '#5b21b6', badge: '#7c3aed' },
+    transport: { bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8', badge: '#2563eb' },
+    activity: { bg: '#fff1f0', border: '#fecaca', text: '#b91c1c', badge: '#dc2626' },
+};
+
+// Page Shell component - A4 sized container
+interface PageShellProps {
+    children: React.ReactNode;
+    scale?: number;
+    showShadow?: boolean;
+}
+
+export const PageShell: React.FC<PageShellProps> = ({ children, scale = 1, showShadow = true }) => (
+    <div style={{
+        width: `${A4_WIDTH * scale}px`,
+        height: `${A4_HEIGHT * scale}px`,
+        background: '#FFFFFF',
+        boxShadow: showShadow ? '0 16px 48px rgba(0,0,0,0.2)' : 'none',
+        fontFamily: '"Inter", "Segoe UI", Arial, sans-serif',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        borderRadius: '4px',
+        flexShrink: 0,
+        position: 'relative',
+    }}>
+        {children}
+    </div>
+);
+
+// Section Title component
+interface SectionTitleProps {
+    color: string;
+    children: React.ReactNode;
+    scale?: number;
+}
+
+export const SectionTitle: React.FC<SectionTitleProps> = ({ color, children, scale = 1 }) => (
+    <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: `${8 * scale}px`,
+        marginBottom: `${10 * scale}px`,
+    }}>
+        <div style={{ width: `${3 * scale}px`, height: `${16 * scale}px`, background: color, borderRadius: '2px', flexShrink: 0 }} />
+        <div style={{ fontSize: `${10 * scale}px`, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{children}</div>
+    </div>
+);
+
+// Template Page Renderer
+interface TemplatePageProps {
+    page: ReportPage;
+    scale?: number;
+}
+
+export const TemplatePageRenderer: React.FC<TemplatePageProps> = ({ page, scale = 1 }) => {
+    return (
+        <PageShell scale={scale}>
+            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                {page.content?.elements?.map((el: any, i: number) => {
+                    const baseStyle: React.CSSProperties = {
+                        position: 'absolute',
+                        left: `${(el.x ?? 0) * scale}px`,
+                        top: `${(el.y ?? 0) * scale}px`,
+                    };
+
+                    if (el.type === 'text') {
+                        return (
+                            <div key={i} style={{
+                                ...baseStyle,
+                                width: el.width ? `${el.width * scale}px` : 'auto',
+                                fontSize: `${(el.fontSize ?? 14) * scale}px`,
+                                fontFamily: el.fontFamily ?? 'Arial',
+                                fontWeight: el.fontWeight ?? 400,
+                                color: el.color ?? '#000',
+                                lineHeight: el.lineHeight ?? 1.4,
+                                letterSpacing: el.letterSpacing ? `${el.letterSpacing * scale}px` : undefined,
+                            }}>
+                                {el.content}
+                            </div>
+                        );
+                    }
+                    if (el.type === 'shape') {
+                        if (el.shape === 'rectangle') {
+                            return (
+                                <div key={i} style={{
+                                    ...baseStyle,
+                                    width: `${(el.width ?? 100) * scale}px`,
+                                    height: `${(el.height ?? 100) * scale}px`,
+                                    background: el.fill ?? 'transparent',
+                                    borderRadius: `${(el.borderRadius ?? 0) * scale}px`,
+                                    border: el.stroke ? `1px solid ${el.stroke}` : undefined,
+                                    boxShadow: el.shadow,
+                                }} />
+                            );
+                        }
+                        if (el.shape === 'circle') {
+                            const diameter = (el.width ?? el.height ?? 0) * scale;
+                            return (
+                                <div key={i} style={{
+                                    ...baseStyle,
+                                    width: `${diameter}px`,
+                                    height: `${diameter}px`,
+                                    borderRadius: '50%',
+                                    background: el.fill ?? '#f3f4f6',
+                                    border: el.stroke ? `1px solid ${el.stroke}` : undefined,
+                                    boxShadow: el.shadow,
+                                }} />
+                            );
+                        }
+                        if (el.shape === 'polygon' && el.points?.length) {
+                            const polygonPoints = el.points
+                                .map((point: { x: number; y: number }) => {
+                                    const px = (point.x / A4_WIDTH) * 100;
+                                    const py = (point.y / A4_HEIGHT) * 100;
+                                    return `${px}% ${py}%`;
+                                })
+                                .join(', ');
+                            return (
+                                <div key={i} style={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: 0,
+                                    width: `${A4_WIDTH * scale}px`,
+                                    height: `${A4_HEIGHT * scale}px`,
+                                    background: el.fill ?? '#111827',
+                                    clipPath: `polygon(${polygonPoints})`,
+                                }} />
+                            );
+                        }
+                        if (el.shape === 'line') {
+                            return (
+                                <div key={i} style={{
+                                    ...baseStyle,
+                                    width: `${(el.width ?? 100) * scale}px`,
+                                    height: `${Math.max(1, (el.height ?? 1) * scale)}px`,
+                                    background: el.stroke ?? el.fill ?? '#e5e7eb',
+                                    borderRadius: '999px',
+                                }} />
+                            );
+                        }
+                        // Default rectangle
+                        return (
+                            <div key={i} style={{
+                                ...baseStyle,
+                                width: `${(el.width ?? 100) * scale}px`,
+                                height: `${(el.height ?? 100) * scale}px`,
+                                background: el.fill ?? 'transparent',
+                                borderRadius: `${(el.borderRadius ?? 0) * scale}px`,
+                            }} />
+                        );
+                    }
+                    if (el.type === 'image') {
+                        return (
+                            <img key={i} src={getImgSrc(el.src)} alt="" style={{
+                                ...baseStyle,
+                                width: `${(el.width ?? 100) * scale}px`,
+                                height: `${(el.height ?? 100) * scale}px`,
+                                objectFit: 'cover',
+                                borderRadius: `${(el.borderRadius ?? 0) * scale}px`,
+                            }} />
+                        );
+                    }
+                    if (el.type === 'pill') {
+                        return (
+                            <div key={i} style={{
+                                ...baseStyle,
+                                padding: `${14 * scale}px ${18 * scale}px`,
+                                borderRadius: `${18 * scale}px`,
+                                background: el.colors?.bg ?? '#ffffff',
+                                color: el.colors?.text ?? '#111827',
+                                border: `1px solid ${(el.colors?.text ?? '#111827')}30`,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: `${4 * scale}px`,
+                                minWidth: `${130 * scale}px`,
+                                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)',
+                            }}>
+                                <span style={{ fontSize: `${10 * scale}px`, letterSpacing: '0.25em', textTransform: 'uppercase' }}>{el.label}</span>
+                                <span style={{ fontSize: `${16 * scale}px`, fontWeight: 600 }}>{el.value}</span>
+                            </div>
+                        );
+                    }
+                    return null;
+                })}
+            </div>
+        </PageShell>
+    );
+};
+
+// Customer Info Page Renderer
+interface CustomerInfoPageProps {
+    page: ReportPage;
+    reportData: ReportData;
+    scale?: number;
+}
+
+export const CustomerInfoPageRenderer: React.FC<CustomerInfoPageProps> = ({ page, reportData, scale = 1 }) => {
+    const metadata = reportData.metadata || page.content;
+    const customerInitials = metadata?.customerName?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'N/A';
+    const infoFields = [
+        { icon: '👤', label: 'Full Name', value: metadata?.customerName },
+        { icon: '🌍', label: 'Country', value: metadata?.country },
+        { icon: '📱', label: 'Mobile', value: metadata?.mobileNo },
+        { icon: '📧', label: 'Email', value: metadata?.customerEmail || page.content?.email },
+        { icon: '🗓️', label: 'Duration', value: metadata?.daysAndNights },
+        { icon: '👥', label: 'Passengers', value: metadata?.numberOfPassengers },
+        ...(metadata?.transportationMode ? [{ icon: '🚌', label: 'Transport', value: metadata.transportationMode }] : []),
+    ];
+
+    return (
+        <PageShell scale={scale}>
+            <div style={{ height: `${170 * scale}px`, background: 'linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', top: `${-30 * scale}px`, right: `${-30 * scale}px`, width: `${180 * scale}px`, height: `${180 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                <div style={{ position: 'absolute', bottom: `${-40 * scale}px`, left: `${-40 * scale}px`, width: `${200 * scale}px`, height: `${200 * scale}px`, borderRadius: '50%', background: 'rgba(0,0,0,0.08)' }} />
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                    <div style={{ width: `${60 * scale}px`, height: `${60 * scale}px`, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: `${24 * scale}px`, fontWeight: 700, color: '#0284C7', margin: '0 auto', marginBottom: `${12 * scale}px`, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+                        {customerInitials}
+                    </div>
+                    <div style={{ fontSize: `${20 * scale}px`, fontWeight: 700, color: 'white', marginBottom: `${4 * scale}px` }}>Booking Information</div>
+                    <div style={{ fontSize: `${12 * scale}px`, color: 'rgba(255,255,255,0.8)' }}>Complete travel itinerary details</div>
+                </div>
+            </div>
+            <div style={{ padding: `${32 * scale}px ${36 * scale}px`, flex: 1, overflow: 'hidden' }}>
+                <SectionTitle color="#0284C7" scale={scale}>Customer Details</SectionTitle>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: `${16 * scale}px`, marginBottom: `${28 * scale}px` }}>
+                    {infoFields.map((field, i) => (
+                        <div key={i} style={{ padding: `${14 * scale}px`, background: '#F8FAFC', borderRadius: `${10 * scale}px`, border: '1px solid #E2E8F0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: `${8 * scale}px`, marginBottom: `${6 * scale}px` }}>
+                                <span style={{ fontSize: `${16 * scale}px` }}>{field.icon}</span>
+                                <span style={{ fontSize: `${10 * scale}px`, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{field.label}</span>
+                            </div>
+                            <div style={{ fontSize: `${13 * scale}px`, fontWeight: 600, color: '#0F172A', paddingLeft: `${24 * scale}px` }}>{field.value || 'N/A'}</div>
+                        </div>
+                    ))}
+                </div>
+                <SectionTitle color="#10B981" scale={scale}>Selected Route</SectionTitle>
+                <div style={{ background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)', padding: `${16 * scale}px`, borderRadius: `${10 * scale}px`, border: '1px solid #A7F3D0', marginBottom: `${28 * scale}px` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: `${8 * scale}px` }}>
+                        {(metadata?.selectedRoutes || []).map((route: string, i: number) => (
+                            <div key={i}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: `${6 * scale}px`, padding: `${6 * scale}px ${12 * scale}px`, background: 'white', borderRadius: `${6 * scale}px`, fontSize: `${12 * scale}px`, fontWeight: 600, color: '#047857', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                                    <span>📍</span>
+                                    <span>{route}</span>
+                                </div>
+                                {i < (metadata?.selectedRoutes || []).length - 1 && (
+                                    <span style={{ margin: `0 ${4 * scale}px`, color: '#10B981', fontSize: `${12 * scale}px` }}>→</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <SectionTitle color="#F59E0B" scale={scale}>Trip Summary</SectionTitle>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: `${12 * scale}px` }}>
+                    <div style={{ textAlign: 'center', padding: `${14 * scale}px`, background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)', borderRadius: `${10 * scale}px`, border: '1px solid #FCD34D' }}>
+                        <div style={{ fontSize: `${22 * scale}px`, fontWeight: 700, color: '#B45309', marginBottom: `${4 * scale}px` }}>{reportData.pages?.filter((p: any) => p.type === 'dayDetail').length || 0}</div>
+                        <div style={{ fontSize: `${10 * scale}px`, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Days</div>
+                    </div>
+                    <div style={{ textAlign: 'center', padding: `${14 * scale}px`, background: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)', borderRadius: `${10 * scale}px`, border: '1px solid #93C5FD' }}>
+                        <div style={{ fontSize: `${22 * scale}px`, fontWeight: 700, color: '#1E40AF', marginBottom: `${4 * scale}px` }}>{(metadata?.selectedRoutes || []).length}</div>
+                        <div style={{ fontSize: `${10 * scale}px`, fontWeight: 700, color: '#1E3A8A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Locations</div>
+                    </div>
+                    <div style={{ textAlign: 'center', padding: `${14 * scale}px`, background: 'linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%)', borderRadius: `${10 * scale}px`, border: '1px solid #F87171' }}>
+                        <div style={{ fontSize: `${22 * scale}px`, fontWeight: 700, color: '#991B1B', marginBottom: `${4 * scale}px` }}>{metadata?.numberOfPassengers || 0}</div>
+                        <div style={{ fontSize: `${10 * scale}px`, fontWeight: 700, color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Guests</div>
+                    </div>
+                </div>
+            </div>
+        </PageShell>
+    );
+};
+
+// Day Detail Page Renderer
+interface DayDetailPageProps {
+    page: ReportPage;
+    scale?: number;
+}
+
+export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scale = 1 }) => {
+    const heroImgs: string[] = [];
+    (page.content?.selectedPlaces || []).forEach((sp: any) => placeImgs(sp.place).slice(0, 2).forEach((u: string) => heroImgs.push(u)));
+
+    return (
+        <PageShell scale={scale}>
+            <div style={{ height: `${130 * scale}px`, background: '#1E293B', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                {heroImgs.length > 0 ? (
+                    <div style={{ display: 'flex', height: '100%' }}>
+                        {heroImgs.slice(0, 4).map((src, i) => (
+                            <div key={i} style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                                <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)' }} />
+                )}
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', zIndex: 10 }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: `${56 * scale}px`, height: `${56 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', fontSize: `${20 * scale}px`, fontWeight: 700, color: '#1E293B', marginBottom: `${8 * scale}px`, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+                        {page.dayNumber}
+                    </div>
+                    <div style={{ fontSize: `${15 * scale}px`, fontWeight: 700, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{page.content?.selectedDay || 'Date TBD'}</div>
+                </div>
+            </div>
+            <div style={{ padding: `${20 * scale}px ${32 * scale}px ${32 * scale}px`, flex: 1, overflow: 'hidden' }}>
+                {page.content?.description && (
+                    <div style={{ marginBottom: `${20 * scale}px` }}>
+                        <SectionTitle color="#8B5CF6" scale={scale}>Daily Itinerary</SectionTitle>
+                        <div style={{ fontSize: `${12 * scale}px`, lineHeight: 1.6, color: '#374151', background: '#F9FAFB', padding: `${14 * scale}px`, borderRadius: `${8 * scale}px`, border: '1px solid #E5E7EB' }}>
+                            {page.content.description}
+                        </div>
+                    </div>
+                )}
+                {(page.content?.selectedPlaces || []).length > 0 && (
+                    <div style={{ marginBottom: `${20 * scale}px` }}>
+                        <SectionTitle color="#10B981" scale={scale}>Visiting Places</SectionTitle>
+                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${180 * scale}px, 1fr))`, gap: `${12 * scale}px` }}>
+                            {(page.content.selectedPlaces || []).slice(0, 4).map((sp: any, i: number) => {
+                                const imgs = placeImgs(sp.place);
+                                return (
+                                    <div key={i} style={{ background: 'white', borderRadius: `${10 * scale}px`, overflow: 'hidden', border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                                        {imgs.length > 0 && (
+                                            <div style={{ height: `${60 * scale}px`, overflow: 'hidden' }}>
+                                                <img src={imgs[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            </div>
+                                        )}
+                                        <div style={{ padding: `${10 * scale}px` }}>
+                                            <div style={{ fontSize: `${11 * scale}px`, fontWeight: 700, color: '#111827', marginBottom: `${3 * scale}px`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {sp.place?.name || sp.place?.placeName || 'Unknown'}
+                                            </div>
+                                            <div style={{ fontSize: `${9 * scale}px`, color: '#6B7280', display: 'flex', alignItems: 'center', gap: `${4 * scale}px` }}>
+                                                <span>📍</span>
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.district}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+                {(page.content?.selectedHotels || []).length > 0 && (
+                    <div style={{ marginBottom: `${20 * scale}px` }}>
+                        <SectionTitle color="#F59E0B" scale={scale}>Services & Accommodations</SectionTitle>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: `${8 * scale}px` }}>
+                            {(page.content.selectedHotels || []).slice(0, 3).map((sh: any, i: number) => {
+                                const imgs = svcImgs(sh.hotel);
+                                const theme = svcColors[sh.type] || svcColors.hotel;
+                                return (
+                                    <div key={i} style={{ display: 'flex', gap: `${10 * scale}px`, background: theme.bg, padding: `${10 * scale}px`, borderRadius: `${8 * scale}px`, border: `1px solid ${theme.border}` }}>
+                                        {imgs[0] && (
+                                            <img src={imgs[0]} alt="" style={{ width: `${60 * scale}px`, height: `${50 * scale}px`, borderRadius: `${6 * scale}px`, objectFit: 'cover', flexShrink: 0 }} />
+                                        )}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: `${6 * scale}px`, marginBottom: `${4 * scale}px` }}>
+                                                <div style={{ padding: `${2 * scale}px ${8 * scale}px`, borderRadius: `${4 * scale}px`, background: theme.badge, color: 'white', fontSize: `${8 * scale}px`, fontWeight: 700, textTransform: 'uppercase' }}>
+                                                    {sh.type === 'hotel' ? '🏨 Hotel' : sh.type === 'transport' ? '🚗 Transport' : '🎯 Activity'}
+                                                </div>
+                                            </div>
+                                            <div style={{ fontSize: `${11 * scale}px`, fontWeight: 700, color: theme.text, marginBottom: `${2 * scale}px`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {sh.hotel?.name || sh.hotel?.serviceName || 'Service'}
+                                            </div>
+                                            <div style={{ fontSize: `${9 * scale}px`, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {sh.district}</div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+                {page.content?.remarks && (
+                    <div>
+                        <SectionTitle color="#EC4899" scale={scale}>Additional Notes</SectionTitle>
+                        <div style={{ fontSize: `${10 * scale}px`, lineHeight: 1.5, color: '#6B7280', background: '#FDF2F8', padding: `${12 * scale}px`, borderRadius: `${8 * scale}px`, border: '1px solid #FBCFE8', fontStyle: 'italic' }}>
+                            {page.content.remarks}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </PageShell>
+    );
+};
+
+// Cost Page Renderer
+interface CostPageProps {
+    page: ReportPage;
+    reportData: ReportData;
+    scale?: number;
+}
+
+export const CostPageRenderer: React.FC<CostPageProps> = ({ page, reportData, scale = 1 }) => {
+    const costData = page.content || {};
+    const reportCostData = reportData.cost || {};
+    const totalAmount = costData.totalAmount || reportCostData.totalAmount || 0;
+    const promoCode = costData.promoCode || reportCostData.promoCode || '';
+    const promoCodeDiscount = costData.promoCodeDiscount || reportCostData.promoCodeDiscount || 0;
+    const finalAmount = costData.finalAmount || reportCostData.finalAmount || totalAmount;
+
+    return (
+        <PageShell scale={scale}>
+            <div style={{
+                height: `${120 * scale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden',
+                background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 25%, #14b8a6 75%, #5eead4 100%)',
+            }}>
+                <div style={{ position: 'absolute', top: `${-30 * scale}px`, right: `${-30 * scale}px`, width: `${120 * scale}px`, height: `${120 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                <div style={{ position: 'absolute', bottom: `${-20 * scale}px`, left: `${-20 * scale}px`, width: `${80 * scale}px`, height: `${80 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                <div style={{ position: 'absolute', top: `${24 * scale}px`, left: `${36 * scale}px`, right: `${36 * scale}px` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: `${12 * scale}px`, marginBottom: `${8 * scale}px` }}>
+                        <div style={{
+                            width: `${40 * scale}px`, height: `${40 * scale}px`, borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.15)', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', fontSize: `${18 * scale}px`
+                        }}>💰</div>
+                        <div>
+                            <div style={{ color: 'white', fontSize: `${18 * scale}px`, fontWeight: 700, lineHeight: 1 }}>Cost Summary</div>
+                            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: `${11 * scale}px`, marginTop: `${2 * scale}px` }}>
+                                Package pricing & discounts
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ padding: `${32 * scale}px ${48 * scale}px`, flex: 1, background: '#fafafa' }}>
+                <div style={{
+                    background: 'white', borderRadius: `${16 * scale}px`, padding: `${28 * scale}px`,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid #f1f5f9',
+                    marginBottom: `${24 * scale}px`
+                }}>
+                    <div style={{ marginBottom: `${20 * scale}px` }}>
+                        <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: '#1e293b', marginBottom: `${16 * scale}px` }}>Package Details</div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: `${12 * scale}px 0`, borderBottom: '1px solid #f1f5f9' }}>
+                        <span style={{ fontSize: `${13 * scale}px`, color: '#64748b' }}>Tour Package Amount</span>
+                        <span style={{ fontSize: `${14 * scale}px`, fontWeight: 600, color: '#1e293b' }}>LKR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+
+                    {promoCodeDiscount > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: `${12 * scale}px 0`, borderBottom: '1px solid #f1f5f9' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: `${8 * scale}px` }}>
+                                <span style={{ fontSize: `${13 * scale}px`, color: '#64748b' }}>Promo Code Discount</span>
+                                {promoCode && (
+                                    <span style={{
+                                        fontSize: `${10 * scale}px`, padding: `${2 * scale}px ${6 * scale}px`, borderRadius: `${4 * scale}px`,
+                                        background: '#dcfce7', color: '#15803d', fontWeight: 600
+                                    }}>
+                                        {promoCode}
+                                    </span>
+                                )}
+                            </div>
+                            <span style={{ fontSize: `${14 * scale}px`, fontWeight: 600, color: '#dc2626' }}>-LKR {promoCodeDiscount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                    )}
+
+                    <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        marginTop: `${12 * scale}px`,
+                        background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                        margin: `${16 * scale}px ${-28 * scale}px ${-28 * scale}px`,
+                        padding: `${20 * scale}px ${28 * scale}px`,
+                        borderBottomLeftRadius: `${16 * scale}px`, borderBottomRightRadius: `${16 * scale}px`
+                    }}>
+                        <span style={{ fontSize: `${16 * scale}px`, fontWeight: 700, color: '#15803d' }}>Total Amount</span>
+                        <span style={{ fontSize: `${20 * scale}px`, fontWeight: 700, color: '#15803d' }}>
+                            LKR {finalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                    </div>
+                </div>
+
+                <div style={{
+                    background: 'white', borderRadius: `${12 * scale}px`, padding: `${20 * scale}px`,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                }}>
+                    <div style={{ fontSize: `${13 * scale}px`, fontWeight: 600, color: '#1e293b', marginBottom: `${12 * scale}px` }}>💳 Payment Information</div>
+                    <div style={{ fontSize: `${12 * scale}px`, color: '#64748b', lineHeight: 1.6 }}>
+                        • 40% advance payment required to confirm booking<br />
+                        • Balance 60% due 30 days before tour commencement<br />
+                        • All amounts are in Sri Lankan Rupees (LKR)
+                    </div>
+                </div>
+            </div>
+        </PageShell>
+    );
+};
+
+// Policies Page Renderer
+interface PoliciesPageProps {
+    page: ReportPage;
+    reportData: ReportData;
+    scale?: number;
+}
+
+export const PoliciesPageRenderer: React.FC<PoliciesPageProps> = ({ page, reportData, scale = 1 }) => {
+    const policiesData = page.content || {};
+    const reportPoliciesData = reportData.policies || {};
+    const specialRemark = policiesData.specialRemark || reportPoliciesData.specialRemark || '';
+    const bookingPolicy = policiesData.bookingPolicy || reportPoliciesData.bookingPolicy || '';
+    const cancellationPolicy = policiesData.cancellationPolicy || reportPoliciesData.cancellationPolicy || '';
+
+    return (
+        <PageShell scale={scale}>
+            <div style={{
+                height: `${120 * scale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden',
+                background: 'linear-gradient(135deg, #7c2d12 0%, #dc2626 25%, #ef4444 75%, #fca5a5 100%)',
+            }}>
+                <div style={{ position: 'absolute', top: `${-30 * scale}px`, right: `${-30 * scale}px`, width: `${120 * scale}px`, height: `${120 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                <div style={{ position: 'absolute', bottom: `${-20 * scale}px`, left: `${-20 * scale}px`, width: `${80 * scale}px`, height: `${80 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                <div style={{ position: 'absolute', top: `${24 * scale}px`, left: `${36 * scale}px`, right: `${36 * scale}px` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: `${12 * scale}px`, marginBottom: `${8 * scale}px` }}>
+                        <div style={{
+                            width: `${40 * scale}px`, height: `${40 * scale}px`, borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.15)', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', fontSize: `${18 * scale}px`
+                        }}>📋</div>
+                        <div>
+                            <div style={{ color: 'white', fontSize: `${18 * scale}px`, fontWeight: 700, lineHeight: 1 }}>Terms & Policies</div>
+                            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: `${11 * scale}px`, marginTop: `${2 * scale}px` }}>
+                                Important information & conditions
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ padding: `${32 * scale}px ${48 * scale}px`, flex: 1, background: '#fafafa' }}>
+                {specialRemark && (
+                    <div style={{
+                        background: 'white', borderRadius: `${12 * scale}px`, padding: `${20 * scale}px`,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                        marginBottom: `${20 * scale}px`
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: `${8 * scale}px`, marginBottom: `${12 * scale}px` }}>
+                            <div style={{ fontSize: `${16 * scale}px` }}>⚡</div>
+                            <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: '#1e293b' }}>Important Notice</div>
+                        </div>
+                        <div style={{ fontSize: `${12 * scale}px`, color: '#4b5563', lineHeight: 1.6, padding: `${12 * scale}px`, background: '#fef3c7', borderRadius: `${8 * scale}px`, border: '1px solid #fbbf24' }}>
+                            {specialRemark}
+                        </div>
+                    </div>
+                )}
+
+                {bookingPolicy && (
+                    <div style={{
+                        background: 'white', borderRadius: `${12 * scale}px`, padding: `${20 * scale}px`,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+                        marginBottom: `${20 * scale}px`
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: `${8 * scale}px`, marginBottom: `${12 * scale}px` }}>
+                            <div style={{ fontSize: `${16 * scale}px` }}>📅</div>
+                            <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: '#1e293b' }}>Booking Policy</div>
+                        </div>
+                        <div style={{ fontSize: `${12 * scale}px`, color: '#4b5563', lineHeight: 1.7 }}>
+                            {bookingPolicy}
+                        </div>
+                    </div>
+                )}
+
+                {cancellationPolicy && (
+                    <div style={{
+                        background: 'white', borderRadius: `${12 * scale}px`, padding: `${20 * scale}px`,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: `${8 * scale}px`, marginBottom: `${12 * scale}px` }}>
+                            <div style={{ fontSize: `${16 * scale}px` }}>❌</div>
+                            <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: '#1e293b' }}>Cancellation Policy</div>
+                        </div>
+                        <div style={{ fontSize: `${12 * scale}px`, color: '#4b5563', lineHeight: 1.7 }}>
+                            {cancellationPolicy}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </PageShell>
+    );
+};
+
+// Main Report Page Renderer
+interface ReportPageRendererProps {
+    page: ReportPage;
+    reportData: ReportData;
+    scale?: number;
+}
+
+export const ReportPageRenderer: React.FC<ReportPageRendererProps> = ({ page, reportData, scale = 1 }) => {
+    switch (page.type) {
+        case 'template':
+            return <TemplatePageRenderer page={page} scale={scale} />;
+        case 'customerInfo':
+            return <CustomerInfoPageRenderer page={page} reportData={reportData} scale={scale} />;
+        case 'dayDetail':
+            return <DayDetailPageRenderer page={page} scale={scale} />;
+        case 'cost':
+            return <CostPageRenderer page={page} reportData={reportData} scale={scale} />;
+        case 'policies':
+            return <PoliciesPageRenderer page={page} reportData={reportData} scale={scale} />;
+        default:
+            return null;
+    }
+};
+
+export default ReportPageRenderer;

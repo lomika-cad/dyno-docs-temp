@@ -1,17 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
+import type { CSSProperties } from "react";
 import Navbar from "../layouts/Navbar";
 import "../styles/agencyData.css";
+import "../styles/templateCustomize.css";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import PaletteRoundedIcon from "@mui/icons-material/PaletteRounded";
-
+import FileDownloadRoundedIcon from "@mui/icons-material/FileDownloadRounded";
+import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
+import CodeRoundedIcon from "@mui/icons-material/CodeRounded";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import HeightRoundedIcon from "@mui/icons-material/HeightRounded";
 import CircularProgress from '@mui/material/CircularProgress';
-import { getReports } from "../services/reports-api";
-import { showError } from "../components/Toast";
-import "../styles/templateCustomize.css";
+import { getReports, updateReport } from "../services/reports-api";
+import { showError, showSuccess } from "../components/Toast";
+import {
+    ReportPageRenderer,
+    A4_WIDTH,
+    A4_HEIGHT,
+    type ReportData,
+    type ReportPage,
+    getImgSrc,
+} from "../components/ReportPageRenderer";
 
 interface Report {
     id: string;
@@ -22,6 +35,38 @@ interface Report {
     lastModifiedAt?: string;
 }
 
+// Element types for customization
+interface BaseElement {
+    id?: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    opacity?: number;
+    type?: string;
+}
+
+interface TextElement extends BaseElement {
+    type: 'text';
+    content?: string;
+    fontSize?: number;
+    fontFamily?: string;
+    fontWeight?: number | string;
+    color?: string;
+    letterSpacing?: number;
+    lineHeight?: number;
+}
+
+interface ShapeElement extends BaseElement {
+    type: 'shape';
+    shape?: 'rectangle' | 'line' | 'polygon' | 'circle';
+    fill?: string;
+    stroke?: string;
+    borderRadius?: number;
+}
+
+type DesignElement = TextElement | ShapeElement | BaseElement;
+
 export default function ReportsHistory() {
     const DD_TOKEN = sessionStorage.getItem("dd_token") || "";
     const [reports, setReports] = useState<Report[]>([]);
@@ -31,7 +76,28 @@ export default function ReportsHistory() {
     const [viewModalOpen, setViewModalOpen] = useState(false);
     const [customizeModalOpen, setCustomizeModalOpen] = useState(false);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+    const [exportDropdownOpen, setExportDropdownOpen] = useState<string | null>(null);
     const itemsPerPage = 10;
+
+    // Customization state
+    const [editableReportData, setEditableReportData] = useState<ReportData | null>(null);
+    const [selectedPageIndex, setSelectedPageIndex] = useState<number>(0);
+    const [selectedElementIndex, setSelectedElementIndex] = useState<number | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [canvasScale, setCanvasScale] = useState(1);
+
+    // Drag state
+    const dragRef = useRef<{
+        pageIndex: number;
+        elementIndex: number;
+        startX: number;
+        startY: number;
+        originX: number;
+        originY: number;
+    } | null>(null);
+
+    const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
+    const exportDropdownRef = useRef<HTMLDivElement | null>(null);
 
     const handleFetchReports = async () => {
         try {
@@ -46,11 +112,87 @@ export default function ReportsHistory() {
         } finally {
             setIsLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
         handleFetchReports();
     }, []);
+
+    // Close export dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
+                setExportDropdownOpen(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Canvas resize observer
+    useEffect(() => {
+        if (!canvasWrapperRef.current || !customizeModalOpen) return;
+
+        const observer = new ResizeObserver((entries) => {
+            const entry = entries[0];
+            if (entry) {
+                const availableWidth = entry.contentRect.width - 40;
+                setCanvasScale(Math.min(1, availableWidth / A4_WIDTH));
+            }
+        });
+
+        observer.observe(canvasWrapperRef.current);
+        return () => observer.disconnect();
+    }, [customizeModalOpen]);
+
+    // Drag and drop handlers
+    useEffect(() => {
+        if (!customizeModalOpen) return;
+
+        const handleMouseMove = (event: MouseEvent) => {
+            if (!dragRef.current || !editableReportData) return;
+
+            const { pageIndex, elementIndex, startX, startY, originX, originY } = dragRef.current;
+            const dx = (event.clientX - startX) / canvasScale;
+            const dy = (event.clientY - startY) / canvasScale;
+
+            setEditableReportData(prev => {
+                if (!prev?.pages) return prev;
+
+                const pages = [...prev.pages];
+                const page = pages[pageIndex];
+                if (!page || page.type !== 'template' || !page.content?.elements) return prev;
+
+                const elements = [...page.content.elements];
+                const element = elements[elementIndex];
+                if (!element) return prev;
+
+                elements[elementIndex] = {
+                    ...element,
+                    x: Math.max(0, Math.min(A4_WIDTH - (element.width || 0), originX + dx)),
+                    y: Math.max(0, Math.min(A4_HEIGHT - (element.height || 0), originY + dy)),
+                };
+
+                pages[pageIndex] = {
+                    ...page,
+                    content: { ...page.content, elements }
+                };
+
+                return { ...prev, pages };
+            });
+        };
+
+        const handleMouseUp = () => {
+            dragRef.current = null;
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [customizeModalOpen, canvasScale, editableReportData]);
 
     // Filter reports based on search term
     const filteredReports = reports.filter((report) =>
@@ -67,30 +209,22 @@ export default function ReportsHistory() {
     const getPaginationNumbers = () => {
         const pages: (number | string)[] = [];
         const maxVisible = 5;
-        
+
         if (totalPages <= maxVisible) {
-            for (let i = 1; i <= totalPages; i++) {
-                pages.push(i);
-            }
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
         } else {
             if (currentPage <= 3) {
-                for (let i = 1; i <= 4; i++) {
-                    pages.push(i);
-                }
+                for (let i = 1; i <= 4; i++) pages.push(i);
                 pages.push('...');
                 pages.push(totalPages);
             } else if (currentPage >= totalPages - 2) {
                 pages.push(1);
                 pages.push('...');
-                for (let i = totalPages - 3; i <= totalPages; i++) {
-                    pages.push(i);
-                }
+                for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
             } else {
                 pages.push(1);
                 pages.push('...');
-                for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-                    pages.push(i);
-                }
+                for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
                 pages.push('...');
                 pages.push(totalPages);
             }
@@ -109,26 +243,530 @@ export default function ReportsHistory() {
         });
     };
 
+    const parseReportData = (report: Report): ReportData | null => {
+        try {
+            return JSON.parse(report.generatedReport);
+        } catch (e) {
+            console.error('Failed to parse report data:', e);
+            return null;
+        }
+    };
+
     const handleViewReport = (report: Report) => {
         setSelectedReport(report);
         setViewModalOpen(true);
     };
 
-    const handleCustomizeTemplate = (report: Report) => {
+    const handleCustomizeReport = (report: Report) => {
+        const reportData = parseReportData(report);
+        if (!reportData) {
+            showError("Failed to load report data for customization");
+            return;
+        }
         setSelectedReport(report);
+        setEditableReportData(reportData);
+        setSelectedPageIndex(0);
+        setSelectedElementIndex(null);
         setCustomizeModalOpen(true);
     };
 
     const handleCloseCustomizeModal = () => {
         setCustomizeModalOpen(false);
         setSelectedReport(null);
+        setEditableReportData(null);
+        setSelectedPageIndex(0);
+        setSelectedElementIndex(null);
     };
 
-    const handleSaveTemplate = () => {
-        // TODO: Implement template save logic
-        console.log('Saving template for report:', selectedReport?.id);
-        // Add your save logic here
-        setCustomizeModalOpen(false);
+    const handleElementMouseDown = (event: React.MouseEvent<HTMLDivElement>, pageIndex: number, elementIndex: number) => {
+        event.stopPropagation();
+        if (!editableReportData?.pages?.[pageIndex]) return;
+
+        const page = editableReportData.pages[pageIndex];
+        if (page.type !== 'template' || !page.content?.elements?.[elementIndex]) return;
+
+        const element = page.content.elements[elementIndex];
+        setSelectedPageIndex(pageIndex);
+        setSelectedElementIndex(elementIndex);
+
+        dragRef.current = {
+            pageIndex,
+            elementIndex,
+            startX: event.clientX,
+            startY: event.clientY,
+            originX: element.x ?? 0,
+            originY: element.y ?? 0,
+        };
+    };
+
+    const handleCanvasClick = () => {
+        setSelectedElementIndex(null);
+    };
+
+    const updateElementAtIndex = (pageIndex: number, elementIndex: number, updater: (el: DesignElement) => DesignElement) => {
+        setEditableReportData(prev => {
+            if (!prev?.pages?.[pageIndex]) return prev;
+
+            const pages = [...prev.pages];
+            const page = pages[pageIndex];
+            if (page.type !== 'template' || !page.content?.elements?.[elementIndex]) return prev;
+
+            const elements = [...page.content.elements];
+            elements[elementIndex] = updater(elements[elementIndex]);
+
+            pages[pageIndex] = {
+                ...page,
+                content: { ...page.content, elements }
+            };
+
+            return { ...prev, pages };
+        });
+    };
+
+    const handleTextContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        if (selectedElementIndex === null) return;
+        const newValue = event.target.value;
+        updateElementAtIndex(selectedPageIndex, selectedElementIndex, (el) => ({
+            ...el,
+            content: newValue,
+        }));
+    };
+
+    const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (selectedElementIndex === null) return;
+        updateElementAtIndex(selectedPageIndex, selectedElementIndex, (el) => ({
+            ...el,
+            color: event.target.value,
+        }));
+    };
+
+    const handleFillChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (selectedElementIndex === null) return;
+        updateElementAtIndex(selectedPageIndex, selectedElementIndex, (el) => ({
+            ...el,
+            fill: event.target.value,
+        }));
+    };
+
+    const handleSaveReport = async () => {
+        if (!selectedReport || !editableReportData) return;
+
+        const token = sessionStorage.getItem("dd_token");
+        if (!token) {
+            showError("Please sign in to save changes.");
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const payload = {
+                id: selectedReport.id,
+                customerName: selectedReport.customerName,
+                customerEmail: selectedReport.customerEmail,
+                generatedReport: JSON.stringify(editableReportData),
+            };
+
+            await updateReport(payload, token);
+            showSuccess("Report updated successfully!");
+            handleFetchReports();
+            handleCloseCustomizeModal();
+        } catch (error) {
+            console.error("Failed to save report:", error);
+            showError("Failed to save changes. Please try again.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Export functions
+    const generateReportHTML = (reportData: ReportData): string => {
+        const pages = reportData.pages || [];
+        let html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Report - ${reportData.metadata?.customerName || 'Customer'}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+        .page { width: 595px; min-height: 842px; background: white; margin: 20px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1); page-break-after: always; overflow: hidden; }
+        .page:last-child { page-break-after: auto; }
+        @media print {
+            body { background: white; }
+            .page { margin: 0; box-shadow: none; page-break-after: always; }
+        }
+        .section-title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .section-title-bar { width: 3px; height: 16px; border-radius: 2px; }
+        .section-title-text { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+        .info-card { padding: 14px; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0; }
+        .route-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border-radius: 6px; font-size: 12px; font-weight: 600; color: #047857; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin: 4px; }
+    </style>
+</head>
+<body>`;
+
+        pages.forEach((page, idx) => {
+            if (page.type === 'template') {
+                html += `<div class="page" style="position: relative;">`;
+                (page.content?.elements || []).forEach((el: any) => {
+                    if (el.type === 'text') {
+                        html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width ? el.width + 'px' : 'auto'}; font-size: ${el.fontSize || 14}px; font-family: ${el.fontFamily || 'Arial'}; font-weight: ${el.fontWeight || 400}; color: ${el.color || '#000'}; line-height: ${el.lineHeight || 1.4};">${el.content || ''}</div>`;
+                    } else if (el.type === 'shape' && el.shape === 'rectangle') {
+                        html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; background: ${el.fill || 'transparent'}; border-radius: ${el.borderRadius || 0}px;"></div>`;
+                    } else if (el.type === 'image') {
+                        html += `<img src="${el.src || ''}" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px;" />`;
+                    }
+                });
+                html += `</div>`;
+            } else if (page.type === 'customerInfo') {
+                const metadata = reportData.metadata || page.content;
+                const initials = metadata?.customerName?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'N/A';
+                html += `
+<div class="page">
+    <div style="height: 170px; background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%); position: relative; display: flex; align-items: center; justify-content: center;">
+        <div style="text-align: center;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #0284C7; margin: 0 auto 12px;">${initials}</div>
+            <div style="font-size: 20px; font-weight: 700; color: white;">Booking Information</div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Complete travel itinerary details</div>
+        </div>
+    </div>
+    <div style="padding: 32px 36px;">
+        <div class="section-title"><div class="section-title-bar" style="background: #0284C7;"></div><div class="section-title-text" style="color: #0284C7;">Customer Details</div></div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 28px;">
+            <div class="info-card"><div style="font-size: 10px; font-weight: 700; color: #64748B; margin-bottom: 6px;">👤 FULL NAME</div><div style="font-size: 13px; font-weight: 600; color: #0F172A;">${metadata?.customerName || 'N/A'}</div></div>
+            <div class="info-card"><div style="font-size: 10px; font-weight: 700; color: #64748B; margin-bottom: 6px;">🌍 COUNTRY</div><div style="font-size: 13px; font-weight: 600; color: #0F172A;">${metadata?.country || 'N/A'}</div></div>
+            <div class="info-card"><div style="font-size: 10px; font-weight: 700; color: #64748B; margin-bottom: 6px;">📱 MOBILE</div><div style="font-size: 13px; font-weight: 600; color: #0F172A;">${metadata?.mobileNo || 'N/A'}</div></div>
+            <div class="info-card"><div style="font-size: 10px; font-weight: 700; color: #64748B; margin-bottom: 6px;">📧 EMAIL</div><div style="font-size: 13px; font-weight: 600; color: #0F172A;">${metadata?.customerEmail || 'N/A'}</div></div>
+            <div class="info-card"><div style="font-size: 10px; font-weight: 700; color: #64748B; margin-bottom: 6px;">🗓️ DURATION</div><div style="font-size: 13px; font-weight: 600; color: #0F172A;">${metadata?.daysAndNights || 'N/A'}</div></div>
+            <div class="info-card"><div style="font-size: 10px; font-weight: 700; color: #64748B; margin-bottom: 6px;">👥 PASSENGERS</div><div style="font-size: 13px; font-weight: 600; color: #0F172A;">${metadata?.numberOfPassengers || 'N/A'}</div></div>
+        </div>
+        <div class="section-title"><div class="section-title-bar" style="background: #10B981;"></div><div class="section-title-text" style="color: #10B981;">Selected Route</div></div>
+        <div style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); padding: 16px; border-radius: 10px; border: 1px solid #A7F3D0; margin-bottom: 28px;">
+            ${(metadata?.selectedRoutes || []).map((r: string) => `<span class="route-badge">📍 ${r}</span>`).join(' → ')}
+        </div>
+    </div>
+</div>`;
+            } else if (page.type === 'dayDetail') {
+                html += `
+<div class="page">
+    <div style="height: 130px; background: linear-gradient(135deg, #1E293B 0%, #334155 100%); position: relative; display: flex; align-items: center; justify-content: center;">
+        <div style="text-align: center;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #1E293B; margin: 0 auto 8px;">${page.dayNumber || idx}</div>
+            <div style="font-size: 15px; font-weight: 700; color: white;">${page.content?.selectedDay || 'Date TBD'}</div>
+        </div>
+    </div>
+    <div style="padding: 20px 32px;">
+        ${page.content?.description ? `
+        <div class="section-title"><div class="section-title-bar" style="background: #8B5CF6;"></div><div class="section-title-text" style="color: #8B5CF6;">Daily Itinerary</div></div>
+        <div style="font-size: 12px; line-height: 1.6; color: #374151; background: #F9FAFB; padding: 14px; border-radius: 8px; margin-bottom: 20px;">${page.content.description}</div>
+        ` : ''}
+        ${(page.content?.selectedPlaces || []).length > 0 ? `
+        <div class="section-title"><div class="section-title-bar" style="background: #10B981;"></div><div class="section-title-text" style="color: #10B981;">Visiting Places</div></div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+            ${(page.content.selectedPlaces || []).map((sp: any) => `
+                <div style="background: white; border-radius: 10px; border: 1px solid #E5E7EB; padding: 10px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #111827;">${sp.place?.name || sp.place?.placeName || 'Unknown'}</div>
+                    <div style="font-size: 10px; color: #6B7280;">📍 ${sp.district}</div>
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}
+    </div>
+</div>`;
+            } else if (page.type === 'cost') {
+                const cost = page.content || reportData.cost || {};
+                html += `
+<div class="page">
+    <div style="height: 120px; background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); position: relative; display: flex; align-items: center; padding: 24px 36px;">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 12px;">💰</div>
+        <div>
+            <div style="color: white; font-size: 18px; font-weight: 700;">Cost Summary</div>
+            <div style="color: rgba(255,255,255,0.7); font-size: 11px;">Package pricing & discounts</div>
+        </div>
+    </div>
+    <div style="padding: 32px 48px; background: #fafafa; min-height: 722px;">
+        <div style="background: white; border-radius: 16px; padding: 28px; box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
+            <div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 16px;">Package Details</div>
+            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                <span style="font-size: 13px; color: #64748b;">Tour Package Amount</span>
+                <span style="font-size: 14px; font-weight: 600; color: #1e293b;">LKR ${(cost.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            </div>
+            ${cost.promoCodeDiscount > 0 ? `
+            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                <span style="font-size: 13px; color: #64748b;">Promo Code Discount</span>
+                <span style="font-size: 14px; font-weight: 600; color: #dc2626;">-LKR ${(cost.promoCodeDiscount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            </div>` : ''}
+            <div style="display: flex; justify-content: space-between; padding: 20px 0; margin-top: 12px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); margin: 16px -28px -28px; padding: 20px 28px; border-radius: 0 0 16px 16px;">
+                <span style="font-size: 16px; font-weight: 700; color: #15803d;">Total Amount</span>
+                <span style="font-size: 20px; font-weight: 700; color: #15803d;">LKR ${(cost.finalAmount || cost.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            </div>
+        </div>
+    </div>
+</div>`;
+            } else if (page.type === 'policies') {
+                const policies = page.content || reportData.policies || {};
+                html += `
+<div class="page">
+    <div style="height: 120px; background: linear-gradient(135deg, #7c2d12 0%, #ef4444 100%); position: relative; display: flex; align-items: center; padding: 24px 36px;">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 12px;">📋</div>
+        <div>
+            <div style="color: white; font-size: 18px; font-weight: 700;">Terms & Policies</div>
+            <div style="color: rgba(255,255,255,0.7); font-size: 11px;">Important information & conditions</div>
+        </div>
+    </div>
+    <div style="padding: 32px 48px; background: #fafafa; min-height: 722px;">
+        ${policies.specialRemark ? `
+        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+            <div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">⚡ Important Notice</div>
+            <div style="font-size: 12px; color: #4b5563; line-height: 1.6; padding: 12px; background: #fef3c7; border-radius: 8px;">${policies.specialRemark}</div>
+        </div>` : ''}
+        ${policies.bookingPolicy ? `
+        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+            <div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">📅 Booking Policy</div>
+            <div style="font-size: 12px; color: #4b5563; line-height: 1.7;">${policies.bookingPolicy}</div>
+        </div>` : ''}
+        ${policies.cancellationPolicy ? `
+        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+            <div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">❌ Cancellation Policy</div>
+            <div style="font-size: 12px; color: #4b5563; line-height: 1.7;">${policies.cancellationPolicy}</div>
+        </div>` : ''}
+    </div>
+</div>`;
+            }
+        });
+
+        html += `</body></html>`;
+        return html;
+    };
+
+    const handleExportHTML = (report: Report) => {
+        const reportData = parseReportData(report);
+        if (!reportData) {
+            showError("Failed to parse report data");
+            return;
+        }
+
+        const html = generateReportHTML(reportData);
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `report-${report.customerName.replace(/\s+/g, '-').toLowerCase()}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showSuccess("HTML exported successfully!");
+        setExportDropdownOpen(null);
+    };
+
+    const handleExportPDF = (report: Report) => {
+        const reportData = parseReportData(report);
+        if (!reportData) {
+            showError("Failed to parse report data");
+            return;
+        }
+
+        const html = generateReportHTML(reportData);
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+        showSuccess("Print dialog opened. Save as PDF.");
+        setExportDropdownOpen(null);
+    };
+
+    // Get selected element for customization panel
+    const selectedElement = useMemo(() => {
+        if (!editableReportData?.pages || selectedElementIndex === null) return null;
+        const page = editableReportData.pages[selectedPageIndex];
+        if (page?.type !== 'template' || !page.content?.elements) return null;
+        return page.content.elements[selectedElementIndex] || null;
+    }, [editableReportData, selectedPageIndex, selectedElementIndex]);
+
+    // Element summary for layer list
+    const elementSummary = useMemo(() => {
+        if (!editableReportData?.pages) return [];
+        const page = editableReportData.pages[selectedPageIndex];
+        if (page?.type !== 'template' || !page.content?.elements) return [];
+
+        return page.content.elements.map((el: any) => {
+            if (el.type === 'text') return `Text · ${(el.content || 'Empty').slice(0, 20)}`;
+            if (el.type === 'image') return 'Image';
+            if (el.type === 'shape') return `Shape · ${el.shape || 'rectangle'}`;
+            if (el.type === 'pill') return 'Pill';
+            return 'Element';
+        });
+    }, [editableReportData, selectedPageIndex]);
+
+    // Render customizable template page
+    const renderCustomizableTemplatePage = (page: ReportPage, pageIndex: number) => {
+        if (page.type !== 'template' || !page.content?.elements) return null;
+
+        return (
+            <div
+                style={{
+                    width: `${A4_WIDTH * canvasScale}px`,
+                    height: `${A4_HEIGHT * canvasScale}px`,
+                    background: '#FFFFFF',
+                    position: 'relative',
+                    boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                }}
+                onClick={handleCanvasClick}
+            >
+                {page.content.elements.map((el: any, i: number) => {
+                    const isSelected = selectedPageIndex === pageIndex && selectedElementIndex === i;
+                    const baseStyle: CSSProperties = {
+                        position: 'absolute',
+                        left: `${(el.x ?? 0) * canvasScale}px`,
+                        top: `${(el.y ?? 0) * canvasScale}px`,
+                        cursor: 'grab',
+                        outline: isSelected ? '2px dashed #ff7b2e' : 'none',
+                        outlineOffset: '2px',
+                    };
+
+                    if (el.type === 'text') {
+                        return (
+                            <div
+                                key={i}
+                                style={{
+                                    ...baseStyle,
+                                    width: el.width ? `${el.width * canvasScale}px` : 'auto',
+                                    fontSize: `${(el.fontSize ?? 14) * canvasScale}px`,
+                                    fontFamily: el.fontFamily ?? 'Arial',
+                                    fontWeight: el.fontWeight ?? 400,
+                                    color: el.color ?? '#000',
+                                    lineHeight: el.lineHeight ?? 1.4,
+                                }}
+                                onMouseDown={(e) => handleElementMouseDown(e, pageIndex, i)}
+                            >
+                                {el.content}
+                            </div>
+                        );
+                    }
+                    if (el.type === 'shape') {
+                        if (el.shape === 'rectangle' || !el.shape) {
+                            return (
+                                <div
+                                    key={i}
+                                    style={{
+                                        ...baseStyle,
+                                        width: `${(el.width ?? 100) * canvasScale}px`,
+                                        height: `${(el.height ?? 100) * canvasScale}px`,
+                                        background: el.fill ?? 'transparent',
+                                        borderRadius: `${(el.borderRadius ?? 0) * canvasScale}px`,
+                                        border: el.stroke ? `1px solid ${el.stroke}` : undefined,
+                                    }}
+                                    onMouseDown={(e) => handleElementMouseDown(e, pageIndex, i)}
+                                />
+                            );
+                        }
+                        if (el.shape === 'circle') {
+                            const diameter = (el.width ?? el.height ?? 0) * canvasScale;
+                            return (
+                                <div
+                                    key={i}
+                                    style={{
+                                        ...baseStyle,
+                                        width: `${diameter}px`,
+                                        height: `${diameter}px`,
+                                        borderRadius: '50%',
+                                        background: el.fill ?? '#f3f4f6',
+                                        border: el.stroke ? `1px solid ${el.stroke}` : undefined,
+                                    }}
+                                    onMouseDown={(e) => handleElementMouseDown(e, pageIndex, i)}
+                                />
+                            );
+                        }
+                        if (el.shape === 'polygon' && el.points?.length) {
+                            const polygonPoints = el.points
+                                .map((point: { x: number; y: number }) => `${(point.x / A4_WIDTH) * 100}% ${(point.y / A4_HEIGHT) * 100}%`)
+                                .join(', ');
+                            return (
+                                <div
+                                    key={i}
+                                    style={{
+                                        position: 'absolute',
+                                        left: 0,
+                                        top: 0,
+                                        width: `${A4_WIDTH * canvasScale}px`,
+                                        height: `${A4_HEIGHT * canvasScale}px`,
+                                        background: el.fill ?? '#111827',
+                                        clipPath: `polygon(${polygonPoints})`,
+                                        cursor: 'grab',
+                                        outline: isSelected ? '2px dashed #ff7b2e' : 'none',
+                                    }}
+                                    onMouseDown={(e) => handleElementMouseDown(e, pageIndex, i)}
+                                />
+                            );
+                        }
+                        if (el.shape === 'line') {
+                            return (
+                                <div
+                                    key={i}
+                                    style={{
+                                        ...baseStyle,
+                                        width: `${(el.width ?? 100) * canvasScale}px`,
+                                        height: `${Math.max(1, (el.height ?? 1) * canvasScale)}px`,
+                                        background: el.stroke ?? el.fill ?? '#e5e7eb',
+                                        borderRadius: '999px',
+                                    }}
+                                    onMouseDown={(e) => handleElementMouseDown(e, pageIndex, i)}
+                                />
+                            );
+                        }
+                    }
+                    if (el.type === 'image') {
+                        return (
+                            <img
+                                key={i}
+                                src={getImgSrc(el.src)}
+                                alt=""
+                                style={{
+                                    ...baseStyle,
+                                    width: `${(el.width ?? 100) * canvasScale}px`,
+                                    height: `${(el.height ?? 100) * canvasScale}px`,
+                                    objectFit: 'cover',
+                                    borderRadius: `${(el.borderRadius ?? 0) * canvasScale}px`,
+                                }}
+                                onMouseDown={(e) => handleElementMouseDown(e, pageIndex, i)}
+                            />
+                        );
+                    }
+                    if (el.type === 'pill') {
+                        return (
+                            <div
+                                key={i}
+                                style={{
+                                    ...baseStyle,
+                                    padding: `${14 * canvasScale}px ${18 * canvasScale}px`,
+                                    borderRadius: `${18 * canvasScale}px`,
+                                    background: el.colors?.bg ?? '#ffffff',
+                                    color: el.colors?.text ?? '#111827',
+                                    border: `1px solid ${(el.colors?.text ?? '#111827')}30`,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: `${4 * canvasScale}px`,
+                                }}
+                                onMouseDown={(e) => handleElementMouseDown(e, pageIndex, i)}
+                            >
+                                <span style={{ fontSize: `${10 * canvasScale}px`, letterSpacing: '0.25em', textTransform: 'uppercase' }}>{el.label}</span>
+                                <span style={{ fontSize: `${16 * canvasScale}px`, fontWeight: 600 }}>{el.value}</span>
+                            </div>
+                        );
+                    }
+                    return null;
+                })}
+            </div>
+        );
     };
 
     return (
@@ -146,199 +784,81 @@ export default function ReportsHistory() {
 
                 <div className="panel">
                     <div className="panel-header">
-                        <div style={{
-                            position: "relative",
-                            flexGrow: 1,
-                            maxWidth: "420px"
-                        }}>
-                            <SearchRoundedIcon style={{
-                                position: "absolute",
-                                left: "14px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                color: "#9ca3af",
-                                fontSize: "20px",
-                                pointerEvents: "none"
-                            }} />
+                        <div style={{ position: "relative", flexGrow: 1, maxWidth: "420px" }}>
+                            <SearchRoundedIcon style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: "20px", pointerEvents: "none" }} />
                             <input
                                 type="text"
                                 placeholder="Search by customer name or email..."
                                 value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                style={{
-                                    width: "100%",
-                                    paddingLeft: "44px",
-                                    paddingRight: "14px",
-                                    paddingTop: "10px",
-                                    paddingBottom: "10px",
-                                    border: "1px solid #e5e7eb",
-                                    borderRadius: "10px",
-                                    fontSize: "14px",
-                                    outline: "none",
-                                    transition: "all 0.2s",
-                                    background: "#fff"
-                                }}
+                                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                style={{ width: "100%", paddingLeft: "44px", paddingRight: "14px", paddingTop: "10px", paddingBottom: "10px", border: "1px solid #e5e7eb", borderRadius: "10px", fontSize: "14px", outline: "none", transition: "all 0.2s", background: "#fff" }}
                                 onFocus={(e) => e.target.style.borderColor = "var(--color-primary)"}
                                 onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
                             />
                         </div>
-                        <div style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            fontSize: "13px",
-                            color: "#6b7280",
-                            fontWeight: "600"
-                        }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#6b7280", fontWeight: "600" }}>
                             {filteredReports.length} {filteredReports.length === 1 ? 'report' : 'reports'}
                         </div>
                     </div>
 
                     <div className="panel-body">
                         {currentReports.length === 0 ? (
-                            <div style={{
-                                textAlign: "center",
-                                padding: "60px 20px",
-                                color: "#9ca3af"
-                            }}>
+                            <div style={{ textAlign: "center", padding: "60px 20px", color: "#9ca3af" }}>
                                 <div style={{ fontSize: "48px", marginBottom: "16px" }}>📋</div>
-                                <div style={{ fontSize: "16px", fontWeight: "600", marginBottom: "8px" }}>
-                                    No reports found
-                                </div>
-                                <div style={{ fontSize: "14px" }}>
-                                    {searchTerm ? "Try adjusting your search" : "Generated reports will appear here"}
-                                </div>
+                                <div style={{ fontSize: "16px", fontWeight: "600", marginBottom: "8px" }}>No reports found</div>
+                                <div style={{ fontSize: "14px" }}>{searchTerm ? "Try adjusting your search" : "Generated reports will appear here"}</div>
                             </div>
                         ) : (
-                            <div style={{
-                                overflowX: "auto"
-                            }}>
-                                <table style={{
-                                    width: "100%",
-                                    borderCollapse: "collapse"
-                                }}>
+                            <div style={{ overflowX: "auto" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
                                     <thead>
-                                        <tr style={{
-                                            borderBottom: "2px solid #e5e7eb"
-                                        }}>
-                                            <th style={{
-                                                textAlign: "left",
-                                                padding: "12px 16px",
-                                                fontSize: "12px",
-                                                fontWeight: "700",
-                                                color: "#6b7280",
-                                                letterSpacing: "0.5px",
-                                                textTransform: "uppercase"
-                                            }}>Customer Name</th>
-                                            <th style={{
-                                                textAlign: "left",
-                                                padding: "12px 16px",
-                                                fontSize: "12px",
-                                                fontWeight: "700",
-                                                color: "#6b7280",
-                                                letterSpacing: "0.5px",
-                                                textTransform: "uppercase"
-                                            }}>Email</th>
-                                            <th style={{
-                                                textAlign: "center",
-                                                padding: "12px 16px",
-                                                fontSize: "12px",
-                                                fontWeight: "700",
-                                                color: "#6b7280",
-                                                letterSpacing: "0.5px",
-                                                textTransform: "uppercase"
-                                            }}>Actions</th>
+                                        <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                                            <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "12px", fontWeight: "700", color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>Customer Name</th>
+                                            <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "12px", fontWeight: "700", color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>Email</th>
+                                            <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "12px", fontWeight: "700", color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>Created</th>
+                                            <th style={{ textAlign: "center", padding: "12px 16px", fontSize: "12px", fontWeight: "700", color: "#6b7280", letterSpacing: "0.5px", textTransform: "uppercase" }}>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {currentReports.map((report, index) => (
-                                            <tr key={report.id} style={{
-                                                borderBottom: index !== currentReports.length - 1 ? "1px solid #f3f4f6" : "none",
-                                                transition: "background-color 0.2s"
-                                            }}
-                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f9fafb"}
-                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}>
-                                                <td style={{
-                                                    padding: "16px",
-                                                    fontSize: "14px",
-                                                    fontWeight: "600",
-                                                    color: "#111827"
-                                                }}>{report.customerName}</td>
-                                                <td style={{
-                                                    padding: "16px",
-                                                    fontSize: "14px",
-                                                    color: "#6b7280"
-                                                }}>{report.customerEmail}</td>
-                                                <td style={{
-                                                    padding: "16px",
-                                                    textAlign: "center"
-                                                }}>
-                                                    <div style={{
-                                                        display: "flex",
-                                                        gap: "8px",
-                                                        justifyContent: "center"
-                                                    }}>
-                                                        <button
-                                                            onClick={() => handleViewReport(report)}
-                                                            style={{
-                                                                border: "none",
-                                                                background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-                                                                color: "white",
-                                                                padding: "8px 12px",
-                                                                borderRadius: "8px",
-                                                                cursor: "pointer",
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                gap: "6px",
-                                                                fontSize: "13px",
-                                                                fontWeight: "600",
-                                                                transition: "all 0.2s",
-                                                                boxShadow: "0 2px 8px rgba(59, 130, 246, 0.25)"
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.currentTarget.style.transform = "translateY(-2px)";
-                                                                e.currentTarget.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.35)";
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.currentTarget.style.transform = "translateY(0)";
-                                                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(59, 130, 246, 0.25)";
-                                                            }}
-                                                        >
+                                            <tr key={report.id} style={{ borderBottom: index !== currentReports.length - 1 ? "1px solid #f3f4f6" : "none", transition: "background-color 0.2s" }}
+                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f9fafb"}
+                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}>
+                                                <td style={{ padding: "16px", fontSize: "14px", fontWeight: "600", color: "#111827" }}>{report.customerName}</td>
+                                                <td style={{ padding: "16px", fontSize: "14px", color: "#6b7280" }}>{report.customerEmail}</td>
+                                                <td style={{ padding: "16px", fontSize: "14px", color: "#6b7280" }}>{formatDate(report.createdAt)}</td>
+                                                <td style={{ padding: "16px", textAlign: "center" }}>
+                                                    <div style={{ display: "flex", gap: "8px", justifyContent: "center", position: "relative" }}>
+                                                        <button onClick={() => handleViewReport(report)} style={{ border: "none", background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", color: "white", padding: "8px 12px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(59, 130, 246, 0.25)" }}>
                                                             <VisibilityRoundedIcon style={{ fontSize: "16px" }} />
                                                             View
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleCustomizeTemplate(report)}
-                                                            style={{
-                                                                border: "none",
-                                                                background: "linear-gradient(135deg, #eed920 0%, #ea7e02 100%)",
-                                                                color: "white",
-                                                                padding: "8px 12px",
-                                                                borderRadius: "8px",
-                                                                cursor: "pointer",
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                gap: "6px",
-                                                                fontSize: "13px",
-                                                                fontWeight: "600",
-                                                                transition: "all 0.2s",
-                                                                boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)"
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.currentTarget.style.transform = "translateY(-2px)";
-                                                                e.currentTarget.style.boxShadow = "0 4px 12px rgba(185, 112, 16, 0.35)";
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.currentTarget.style.transform = "translateY(0)";
-                                                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(185, 143, 16, 0.25)";
-                                                            }}
-                                                        >
+                                                        <button onClick={() => handleCustomizeReport(report)} style={{ border: "none", background: "linear-gradient(135deg, #eed920 0%, #ea7e02 100%)", color: "white", padding: "8px 12px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(234, 126, 2, 0.25)" }}>
                                                             <EditRoundedIcon style={{ fontSize: "16px" }} />
                                                             Customize
                                                         </button>
+                                                        <div style={{ position: "relative" }} ref={exportDropdownOpen === report.id ? exportDropdownRef : null}>
+                                                            <button onClick={() => setExportDropdownOpen(exportDropdownOpen === report.id ? null : report.id)} style={{ border: "none", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "white", padding: "8px 12px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600", transition: "all 0.2s", boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)" }}>
+                                                                <FileDownloadRoundedIcon style={{ fontSize: "16px" }} />
+                                                                Export
+                                                            </button>
+                                                            {exportDropdownOpen === report.id && (
+                                                                <div style={{ position: "absolute", top: "100%", right: 0, marginTop: "4px", background: "white", borderRadius: "8px", boxShadow: "0 10px 40px rgba(0,0,0,0.15)", border: "1px solid #e5e7eb", overflow: "hidden", zIndex: 100, minWidth: "140px" }}>
+                                                                    <button onClick={() => handleExportPDF(report)} style={{ width: "100%", padding: "10px 16px", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#374151", transition: "background 0.15s" }}
+                                                                        onMouseEnter={(e) => e.currentTarget.style.background = "#f3f4f6"}
+                                                                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                                                                        <PictureAsPdfRoundedIcon style={{ fontSize: "18px", color: "#ef4444" }} />
+                                                                        Export PDF
+                                                                    </button>
+                                                                    <button onClick={() => handleExportHTML(report)} style={{ width: "100%", padding: "10px 16px", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#374151", transition: "background 0.15s" }}
+                                                                        onMouseEnter={(e) => e.currentTarget.style.background = "#f3f4f6"}
+                                                                        onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                                                                        <CodeRoundedIcon style={{ fontSize: "18px", color: "#3b82f6" }} />
+                                                                        Export HTML
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -349,90 +869,16 @@ export default function ReportsHistory() {
                         )}
 
                         {totalPages > 1 && (
-                            <div style={{
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                gap: "8px",
-                                marginTop: "24px",
-                                paddingTop: "20px",
-                                borderTop: "1px solid #f3f4f6"
-                            }}>
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                    disabled={currentPage === 1}
-                                    style={{
-                                        border: "1px solid #e5e7eb",
-                                        background: currentPage === 1 ? "#f9fafb" : "white",
-                                        color: currentPage === 1 ? "#9ca3af" : "#374151",
-                                        padding: "8px 14px",
-                                        borderRadius: "8px",
-                                        cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                                        fontSize: "14px",
-                                        fontWeight: "600",
-                                        transition: "all 0.2s"
-                                    }}
-                                >
-                                    Previous
-                                </button>
+                            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", marginTop: "24px", paddingTop: "20px", borderTop: "1px solid #f3f4f6" }}>
+                                <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ border: "1px solid #e5e7eb", background: currentPage === 1 ? "#f9fafb" : "white", color: currentPage === 1 ? "#9ca3af" : "#374151", padding: "8px 14px", borderRadius: "8px", cursor: currentPage === 1 ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: "600" }}>Previous</button>
                                 {getPaginationNumbers().map((page, index) => (
                                     page === '...' ? (
-                                        <span key={`ellipsis-${index}`} style={{
-                                            padding: "8px 12px",
-                                            color: "#9ca3af",
-                                            fontSize: "14px"
-                                        }}>...</span>
+                                        <span key={`ellipsis-${index}`} style={{ padding: "8px 12px", color: "#9ca3af", fontSize: "14px" }}>...</span>
                                     ) : (
-                                        <button
-                                            key={page}
-                                            onClick={() => setCurrentPage(page as number)}
-                                            style={{
-                                                border: "1px solid #e5e7eb",
-                                                background: currentPage === page ? "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)" : "white",
-                                                color: currentPage === page ? "white" : "#374151",
-                                                padding: "8px 14px",
-                                                borderRadius: "8px",
-                                                cursor: "pointer",
-                                                fontSize: "14px",
-                                                fontWeight: "600",
-                                                minWidth: "40px",
-                                                transition: "all 0.2s",
-                                                boxShadow: currentPage === page ? "0 2px 8px rgba(255, 123, 46, 0.25)" : "none"
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (currentPage !== page) {
-                                                    e.currentTarget.style.borderColor = "var(--color-primary)";
-                                                    e.currentTarget.style.color = "var(--color-primary)";
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (currentPage !== page) {
-                                                    e.currentTarget.style.borderColor = "#e5e7eb";
-                                                    e.currentTarget.style.color = "#374151";
-                                                }
-                                            }}
-                                        >
-                                            {page}
-                                        </button>
+                                        <button key={page} onClick={() => setCurrentPage(page as number)} style={{ border: "1px solid #e5e7eb", background: currentPage === page ? "linear-gradient(135deg, var(--color-primary) 0%, #F0A94D 100%)" : "white", color: currentPage === page ? "white" : "#374151", padding: "8px 14px", borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: "600", minWidth: "40px", boxShadow: currentPage === page ? "0 2px 8px rgba(255, 123, 46, 0.25)" : "none" }}>{page}</button>
                                     )
                                 ))}
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                    disabled={currentPage === totalPages}
-                                    style={{
-                                        border: "1px solid #e5e7eb",
-                                        background: currentPage === totalPages ? "#f9fafb" : "white",
-                                        color: currentPage === totalPages ? "#9ca3af" : "#374151",
-                                        padding: "8px 14px",
-                                        borderRadius: "8px",
-                                        cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                                        fontSize: "14px",
-                                        fontWeight: "600",
-                                        transition: "all 0.2s"
-                                    }}
-                                >
-                                    Next
-                                </button>
+                                <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ border: "1px solid #e5e7eb", background: currentPage === totalPages ? "#f9fafb" : "white", color: currentPage === totalPages ? "#9ca3af" : "#374151", padding: "8px 14px", borderRadius: "8px", cursor: currentPage === totalPages ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: "600" }}>Next</button>
                             </div>
                         )}
                     </div>
@@ -441,31 +887,11 @@ export default function ReportsHistory() {
 
             {/* View Report Modal */}
             {viewModalOpen && selectedReport && (() => {
-                let reportData: any = null;
-                try {
-                    reportData = JSON.parse(selectedReport.generatedReport);
-                } catch (e) {
-                    console.error('Failed to parse report data:', e);
-                }
-
+                const reportData = parseReportData(selectedReport);
                 if (!reportData) {
                     return (
-                        <div style={{
-                            position: "fixed",
-                            inset: 0,
-                            background: "rgba(0, 0, 0, 0.5)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            zIndex: 1000,
-                            padding: "20px"
-                        }} onClick={() => setViewModalOpen(false)}>
-                            <div style={{
-                                background: "white",
-                                borderRadius: "16px",
-                                padding: "40px",
-                                textAlign: "center"
-                            }}>
+                        <div style={{ position: "fixed", inset: 0, background: "rgba(0, 0, 0, 0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }} onClick={() => setViewModalOpen(false)}>
+                            <div style={{ background: "white", borderRadius: "16px", padding: "40px", textAlign: "center" }}>
                                 <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
                                 <div style={{ fontSize: "16px", color: "#6b7280" }}>Failed to load report data</div>
                             </div>
@@ -473,1322 +899,179 @@ export default function ReportsHistory() {
                     );
                 }
 
-                const getImgSrc = (raw: any): string => {
-                    const s = typeof raw === 'string' ? raw : raw?.url ?? raw?.src ?? raw?.path ?? '';
-                    if (!s) return '';
-                    if (s.startsWith('data:')) return s;
-                    if (s.length > 200 && /^[A-Za-z0-9+/]+=*$/.test(s)) return `data:image/jpeg;base64,${s}`;
-                    return s;
-                };
-
-                const placeImgs = (place: any): string[] => {
-                    const urls: string[] = [];
-                    let idx = 1;
-                    while (place[`image${idx}Url`]) { urls.push(getImgSrc(place[`image${idx}Url`])); idx++; }
-                    if (urls.length === 0) {
-                        const fb = place.images ?? place.Images ?? place.image ?? place.Image;
-                        if (fb) (Array.isArray(fb) ? fb : [fb]).forEach((u: any) => urls.push(getImgSrc(u)));
-                    }
-                    return urls.filter(Boolean);
-                };
-
-                const svcImgs = (hotel: any): string[] => {
-                    const raw = hotel.images ?? hotel.Images ?? hotel.image ?? hotel.Image ?? [];
-                    return (Array.isArray(raw) ? raw : [raw]).map(getImgSrc).filter(Boolean);
-                };
-
-                const PageShell = ({ children }: { children: React.ReactNode }) => (
-                    <div style={{
-                        width: '700px', height: '991px', background: '#FAFAFA',
-                        boxShadow: '0 32px 80px rgba(0,0,0,0.75)',
-                        fontFamily: '"Inter", "Segoe UI", Arial, sans-serif',
-                        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                        borderRadius: '4px',
-                    }}>
-                        {children}
-                    </div>
-                );
-
-                const SectionTitle = ({ color, children }: { color: string; children: React.ReactNode }) => (
-                    <div style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        marginBottom: '10px',
-                    }}>
-                        <div style={{ width: '3px', height: '16px', background: color, borderRadius: '2px', flexShrink: 0 }} />
-                        <div style={{ fontSize: '10px', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{children}</div>
-                    </div>
-                );
-
                 return (
-                    <div style={{
-                        position: 'fixed', inset: 0, zIndex: 10000,
-                        background: 'linear-gradient(160deg, #0a0a18 0%, #12121f 100%)',
-                        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                    }}>
-                        <div style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '0 28px', height: '58px', flexShrink: 0,
-                            background: 'rgba(255,255,255,0.03)',
-                            borderBottom: '1px solid rgba(255,255,255,0.07)',
-                            backdropFilter: 'blur(12px)',
-                        }}>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'linear-gradient(160deg, #0a0a18 0%, #12121f 100%)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', height: '58px', flexShrink: 0, background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                <div style={{
-                                    width: '34px', height: '34px', borderRadius: '8px',
-                                    background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px',
-                                }}>✈️</div>
+                                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #FF7B2E 0%, #F0A94D 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>✈️</div>
                                 <div>
-                                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(255,255,255,0.95)', letterSpacing: '-0.3px' }}>
-                                        {reportData.metadata?.customerName || selectedReport.customerName}
-                                    </div>
-                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
-                                        {reportData.totalPages || 0} pages • {reportData.metadata?.daysAndNights || 'N/A'}
-                                    </div>
+                                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(255,255,255,0.95)', letterSpacing: '-0.3px' }}>{reportData.metadata?.customerName || selectedReport.customerName}</div>
+                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>{reportData.pages?.length || 0} pages • {reportData.metadata?.daysAndNights || 'N/A'}</div>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setViewModalOpen(false)}
-                                style={{
-                                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-                                    color: 'rgba(255,255,255,0.8)', borderRadius: '8px', padding: '7px 18px',
-                                    cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-                                    transition: 'all 0.15s',
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
-                            >✕ Close</button>
+                            <button onClick={() => setViewModalOpen(false)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', borderRadius: '8px', padding: '7px 18px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>✕ Close</button>
                         </div>
-
-                        <div style={{
-                            flex: 1, overflowY: 'auto', overflowX: 'auto',
-                            padding: '44px 24px 60px',
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px',
-                        }}>
-                            {reportData.pages?.map((page: any, idx: number) => {
-                                if (page.type === 'template') {
-                                    return (
-                                        <div key={`tpl-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
-                                            <PageShell>
-                                                <div style={{ width: '595px', height: '842px', transform: 'scale(1.176)', transformOrigin: 'top left', position: 'relative' }}>
-                                                    {page.content?.elements?.map((el: any, i: number) => {
-                                                        if (el.type === 'text') {
-                                                            return (
-                                                                <div key={i} style={{
-                                                                    position: 'absolute',
-                                                                    left: `${el.x ?? 0}px`,
-                                                                    top: `${el.y ?? 0}px`,
-                                                                    width: el.width ? `${el.width}px` : 'auto',
-                                                                    fontSize: `${el.fontSize ?? 14}px`,
-                                                                    fontFamily: el.fontFamily ?? 'Arial',
-                                                                    fontWeight: el.fontWeight ?? 400,
-                                                                    color: el.color ?? '#000',
-                                                                    lineHeight: el.lineHeight ?? 1.4,
-                                                                }}>
-                                                                    {el.content}
-                                                                </div>
-                                                            );
-                                                        }
-                                                        if (el.type === 'shape' && el.shape === 'rectangle') {
-                                                            return (
-                                                                <div key={i} style={{
-                                                                    position: 'absolute',
-                                                                    left: `${el.x ?? 0}px`,
-                                                                    top: `${el.y ?? 0}px`,
-                                                                    width: `${el.width ?? 100}px`,
-                                                                    height: `${el.height ?? 100}px`,
-                                                                    background: el.fill ?? 'transparent',
-                                                                    borderRadius: `${el.borderRadius ?? 0}px`,
-                                                                }} />
-                                                            );
-                                                        }
-                                                        if (el.type === 'image') {
-                                                            return (
-                                                                <img key={i} src={getImgSrc(el.src)} alt="" style={{
-                                                                    position: 'absolute',
-                                                                    left: `${el.x ?? 0}px`,
-                                                                    top: `${el.y ?? 0}px`,
-                                                                    width: `${el.width ?? 100}px`,
-                                                                    height: `${el.height ?? 100}px`,
-                                                                    objectFit: 'cover',
-                                                                    borderRadius: `${el.borderRadius ?? 0}px`,
-                                                                }} />
-                                                            );
-                                                        }
-                                                        return null;
-                                                    })}
-                                                </div>
-                                            </PageShell>
-                                        </div>
-                                    );
-                                }
-
-                                if (page.type === 'customerInfo') {
-                                    const metadata = reportData.metadata || page.content;
-                                    const customerInitials = metadata.customerName?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'N/A';
-                                    const infoFields = [
-                                        { icon: '👤', label: 'Full Name', value: metadata.customerName },
-                                        { icon: '🌍', label: 'Country', value: metadata.country },
-                                        { icon: '📱', label: 'Mobile', value: metadata.mobileNo },
-                                        { icon: '📧', label: 'Email', value: metadata.customerEmail },
-                                        { icon: '🗓️', label: 'Duration', value: metadata.daysAndNights },
-                                        { icon: '👥', label: 'Passengers', value: metadata.numberOfPassengers },
-                                        ...(metadata.transportationMode ? [{ icon: '🚌', label: 'Transport', value: metadata.transportationMode }] : []),
-                                    ];
-
-                                    return (
-                                        <div key={`info-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
-                                            <PageShell>
-                                                <div style={{ height: '170px', background: 'linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%)', position: 'relative', overflow: 'hidden' }}>
-                                                    <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-                                                    <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(0,0,0,0.08)' }} />
-                                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 700, color: '#0284C7', margin: '0 auto 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
-                                                            {customerInitials}
-                                                        </div>
-                                                        <div style={{ fontSize: '20px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>Booking Information</div>
-                                                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>Complete travel itinerary details</div>
-                                                    </div>
-                                                </div>
-                                                <div style={{ padding: '32px 36px' }}>
-                                                    <SectionTitle color="#0284C7">Customer Details</SectionTitle>
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '28px' }}>
-                                                        {infoFields.map((field, i) => (
-                                                            <div key={i} style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                                                                    <span style={{ fontSize: '16px' }}>{field.icon}</span>
-                                                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{field.label}</span>
-                                                                </div>
-                                                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', paddingLeft: '24px' }}>{field.value || 'N/A'}</div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <SectionTitle color="#10B981">Selected Route</SectionTitle>
-                                                    <div style={{ background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)', padding: '16px', borderRadius: '10px', border: '1px solid #A7F3D0', marginBottom: '28px' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                                                            {(metadata.selectedRoutes || []).map((route: string, i: number) => (
-                                                                <div key={i}>
-                                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'white', borderRadius: '6px', fontSize: '12px', fontWeight: 600, color: '#047857', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                                                                        <span>📍</span>
-                                                                        <span>{route}</span>
-                                                                    </div>
-                                                                    {i < (metadata.selectedRoutes || []).length - 1 && (
-                                                                        <span style={{ margin: '0 4px', color: '#10B981', fontSize: '12px' }}>→</span>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                    <SectionTitle color="#F59E0B">Trip Summary</SectionTitle>
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                                                        <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)', borderRadius: '10px', border: '1px solid #FCD34D' }}>
-                                                            <div style={{ fontSize: '22px', fontWeight: 700, color: '#B45309', marginBottom: '4px' }}>{reportData.pages?.filter((p: any) => p.type === 'dayDetail').length || 0}</div>
-                                                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Days</div>
-                                                        </div>
-                                                        <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)', borderRadius: '10px', border: '1px solid #93C5FD' }}>
-                                                            <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E40AF', marginBottom: '4px' }}>{(metadata.selectedRoutes || []).length}</div>
-                                                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#1E3A8A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Locations</div>
-                                                        </div>
-                                                        <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%)', borderRadius: '10px', border: '1px solid #F87171' }}>
-                                                            <div style={{ fontSize: '22px', fontWeight: 700, color: '#991B1B', marginBottom: '4px' }}>{metadata.numberOfPassengers || 0}</div>
-                                                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Guests</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </PageShell>
-                                        </div>
-                                    );
-                                }
-
-                                if (page.type === 'dayDetail') {
-                                    const heroImgs: string[] = [];
-                                    (page.content?.selectedPlaces || []).forEach((sp: any) => placeImgs(sp.place).slice(0, 2).forEach((u: string) => heroImgs.push(u)));
-                                    const svcColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-                                        hotel: { bg: '#f5f0ff', border: '#ddd6fe', text: '#5b21b6', badge: '#7c3aed' },
-                                        transport: { bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8', badge: '#2563eb' },
-                                        activity: { bg: '#fff1f0', border: '#fecaca', text: '#b91c1c', badge: '#dc2626' },
-                                    };
-
-                                    return (
-                                        <div key={`day-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
-                                            <PageShell>
-                                                <div style={{ height: '130px', background: '#1E293B', position: 'relative', overflow: 'hidden' }}>
-                                                    {heroImgs.length > 0 ? (
-                                                        <div style={{ display: 'flex', height: '100%' }}>
-                                                            {heroImgs.slice(0, 4).map((src, i) => (
-                                                                <div key={i} style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                                                                    <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)' }} />
-                                                    )}
-                                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', zIndex: 10 }}>
-                                                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(255,255,255,0.95)', fontSize: '20px', fontWeight: 700, color: '#1E293B', marginBottom: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-                                                            {page.dayNumber}
-                                                        </div>
-                                                        <div style={{ fontSize: '15px', fontWeight: 700, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{page.content?.selectedDay || 'Date TBD'}</div>
-                                                    </div>
-                                                </div>
-                                                <div style={{ padding: '20px 32px 32px' }}>
-                                                    {page.content?.description && (
-                                                        <div style={{ marginBottom: '20px' }}>
-                                                            <SectionTitle color="#8B5CF6">Daily Itinerary</SectionTitle>
-                                                            <div style={{ fontSize: '12px', lineHeight: 1.6, color: '#374151', background: '#F9FAFB', padding: '14px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-                                                                {page.content.description}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {(page.content?.selectedPlaces || []).length > 0 && (
-                                                        <div style={{ marginBottom: '20px' }}>
-                                                            <SectionTitle color="#10B981">Visiting Places</SectionTitle>
-                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-                                                                {(page.content.selectedPlaces || []).map((sp: any, i: number) => {
-                                                                    const imgs = placeImgs(sp.place);
-                                                                    return (
-                                                                        <div key={i} style={{ background: 'white', borderRadius: '10px', overflow: 'hidden', border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                                                                            <div style={{ display: 'grid', gridTemplateColumns: imgs.length >= 2 ? 'repeat(2, 68px)' : '68px', gridTemplateRows: imgs.length > 2 ? 'repeat(2, 68px)' : '68px', gap: '0' }}>
-                                                                                {imgs.slice(0, 4).map((src, j) => (
-                                                                                    <img key={j} src={src} alt="" style={{ width: '68px', height: '68px', objectFit: 'cover' }} />
-                                                                                ))}
-                                                                            </div>
-                                                                            <div style={{ padding: '10px' }}>
-                                                                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#111827', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                                    {sp.place?.name || sp.place?.placeName || 'Unknown'}
-                                                                                </div>
-                                                                                <div style={{ fontSize: '10px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                                    <span>📍</span>
-                                                                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.district}</span>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {(page.content?.selectedHotels || []).length > 0 && (
-                                                        <div style={{ marginBottom: '20px' }}>
-                                                            <SectionTitle color="#F59E0B">Services & Accommodations</SectionTitle>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                                {(page.content.selectedHotels || []).map((sh: any, i: number) => {
-                                                                    const imgs = svcImgs(sh.hotel);
-                                                                    const theme = svcColors[sh.type] || svcColors.hotel;
-                                                                    return (
-                                                                        <div key={i} style={{ display: 'flex', gap: '10px', background: theme.bg, padding: '10px', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
-                                                                            {imgs[0] && (
-                                                                                <img src={imgs[0]} alt="" style={{ width: '70px', height: '64px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />
-                                                                            )}
-                                                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                                                                                    <div style={{ padding: '2px 8px', borderRadius: '4px', background: theme.badge, color: 'white', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                                                        {sh.type === 'hotel' ? '🏨 Hotel' : sh.type === 'transport' ? '🚗 Transport' : '🎯 Activity'}
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div style={{ fontSize: '12px', fontWeight: 700, color: theme.text, marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                                    {sh.hotel?.name || sh.hotel?.serviceName || 'Service'}
-                                                                                </div>
-                                                                                <div style={{ fontSize: '10px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {sh.district}</div>
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {page.content?.remarks && (
-                                                        <div>
-                                                            <SectionTitle color="#EC4899">Additional Notes</SectionTitle>
-                                                            <div style={{ fontSize: '11px', lineHeight: 1.5, color: '#6B7280', background: '#FDF2F8', padding: '12px', borderRadius: '8px', border: '1px solid #FBCFE8', fontStyle: 'italic' }}>
-                                                                {page.content.remarks}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </PageShell>
-                                        </div>
-                                    );
-                                }
-
-                                if (page.type === 'cost') {
-                                    const costData = page.content || {};
-                                    const reportCostData = reportData.cost || {};
-                                    const totalAmount = costData.totalAmount || reportCostData.totalAmount || 0;
-                                    const promoCode = costData.promoCode || reportCostData.promoCode || '';
-                                    const promoCodeDiscount = costData.promoCodeDiscount || reportCostData.promoCodeDiscount || 0;
-                                    const finalAmount = costData.finalAmount || reportCostData.finalAmount || totalAmount;
-
-                                    return (
-                                        <div key={`cost-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
-                                            <PageShell>
-                                                {/* Hero Section */}
-                                                <div style={{
-                                                    height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
-                                                    background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 25%, #14b8a6 75%, #5eead4 100%)',
-                                                }}>
-                                                    <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-                                                    <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-                                                    <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                                            <div style={{
-                                                                width: '40px', height: '40px', borderRadius: '50%',
-                                                                background: 'rgba(255,255,255,0.15)', display: 'flex',
-                                                                alignItems: 'center', justifyContent: 'center', fontSize: '18px'
-                                                            }}>💰</div>
-                                                            <div>
-                                                                <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Cost Summary</div>
-                                                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
-                                                                    Package pricing & discounts
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Content */}
-                                                <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
-                                                    {/* Cost Breakdown Card */}
-                                                    <div style={{
-                                                        background: 'white', borderRadius: '16px', padding: '28px',
-                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid #f1f5f9',
-                                                        marginBottom: '24px'
-                                                    }}>
-                                                        <div style={{ marginBottom: '20px' }}>
-                                                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '16px' }}>Package Details</div>
-                                                        </div>
-
-                                                        {/* Subtotal */}
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
-                                                            <span style={{ fontSize: '13px', color: '#64748b' }}>Tour Package Amount</span>
-                                                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>LKR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                        </div>
-
-                                                        {/* Promo Code Discount */}
-                                                        {promoCodeDiscount > 0 && (
-                                                            <>
-                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                        <span style={{ fontSize: '13px', color: '#64748b' }}>Promo Code Discount</span>
-                                                                        {promoCode && (
-                                                                            <span style={{
-                                                                                fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
-                                                                                background: '#dcfce7', color: '#15803d', fontWeight: 600
-                                                                            }}>
-                                                                                {promoCode}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#dc2626' }}>-LKR {promoCodeDiscount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                                </div>
-                                                            </>
-                                                        )}
-
-                                                        {/* Final Amount */}
-                                                        <div style={{
-                                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                            marginTop: '12px',
-                                                            background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-                                                            margin: '16px -28px -28px',
-                                                            padding: '20px 28px',
-                                                            borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px'
-                                                        }}>
-                                                            <span style={{ fontSize: '16px', fontWeight: 700, color: '#15803d' }}>Total Amount</span>
-                                                            <span style={{ fontSize: '20px', fontWeight: 700, color: '#15803d' }}>
-                                                                LKR {finalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Payment Terms */}
-                                                    <div style={{
-                                                        background: 'white', borderRadius: '12px', padding: '20px',
-                                                        boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
-                                                    }}>
-                                                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '12px' }}>💳 Payment Information</div>
-                                                        <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
-                                                            • 40% advance payment required to confirm booking<br />
-                                                            • Balance 60% due 30 days before tour commencement<br />
-                                                            • All amounts are in Sri Lankan Rupees (LKR)
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </PageShell>
-                                        </div>
-                                    );
-                                }
-
-                                if (page.type === 'policies') {
-                                    const policiesData = page.content || {};
-                                    const reportPoliciesData = reportData.policies || {};
-                                    const specialRemark = policiesData.specialRemark || reportPoliciesData.specialRemark || '';
-                                    const bookingPolicy = policiesData.bookingPolicy || reportPoliciesData.bookingPolicy || '';
-                                    const cancellationPolicy = policiesData.cancellationPolicy || reportPoliciesData.cancellationPolicy || '';
-
-                                    return (
-                                        <div key={`policies-${idx}`} style={{ flexShrink: 0, marginBottom: '48px' }}>
-                                            <PageShell>
-                                                {/* Hero Section */}
-                                                <div style={{
-                                                    height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
-                                                    background: 'linear-gradient(135deg, #7c2d12 0%, #dc2626 25%, #ef4444 75%, #fca5a5 100%)',
-                                                }}>
-                                                    <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-                                                    <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-                                                    <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                                            <div style={{
-                                                                width: '40px', height: '40px', borderRadius: '50%',
-                                                                background: 'rgba(255,255,255,0.15)', display: 'flex',
-                                                                alignItems: 'center', justifyContent: 'center', fontSize: '18px'
-                                                            }}>📋</div>
-                                                            <div>
-                                                                <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Terms & Policies</div>
-                                                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
-                                                                    Important information & conditions
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Content */}
-                                                <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
-                                                    {/* Special Remark */}
-                                                    {specialRemark && (
-                                                        <div style={{
-                                                            background: 'white', borderRadius: '12px', padding: '20px',
-                                                            boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-                                                            marginBottom: '20px'
-                                                        }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                                                <div style={{ fontSize: '16px' }}>⚡</div>
-                                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Important Notice</div>
-                                                            </div>
-                                                            <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.6, padding: '12px', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fbbf24' }}>
-                                                                {specialRemark}
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Booking Policy */}
-                                                    {bookingPolicy && (
-                                                        <div style={{
-                                                            background: 'white', borderRadius: '12px', padding: '20px',
-                                                            boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-                                                            marginBottom: '20px'
-                                                        }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                                                <div style={{ fontSize: '16px' }}>📅</div>
-                                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Booking Policy</div>
-                                                            </div>
-                                                            <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
-                                                                {bookingPolicy}
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Cancellation Policy */}
-                                                    {cancellationPolicy && (
-                                                        <div style={{
-                                                            background: 'white', borderRadius: '12px', padding: '20px',
-                                                            boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
-                                                        }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                                                <div style={{ fontSize: '16px' }}>❌</div>
-                                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Cancellation Policy</div>
-                                                            </div>
-                                                            <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
-                                                                {cancellationPolicy}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </PageShell>
-                                        </div>
-                                    );
-                                }
-
-                                return null;
-                            })}
+                        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: '44px 24px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '48px' }}>
+                            {reportData.pages?.map((page, idx) => (
+                                <div key={idx} style={{ flexShrink: 0 }}>
+                                    <ReportPageRenderer page={page} reportData={reportData} scale={1} />
+                                </div>
+                            ))}
                         </div>
                     </div>
                 );
             })()}
 
-            {/* Template Customize Modal */}
-            {customizeModalOpen && selectedReport && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    zIndex: 9999,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
-                    <div className="template-customize" style={{
-                        width: '100vw',
-                        height: '100vh',
-                        backgroundColor: 'white',
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }}>
+            {/* Customize Report Modal */}
+            {customizeModalOpen && selectedReport && editableReportData && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 10000 }}>
+                    <div className="template-customize">
                         <header className="template-customize-header">
-                            <div className="template-customize-title">
-                                <button 
-                                    type="button" 
-                                    className="template-customize-back" 
-                                    onClick={handleCloseCustomizeModal}
-                                >
-                                    <CloseRoundedIcon fontSize="small" />
-                                </button>
-                                <div>
-                                    <p>Template customization</p>
-                                    <h1>Report: {selectedReport.customerName}</h1>
+                        <div className="template-customize-title">
+                            <button type="button" className="template-customize-back" onClick={handleCloseCustomizeModal}>
+                                <ArrowBackRoundedIcon fontSize="small" />
+                            </button>
+                            <div>
+                                <p>Report customization</p>
+                                <h1>{selectedReport.customerName}</h1>
+                            </div>
+                        </div>
+                        <div className="template-customize-actions">
+                            <div className="template-customize-badge">
+                                <HeightRoundedIcon fontSize="small" />
+                                A4 canvas ({A4_WIDTH}×{A4_HEIGHT})
+                            </div>
+                            <button type="button" className="btn btn--orange" onClick={handleSaveReport} disabled={isSaving}>
+                                <SaveRoundedIcon fontSize="small" />
+                                {isSaving ? "Saving..." : "Save changes"}
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="template-customize-content">
+                        <aside className="template-customize-panel template-customize-panel--left">
+                            <div className="template-customize-panel-card">
+                                <h3>Pages</h3>
+                                <div className="template-customize-layer-list">
+                                    {editableReportData.pages?.map((page, idx) => (
+                                        <button key={idx} type="button" className={`template-customize-layer ${selectedPageIndex === idx ? 'active' : ''}`}
+                                            onClick={() => { setSelectedPageIndex(idx); setSelectedElementIndex(null); }}>
+                                            <span>
+                                                {page.type === 'template' ? `📄 Cover Page ${idx + 1}` :
+                                                    page.type === 'customerInfo' ? '👤 Customer Info' :
+                                                        page.type === 'dayDetail' ? `📅 Day ${page.dayNumber}` :
+                                                            page.type === 'cost' ? '💰 Cost Summary' :
+                                                                page.type === 'policies' ? '📋 Policies' : `Page ${idx + 1}`}
+                                            </span>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                            <div className="template-customize-actions">
-                                <div className="template-customize-badge">
-                                    <PaletteRoundedIcon fontSize="small" />
-                                    Customize Template
+
+                            {editableReportData.pages?.[selectedPageIndex]?.type === 'template' && (
+                                <div className="template-customize-panel-card">
+                                    <h3>Layers</h3>
+                                    <div className="template-customize-layer-list">
+                                        {elementSummary.length === 0 && <p className="template-customize-hint">No elements found.</p>}
+                                        {elementSummary.map((summary: string, index: number) => (
+                                            <button key={index} type="button" className={`template-customize-layer ${selectedElementIndex === index ? 'active' : ''}`}
+                                                onClick={() => setSelectedElementIndex(index)}>
+                                                <span>{summary}</span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    className="btn btn--orange"
-                                    onClick={handleSaveTemplate}
-                                >
-                                    <SaveRoundedIcon fontSize="small" />
-                                    Save changes
-                                </button>
+                            )}
+                        </aside>
+
+                        <section className="template-customize-canvas">
+                            <div className="template-customize-canvas-scroll" ref={canvasWrapperRef}>
+                                <div className="template-customize-canvas-wrapper">
+                                    {editableReportData.pages?.[selectedPageIndex]?.type === 'template' ? (
+                                        renderCustomizableTemplatePage(editableReportData.pages[selectedPageIndex], selectedPageIndex)
+                                    ) : (
+                                        <div style={{ margin: '20px auto' }}>
+                                            <ReportPageRenderer page={editableReportData.pages![selectedPageIndex]} reportData={editableReportData} scale={canvasScale} />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </header>
+                        </section>
 
-                        <main className="template-customize-content">
-                            <aside className="template-customize-panel template-customize-panel--left">
-                                <div className="template-customize-panel-card">
-                                    <h3>Report Information</h3>
-                                    <div style={{ padding: '16px' }}>
-                                        <div style={{ marginBottom: '12px' }}>
-                                            <label style={{ 
-                                                display: 'block', 
-                                                fontSize: '12px', 
-                                                fontWeight: '600', 
-                                                color: '#6b7280',
-                                                marginBottom: '4px'
-                                            }}>
-                                                Customer Name
-                                            </label>
-                                            <div style={{ 
-                                                fontSize: '14px', 
-                                                fontWeight: '500', 
-                                                color: '#111827' 
-                                            }}>
-                                                {selectedReport.customerName}
-                                            </div>
-                                        </div>
-                                        <div style={{ marginBottom: '12px' }}>
-                                            <label style={{ 
-                                                display: 'block', 
-                                                fontSize: '12px', 
-                                                fontWeight: '600', 
-                                                color: '#6b7280',
-                                                marginBottom: '4px'
-                                            }}>
-                                                Email
-                                            </label>
-                                            <div style={{ 
-                                                fontSize: '14px', 
-                                                fontWeight: '500', 
-                                                color: '#111827' 
-                                            }}>
-                                                {selectedReport.customerEmail}
-                                            </div>
-                                        </div>
-                                        <div style={{ marginBottom: '12px' }}>
-                                            <label style={{ 
-                                                display: 'block', 
-                                                fontSize: '12px', 
-                                                fontWeight: '600', 
-                                                color: '#6b7280',
-                                                marginBottom: '4px'
-                                            }}>
-                                                Created
-                                            </label>
-                                            <div style={{ 
-                                                fontSize: '14px', 
-                                                fontWeight: '500', 
-                                                color: '#111827' 
-                                            }}>
-                                                {formatDate(selectedReport.createdAt)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </aside>
-
-                            <section className="template-customize-canvas">
-                                <div className="template-customize-canvas-scroll">
-                                    <div className="template-customize-canvas-wrapper">
-                                    {(() => {
-                                        let reportData: any = null;
-                                        try {
-                                            reportData = JSON.parse(selectedReport.generatedReport);
-                                        } catch (e) {
-                                            console.error('Failed to parse report data:', e);
-                                        }
-
-                                        if (!reportData) {
-                                            return (
-                                                <div style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    height: '400px',
-                                                    color: '#9ca3af',
-                                                    fontSize: '16px'
-                                                }}>
-                                                    ⚠️ Failed to load report data
-                                                </div>
-                                            );
-                                        }
-
-                                        const getImgSrc = (raw: any): string => {
-                                            const s = typeof raw === 'string' ? raw : raw?.url ?? raw?.src ?? raw?.path ?? '';
-                                            if (!s) return '';
-                                            if (s.startsWith('data:')) return s;
-                                            if (s.length > 200 && /^[A-Za-z0-9+/]+=*$/.test(s)) return `data:image/jpeg;base64,${s}`;
-                                            return s;
-                                        };
-
-                                        const PageShell = ({ children }: { children: React.ReactNode }) => (
-                                            <div style={{
-                                                width: '595px',
-                                                height: '842px',
-                                                background: '#FAFAFA',
-                                                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                                                fontFamily: '"Inter", "Segoe UI", Arial, sans-serif',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                overflow: 'hidden',
-                                                borderRadius: '8px',
-                                                margin: '20px auto'
-                                            }}>
-                                                {children}
-                                            </div>
-                                        );
-
-                                        const SectionTitle = ({ color, children }: { color: string; children: React.ReactNode }) => (
-                                            <div style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                marginBottom: '10px',
-                                            }}>
-                                                <div style={{ width: '3px', height: '16px', background: color, borderRadius: '2px', flexShrink: 0 }} />
-                                                <div style={{ fontSize: '10px', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{children}</div>
-                                            </div>
-                                        );
-
-                                        return (
-                                            <div style={{ padding: '20px 0' }}>
-                                                {reportData.pages?.map((page: any, idx: number) => {
-                                                    if (page.type === 'template') {
-                                                        return (
-                                                            <div key={`tpl-${idx}`} style={{ marginBottom: '30px' }}>
-                                                                <PageShell>
-                                                                    <div style={{ width: '595px', height: '842px', position: 'relative' }}>
-                                                                        {page.content?.elements?.map((el: any, i: number) => {
-                                                                            if (el.type === 'text') {
-                                                                                return (
-                                                                                    <div key={i} style={{
-                                                                                        position: 'absolute',
-                                                                                        left: `${el.x ?? 0}px`,
-                                                                                        top: `${el.y ?? 0}px`,
-                                                                                        width: el.width ? `${el.width}px` : 'auto',
-                                                                                        fontSize: `${el.fontSize ?? 14}px`,
-                                                                                        fontFamily: el.fontFamily ?? 'Arial',
-                                                                                        fontWeight: el.fontWeight ?? 400,
-                                                                                        color: el.color ?? '#000',
-                                                                                        lineHeight: el.lineHeight ?? 1.4,
-                                                                                    }}>
-                                                                                        {el.content}
-                                                                                    </div>
-                                                                                );
-                                                                            }
-                                                                            if (el.type === 'shape' && el.shape === 'rectangle') {
-                                                                                return (
-                                                                                    <div key={i} style={{
-                                                                                        position: 'absolute',
-                                                                                        left: `${el.x ?? 0}px`,
-                                                                                        top: `${el.y ?? 0}px`,
-                                                                                        width: `${el.width ?? 100}px`,
-                                                                                        height: `${el.height ?? 100}px`,
-                                                                                        background: el.fill ?? 'transparent',
-                                                                                        borderRadius: `${el.borderRadius ?? 0}px`,
-                                                                                    }} />
-                                                                                );
-                                                                            }
-                                                                            if (el.type === 'image') {
-                                                                                return (
-                                                                                    <img key={i} src={getImgSrc(el.src)} alt="" style={{
-                                                                                        position: 'absolute',
-                                                                                        left: `${el.x ?? 0}px`,
-                                                                                        top: `${el.y ?? 0}px`,
-                                                                                        width: `${el.width ?? 100}px`,
-                                                                                        height: `${el.height ?? 100}px`,
-                                                                                        objectFit: 'cover',
-                                                                                        borderRadius: `${el.borderRadius ?? 0}px`,
-                                                                                    }} />
-                                                                                );
-                                                                            }
-                                                                            return null;
-                                                                        })}
-                                                                    </div>
-                                                                </PageShell>
-                                                            </div>
-                                                        );
-                                                    }
-
-                                                    if (page.type === 'customerInfo') {
-                                                        const metadata = reportData.metadata || page.content;
-                                                        const customerInitials = metadata.customerName?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'N/A';
-                                                        const infoFields = [
-                                                            { icon: '👤', label: 'Full Name', value: metadata.customerName },
-                                                            { icon: '🌍', label: 'Country', value: metadata.country },
-                                                            { icon: '📱', label: 'Mobile', value: metadata.mobileNo },
-                                                            { icon: '📧', label: 'Email', value: metadata.customerEmail },
-                                                            { icon: '🗓️', label: 'Duration', value: metadata.daysAndNights },
-                                                            { icon: '👥', label: 'Passengers', value: metadata.numberOfPassengers },
-                                                            ...(metadata.transportationMode ? [{ icon: '🚌', label: 'Transport', value: metadata.transportationMode }] : []),
-                                                        ];
-                                                        
-                                                        return (
-                                                            <div key={`info-${idx}`} style={{ marginBottom: '30px' }}>
-                                                                <PageShell>
-                                                                    <div style={{ height: '170px', background: 'linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%)', position: 'relative', overflow: 'hidden' }}>
-                                                                        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-                                                                        <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(0,0,0,0.08)' }} />
-                                                                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                                                                            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 700, color: '#0284C7', margin: '0 auto 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
-                                                                                {customerInitials}
-                                                                            </div>
-                                                                            <div style={{ fontSize: '20px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>Booking Information</div>
-                                                                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>Complete travel itinerary details</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div style={{ padding: '32px 36px' }}>
-                                                                        <SectionTitle color="#0284C7">Customer Details</SectionTitle>
-                                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '28px' }}>
-                                                                            {infoFields.map((field, i) => (
-                                                                                <div key={i} style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                                                                                        <span style={{ fontSize: '16px' }}>{field.icon}</span>
-                                                                                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{field.label}</span>
-                                                                                    </div>
-                                                                                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', paddingLeft: '24px' }}>{field.value || 'N/A'}</div>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                        <SectionTitle color="#10B981">Selected Route</SectionTitle>
-                                                                        <div style={{ background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)', padding: '16px', borderRadius: '10px', border: '1px solid #A7F3D0', marginBottom: '28px' }}>
-                                                                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                                                                                {(metadata.selectedRoutes || []).map((route: string, i: number) => (
-                                                                                    <div key={i}>
-                                                                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'white', borderRadius: '6px', fontSize: '12px', fontWeight: 600, color: '#047857', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                                                                                            <span>📍</span>
-                                                                                            <span>{route}</span>
-                                                                                        </div>
-                                                                                        {i < (metadata.selectedRoutes || []).length - 1 && (
-                                                                                            <span style={{ margin: '0 4px', color: '#10B981', fontSize: '12px' }}>→</span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                        <SectionTitle color="#F59E0B">Trip Summary</SectionTitle>
-                                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                                                                            <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)', borderRadius: '10px', border: '1px solid #FCD34D' }}>
-                                                                                <div style={{ fontSize: '22px', fontWeight: 700, color: '#B45309', marginBottom: '4px' }}>{reportData.pages?.filter((p: any) => p.type === 'dayDetail').length || 0}</div>
-                                                                                <div style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Days</div>
-                                                                            </div>
-                                                                            <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)', borderRadius: '10px', border: '1px solid #93C5FD' }}>
-                                                                                <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E40AF', marginBottom: '4px' }}>{(metadata.selectedRoutes || []).length}</div>
-                                                                                <div style={{ fontSize: '10px', fontWeight: 700, color: '#1E3A8A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Locations</div>
-                                                                            </div>
-                                                                            <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%)', borderRadius: '10px', border: '1px solid #F87171' }}>
-                                                                                <div style={{ fontSize: '22px', fontWeight: 700, color: '#991B1B', marginBottom: '4px' }}>{metadata.numberOfPassengers || 0}</div>
-                                                                                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Guests</div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </PageShell>
-                                                            </div>
-                                                        );
-                                                    }
-
-                                                    if (page.type === 'dayDetail') {
-                                                        const placeImgs = (place: any): string[] => {
-                                                            const urls: string[] = [];
-                                                            let idx = 1;
-                                                            while (place[`image${idx}Url`]) { urls.push(getImgSrc(place[`image${idx}Url`])); idx++; }
-                                                            if (urls.length === 0) {
-                                                                const fb = place.images ?? place.Images ?? place.image ?? place.Image;
-                                                                if (fb) (Array.isArray(fb) ? fb : [fb]).forEach((u: any) => urls.push(getImgSrc(u)));
-                                                            }
-                                                            return urls.filter(Boolean);
-                                                        };
-
-                                                        const svcImgs = (hotel: any): string[] => {
-                                                            const raw = hotel.images ?? hotel.Images ?? hotel.image ?? hotel.Image ?? [];
-                                                            return (Array.isArray(raw) ? raw : [raw]).map(getImgSrc).filter(Boolean);
-                                                        };
-
-                                                        const heroImgs: string[] = [];
-                                                        (page.content?.selectedPlaces || []).forEach((sp: any) => placeImgs(sp.place).slice(0, 2).forEach((u: string) => heroImgs.push(u)));
-                                                        const svcColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-                                                            hotel: { bg: '#f5f0ff', border: '#ddd6fe', text: '#5b21b6', badge: '#7c3aed' },
-                                                            transport: { bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8', badge: '#2563eb' },
-                                                            activity: { bg: '#fff1f0', border: '#fecaca', text: '#b91c1c', badge: '#dc2626' },
-                                                        };
-
-                                                        return (
-                                                            <div key={`day-${idx}`} style={{ marginBottom: '30px' }}>
-                                                                <PageShell>
-                                                                    <div style={{ height: '130px', background: '#1E293B', position: 'relative', overflow: 'hidden' }}>
-                                                                        {heroImgs.length > 0 ? (
-                                                                            <div style={{ display: 'flex', height: '100%' }}>
-                                                                                {heroImgs.slice(0, 4).map((src, i) => (
-                                                                                    <div key={i} style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                                                                                        <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                                                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)' }} />
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)' }} />
-                                                                        )}
-                                                                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', zIndex: 10 }}>
-                                                                            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(255,255,255,0.95)', fontSize: '20px', fontWeight: 700, color: '#1E293B', marginBottom: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-                                                                                {page.dayNumber}
-                                                                            </div>
-                                                                            <div style={{ fontSize: '15px', fontWeight: 700, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{page.content?.selectedDay || 'Date TBD'}</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div style={{ padding: '20px 32px 32px' }}>
-                                                                        {page.content?.description && (
-                                                                            <div style={{ marginBottom: '20px' }}>
-                                                                                <SectionTitle color="#8B5CF6">Daily Itinerary</SectionTitle>
-                                                                                <div style={{ fontSize: '12px', lineHeight: 1.6, color: '#374151', background: '#F9FAFB', padding: '14px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-                                                                                    {page.content.description}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                        {(page.content?.selectedPlaces || []).length > 0 && (
-                                                                            <div style={{ marginBottom: '20px' }}>
-                                                                                <SectionTitle color="#10B981">Visiting Places</SectionTitle>
-                                                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-                                                                                    {(page.content.selectedPlaces || []).map((sp: any, i: number) => {
-                                                                                        const imgs = placeImgs(sp.place);
-                                                                                        return (
-                                                                                            <div key={i} style={{ background: 'white', borderRadius: '10px', overflow: 'hidden', border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-                                                                                                <div style={{ display: 'grid', gridTemplateColumns: imgs.length >= 2 ? 'repeat(2, 68px)' : '68px', gridTemplateRows: imgs.length > 2 ? 'repeat(2, 68px)' : '68px', gap: '0' }}>
-                                                                                                    {imgs.slice(0, 4).map((src, j) => (
-                                                                                                        <img key={j} src={src} alt="" style={{ width: '68px', height: '68px', objectFit: 'cover' }} />
-                                                                                                    ))}
-                                                                                                </div>
-                                                                                                <div style={{ padding: '10px' }}>
-                                                                                                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#111827', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                                                        {sp.place?.name || sp.place?.placeName || 'Unknown'}
-                                                                                                    </div>
-                                                                                                    <div style={{ fontSize: '10px', color: '#6B7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                                                        <span>📍</span>
-                                                                                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sp.district}</span>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        );
-                                                                                    })}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                        {(page.content?.selectedHotels || []).length > 0 && (
-                                                                            <div style={{ marginBottom: '20px' }}>
-                                                                                <SectionTitle color="#F59E0B">Services & Accommodations</SectionTitle>
-                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                                                    {(page.content.selectedHotels || []).map((sh: any, i: number) => {
-                                                                                        const imgs = svcImgs(sh.hotel);
-                                                                                        const theme = svcColors[sh.type] || svcColors.hotel;
-                                                                                        return (
-                                                                                            <div key={i} style={{ display: 'flex', gap: '10px', background: theme.bg, padding: '10px', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
-                                                                                                {imgs[0] && (
-                                                                                                    <img src={imgs[0]} alt="" style={{ width: '70px', height: '64px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />
-                                                                                                )}
-                                                                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                                                                                                        <div style={{ padding: '2px 8px', borderRadius: '4px', background: theme.badge, color: 'white', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>
-                                                                                                            {sh.type === 'hotel' ? '🏨 Hotel' : sh.type === 'transport' ? '🚗 Transport' : '🎯 Activity'}
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                    <div style={{ fontSize: '12px', fontWeight: 700, color: theme.text, marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                                                        {sh.hotel?.name || sh.hotel?.serviceName || 'Service'}
-                                                                                                    </div>
-                                                                                                    <div style={{ fontSize: '10px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {sh.district}</div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        );
-                                                                                    })}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                        {page.content?.remarks && (
-                                                                            <div>
-                                                                                <SectionTitle color="#EC4899">Additional Notes</SectionTitle>
-                                                                                <div style={{ fontSize: '11px', lineHeight: 1.5, color: '#6B7280', background: '#FDF2F8', padding: '12px', borderRadius: '8px', border: '1px solid #FBCFE8', fontStyle: 'italic' }}>
-                                                                                    {page.content.remarks}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </PageShell>
-                                                            </div>
-                                                        );
-                                                    }
-
-                                                    if (page.type === 'cost') {
-                                                        const costData = page.content || {};
-                                                        const reportCostData = reportData.cost || {};
-                                                        const totalAmount = costData.totalAmount || reportCostData.totalAmount || 0;
-                                                        const promoCode = costData.promoCode || reportCostData.promoCode || '';
-                                                        const promoCodeDiscount = costData.promoCodeDiscount || reportCostData.promoCodeDiscount || 0;
-                                                        const finalAmount = costData.finalAmount || reportCostData.finalAmount || totalAmount;
-
-                                                        return (
-                                                            <div key={`cost-${idx}`} style={{ marginBottom: '30px' }}>
-                                                                <PageShell>
-                                                                    {/* Hero Section */}
-                                                                    <div style={{
-                                                                        height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
-                                                                        background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 25%, #14b8a6 75%, #5eead4 100%)',
-                                                                    }}>
-                                                                        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-                                                                        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-                                                                        <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                                                                <div style={{
-                                                                                    width: '40px', height: '40px', borderRadius: '50%',
-                                                                                    background: 'rgba(255,255,255,0.15)', display: 'flex',
-                                                                                    alignItems: 'center', justifyContent: 'center', fontSize: '18px'
-                                                                                }}>💰</div>
-                                                                                <div>
-                                                                                    <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Cost Summary</div>
-                                                                                    <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
-                                                                                        Package pricing & discounts
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* Content */}
-                                                                    <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
-                                                                        {/* Cost Breakdown Card */}
-                                                                        <div style={{
-                                                                            background: 'white', borderRadius: '16px', padding: '28px',
-                                                                            boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid #f1f5f9',
-                                                                            marginBottom: '24px'
-                                                                        }}>
-                                                                            <div style={{ marginBottom: '20px' }}>
-                                                                                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '16px' }}>Package Details</div>
-                                                                            </div>
-
-                                                                            {/* Subtotal */}
-                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
-                                                                                <span style={{ fontSize: '13px', color: '#64748b' }}>Tour Package Amount</span>
-                                                                                <span style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>LKR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                                            </div>
-
-                                                                            {/* Promo Code Discount */}
-                                                                            {promoCodeDiscount > 0 && (
-                                                                                <>
-                                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
-                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                            <span style={{ fontSize: '13px', color: '#64748b' }}>Promo Code Discount</span>
-                                                                                            {promoCode && (
-                                                                                                <span style={{
-                                                                                                    fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
-                                                                                                    background: '#dcfce7', color: '#15803d', fontWeight: 600
-                                                                                                }}>
-                                                                                                    {promoCode}
-                                                                                                </span>
-                                                                                            )}
-                                                                                        </div>
-                                                                                        <span style={{ fontSize: '14px', fontWeight: 600, color: '#dc2626' }}>-LKR {promoCodeDiscount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                                                                    </div>
-                                                                                </>
-                                                                            )}
-
-                                                                            {/* Final Amount */}
-                                                                            <div style={{
-                                                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                                                marginTop: '12px',
-                                                                                background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-                                                                                margin: '16px -28px -28px',
-                                                                                padding: '20px 28px',
-                                                                                borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px'
-                                                                            }}>
-                                                                                <span style={{ fontSize: '16px', fontWeight: 700, color: '#15803d' }}>Total Amount</span>
-                                                                                <span style={{ fontSize: '20px', fontWeight: 700, color: '#15803d' }}>
-                                                                                    LKR {finalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {/* Payment Terms */}
-                                                                        <div style={{
-                                                                            background: 'white', borderRadius: '12px', padding: '20px',
-                                                                            boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
-                                                                        }}>
-                                                                            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '12px' }}>💳 Payment Information</div>
-                                                                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.6 }}>
-                                                                                • 40% advance payment required to confirm booking<br />
-                                                                                • Balance 60% due 30 days before tour commencement<br />
-                                                                                • All amounts are in Sri Lankan Rupees (LKR)
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </PageShell>
-                                                            </div>
-                                                        );
-                                                    }
-
-                                                    if (page.type === 'policies') {
-                                                        const policiesData = page.content || {};
-                                                        const reportPoliciesData = reportData.policies || {};
-                                                        const specialRemark = policiesData.specialRemark || reportPoliciesData.specialRemark || '';
-                                                        const bookingPolicy = policiesData.bookingPolicy || reportPoliciesData.bookingPolicy || '';
-                                                        const cancellationPolicy = policiesData.cancellationPolicy || reportPoliciesData.cancellationPolicy || '';
-
-                                                        return (
-                                                            <div key={`policies-${idx}`} style={{ marginBottom: '30px' }}>
-                                                                <PageShell>
-                                                                    {/* Hero Section */}
-                                                                    <div style={{
-                                                                        height: '120px', flexShrink: 0, position: 'relative', overflow: 'hidden',
-                                                                        background: 'linear-gradient(135deg, #7c2d12 0%, #dc2626 25%, #ef4444 75%, #fca5a5 100%)',
-                                                                    }}>
-                                                                        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-                                                                        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-                                                                        <div style={{ position: 'absolute', top: '24px', left: '36px', right: '36px' }}>
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                                                                                <div style={{
-                                                                                    width: '40px', height: '40px', borderRadius: '50%',
-                                                                                    background: 'rgba(255,255,255,0.15)', display: 'flex',
-                                                                                    alignItems: 'center', justifyContent: 'center', fontSize: '18px'
-                                                                                }}>📋</div>
-                                                                                <div>
-                                                                                    <div style={{ color: 'white', fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>Terms & Policies</div>
-                                                                                    <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
-                                                                                        Important information & conditions
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {/* Content */}
-                                                                    <div style={{ padding: '32px 48px', flex: 1, background: '#fafafa' }}>
-                                                                        {/* Special Remark */}
-                                                                        {specialRemark && (
-                                                                            <div style={{
-                                                                                background: 'white', borderRadius: '12px', padding: '20px',
-                                                                                boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-                                                                                marginBottom: '20px'
-                                                                            }}>
-                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                                                                    <div style={{ fontSize: '16px' }}>⚡</div>
-                                                                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Important Notice</div>
-                                                                                </div>
-                                                                                <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.6, padding: '12px', background: '#fef3c7', borderRadius: '8px', border: '1px solid #fbbf24' }}>
-                                                                                    {specialRemark}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-
-                                                                        {/* Booking Policy */}
-                                                                        {bookingPolicy && (
-                                                                            <div style={{
-                                                                                background: 'white', borderRadius: '12px', padding: '20px',
-                                                                                boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-                                                                                marginBottom: '20px'
-                                                                            }}>
-                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                                                                    <div style={{ fontSize: '16px' }}>📅</div>
-                                                                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Booking Policy</div>
-                                                                                </div>
-                                                                                <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
-                                                                                    {bookingPolicy}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-
-                                                                        {/* Cancellation Policy */}
-                                                                        {cancellationPolicy && (
-                                                                            <div style={{
-                                                                                background: 'white', borderRadius: '12px', padding: '20px',
-                                                                                boxShadow: '0 4px 16px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9'
-                                                                            }}>
-                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                                                                    <div style={{ fontSize: '16px' }}>❌</div>
-                                                                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Cancellation Policy</div>
-                                                                                </div>
-                                                                                <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.7 }}>
-                                                                                    {cancellationPolicy}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </PageShell>
-                                                            </div>
-                                                        );
-                                                    }
-
-                                                    return null;
-                                                }).filter(Boolean)}
-                                            </div>
-                                        );
-                                    })()}
-                                    </div>
-                                </div>
-                            </section>
-
-                            <aside className="template-customize-panel template-customize-panel--right">
-                                <div className="template-customize-panel-card">
-                                    <h3>Customization Options</h3>
-                                    <div style={{ padding: '16px' }}>
-                                        <div className="template-customize-control" style={{ marginBottom: '20px' }}>
-                                            <label style={{ 
-                                                display: 'block', 
-                                                fontSize: '12px', 
-                                                fontWeight: '600', 
-                                                color: '#6b7280',
-                                                marginBottom: '8px'
-                                            }}>
-                                                Template Colors
-                                            </label>
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <input
-                                                    type="color"
-                                                    defaultValue="#3b82f6"
-                                                    style={{ 
-                                                        width: '40px', 
-                                                        height: '40px', 
-                                                        border: 'none', 
-                                                        borderRadius: '8px',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                />
-                                                <input
-                                                    type="color"
-                                                    defaultValue="#10b981"
-                                                    style={{ 
-                                                        width: '40px', 
-                                                        height: '40px', 
-                                                        border: 'none', 
-                                                        borderRadius: '8px',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                />
-                                                <input
-                                                    type="color"
-                                                    defaultValue="#f59e0b"
-                                                    style={{ 
-                                                        width: '40px', 
-                                                        height: '40px', 
-                                                        border: 'none', 
-                                                        borderRadius: '8px',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="template-customize-control" style={{ marginBottom: '20px' }}>
-                                            <label style={{ 
-                                                display: 'block', 
-                                                fontSize: '12px', 
-                                                fontWeight: '600', 
-                                                color: '#6b7280',
-                                                marginBottom: '8px'
-                                            }}>
-                                                Font Family
-                                            </label>
-                                            <select style={{
-                                                width: '100%',
-                                                padding: '8px 12px',
-                                                border: '1px solid #e5e7eb',
-                                                borderRadius: '8px',
-                                                fontSize: '14px',
-                                                background: 'white'
-                                            }}>
-                                                <option>Poppins</option>
-                                                <option>Inter</option>
-                                                <option>Roboto</option>
-                                                <option>Open Sans</option>
-                                            </select>
-                                        </div>
-
+                        <aside className="template-customize-panel template-customize-panel--right">
+                            <div className="template-customize-panel-card">
+                                <h3>Edit selected</h3>
+                                {selectedElement && editableReportData.pages?.[selectedPageIndex]?.type === 'template' ? (
+                                    <div className="template-customize-controls">
                                         <div className="template-customize-control">
-                                            <label style={{ 
-                                                display: 'block', 
-                                                fontSize: '12px', 
-                                                fontWeight: '600', 
-                                                color: '#6b7280',
-                                                marginBottom: '8px'
-                                            }}>
-                                                Logo Upload
-                                            </label>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '8px 12px',
-                                                    border: '1px solid #e5e7eb',
-                                                    borderRadius: '8px',
-                                                    fontSize: '14px',
-                                                    background: 'white'
-                                                }}
-                                            />
+                                            <label>Position</label>
+                                            <div className="template-customize-position">
+                                                <span>X: {Math.round(selectedElement.x ?? 0)}</span>
+                                                <span>Y: {Math.round(selectedElement.y ?? 0)}</span>
+                                            </div>
                                         </div>
+                                        {selectedElement.type === 'text' && (
+                                            <>
+                                                <div className="template-customize-control">
+                                                    <label>Text</label>
+                                                    <textarea rows={4} className="template-customize-textarea" value={(selectedElement as TextElement).content ?? ''} onChange={handleTextContentChange} />
+                                                </div>
+                                                <div className="template-customize-control">
+                                                    <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Text color</label>
+                                                    <input type="color" value={(selectedElement as TextElement).color ?? '#111827'} onChange={handleColorChange} />
+                                                </div>
+                                            </>
+                                        )}
+                                        {selectedElement.type === 'shape' && (
+                                            <div className="template-customize-control">
+                                                <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Fill color</label>
+                                                <input type="color" value={(selectedElement as ShapeElement).fill ?? '#ffffff'} onChange={handleFillChange} />
+                                            </div>
+                                        )}
+                                        {selectedElement.type !== 'text' && selectedElement.type !== 'shape' && (
+                                            <p className="template-customize-hint">Drag elements on the canvas to reposition them.</p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="template-customize-hint">
+                                        {editableReportData.pages?.[selectedPageIndex]?.type === 'template'
+                                            ? 'Select an element from the canvas or the layer list to edit.'
+                                            : 'Template cover pages can be customized. Select a cover page to edit elements.'}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="template-customize-panel-card">
+                                <h3>Report Info</h3>
+                                <div style={{ padding: '8px 0' }}>
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>Customer</label>
+                                        <div style={{ fontSize: '13px', fontWeight: '500', color: '#111827' }}>{selectedReport.customerName}</div>
+                                    </div>
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>Email</label>
+                                        <div style={{ fontSize: '13px', fontWeight: '500', color: '#111827' }}>{selectedReport.customerEmail}</div>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>Created</label>
+                                        <div style={{ fontSize: '13px', fontWeight: '500', color: '#111827' }}>{formatDate(selectedReport.createdAt)}</div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div className="template-customize-panel-card template-customize-panel-footer">
-                                    <button 
-                                        type="button" 
-                                        className="template-customize-close" 
-                                        onClick={handleCloseCustomizeModal}
-                                    >
-                                        <CloseRoundedIcon fontSize="small" />
-                                        Exit customization
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn--orange"
-                                        onClick={handleSaveTemplate}
-                                    >
-                                        <SaveRoundedIcon fontSize="small" />
-                                        Save changes
-                                    </button>
-                                </div>
-                            </aside>
-                        </main>
-                    </div>
+                            <div className="template-customize-panel-card template-customize-panel-footer">
+                                <button type="button" className="template-customize-close" onClick={handleCloseCustomizeModal}>
+                                    <CloseRoundedIcon fontSize="small" />
+                                    Exit customization
+                                </button>
+                                <button type="button" className="btn btn--orange" onClick={handleSaveReport} disabled={isSaving}>
+                                    <SaveRoundedIcon fontSize="small" />
+                                    {isSaving ? "Saving..." : "Save changes"}
+                                </button>
+                            </div>
+                        </aside>
+                    </main>
+                </div>
                 </div>
             )}
         </Navbar>
