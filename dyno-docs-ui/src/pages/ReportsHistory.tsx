@@ -1134,75 +1134,163 @@ export default function ReportsHistory() {
                             <section className="template-customize-canvas">
                                 <div className="template-customize-canvas-scroll">
                                     <div className="template-customize-canvas-wrapper">
-                                        <div
-                                            className="template-customize-canvas-stage"
-                                            style={{ 
-                                                width: '595px', 
-                                                height: '842px', 
-                                                background: '#fff',
-                                                margin: '20px auto',
-                                                border: '1px solid #e5e7eb',
-                                                borderRadius: '8px',
-                                                padding: '20px',
-                                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                            }}
-                                        >
-                                            <div style={{ 
-                                                fontSize: '24px', 
-                                                fontWeight: '700', 
-                                                marginBottom: '20px',
-                                                color: '#111827',
-                                                textAlign: 'center'
-                                            }}>
-                                                Template Preview
-                                            </div>
-                                            <div style={{ 
-                                                fontSize: '16px', 
-                                                color: '#6b7280',
-                                                textAlign: 'center',
-                                                marginBottom: '40px'
-                                            }}>
-                                                Report for {selectedReport.customerName}
-                                            </div>
-                                            
-                                            {/* Sample template elements */}
-                                            <div style={{
-                                                background: '#f8fafc',
-                                                padding: '20px',
-                                                borderRadius: '8px',
-                                                marginBottom: '20px'
-                                            }}>
-                                                <h3 style={{ 
-                                                    fontSize: '18px', 
-                                                    fontWeight: '600', 
-                                                    marginBottom: '12px',
-                                                    color: '#1e293b' 
-                                                }}>
-                                                    Report Content
-                                                </h3>
-                                                <div style={{ 
-                                                    fontSize: '14px', 
-                                                    lineHeight: '1.6', 
-                                                    color: '#475569',
-                                                    whiteSpace: 'pre-wrap'
-                                                }}>
-                                                    {selectedReport.generatedReport.substring(0, 500)}...
-                                                </div>
-                                            </div>
+                                    {(() => {
+                                        let reportData: any = null;
+                                        try {
+                                            reportData = JSON.parse(selectedReport.generatedReport);
+                                        } catch (e) {
+                                            console.error('Failed to parse report data:', e);
+                                        }
 
+                                        if (!reportData) {
+                                            return (
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    height: '400px',
+                                                    color: '#9ca3af',
+                                                    fontSize: '16px'
+                                                }}>
+                                                    ⚠️ Failed to load report data
+                                                </div>
+                                            );
+                                        }
+
+                                        const getImgSrc = (raw: any): string => {
+                                            const s = typeof raw === 'string' ? raw : raw?.url ?? raw?.src ?? raw?.path ?? '';
+                                            if (!s) return '';
+                                            if (s.startsWith('data:')) return s;
+                                            if (s.length > 200 && /^[A-Za-z0-9+/]+=*$/.test(s)) return `data:image/jpeg;base64,${s}`;
+                                            return s;
+                                        };
+
+                                        const PageShell = ({ children }: { children: React.ReactNode }) => (
+                                            <div style={{
+                                                width: '595px',
+                                                height: '842px',
+                                                background: '#FAFAFA',
+                                                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                                                fontFamily: '"Inter", "Segoe UI", Arial, sans-serif',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                overflow: 'hidden',
+                                                borderRadius: '8px',
+                                                margin: '20px auto'
+                                            }}>
+                                                {children}
+                                            </div>
+                                        );
+
+                                        const SectionTitle = ({ color, children }: { color: string; children: React.ReactNode }) => (
                                             <div style={{
                                                 display: 'flex',
-                                                justifyContent: 'center',
                                                 alignItems: 'center',
-                                                height: '200px',
-                                                border: '2px dashed #e5e7eb',
-                                                borderRadius: '8px',
-                                                color: '#9ca3af',
-                                                fontSize: '14px'
+                                                gap: '8px',
+                                                marginBottom: '10px',
                                             }}>
-                                                Template customization tools will be added here
+                                                <div style={{ width: '3px', height: '16px', background: color, borderRadius: '2px', flexShrink: 0 }} />
+                                                <div style={{ fontSize: '10px', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{children}</div>
                                             </div>
-                                        </div>
+                                        );
+
+                                        return (
+                                            <div style={{ padding: '20px 0' }}>
+                                                {reportData.pages?.map((page: any, idx: number) => {
+                                                    if (page.type === 'template') {
+                                                        return (
+                                                            <div key={`tpl-${idx}`} style={{ marginBottom: '30px' }}>
+                                                                <PageShell>
+                                                                    <div style={{ width: '595px', height: '842px', position: 'relative' }}>
+                                                                        {page.content?.elements?.map((el: any, i: number) => {
+                                                                            if (el.type === 'text') {
+                                                                                return (
+                                                                                    <div key={i} style={{
+                                                                                        position: 'absolute',
+                                                                                        left: `${el.x ?? 0}px`,
+                                                                                        top: `${el.y ?? 0}px`,
+                                                                                        width: el.width ? `${el.width}px` : 'auto',
+                                                                                        fontSize: `${el.fontSize ?? 14}px`,
+                                                                                        fontFamily: el.fontFamily ?? 'Arial',
+                                                                                        fontWeight: el.fontWeight ?? 400,
+                                                                                        color: el.color ?? '#000',
+                                                                                        lineHeight: el.lineHeight ?? 1.4,
+                                                                                    }}>
+                                                                                        {el.content}
+                                                                                    </div>
+                                                                                );
+                                                                            }
+                                                                            if (el.type === 'shape' && el.shape === 'rectangle') {
+                                                                                return (
+                                                                                    <div key={i} style={{
+                                                                                        position: 'absolute',
+                                                                                        left: `${el.x ?? 0}px`,
+                                                                                        top: `${el.y ?? 0}px`,
+                                                                                        width: `${el.width ?? 100}px`,
+                                                                                        height: `${el.height ?? 100}px`,
+                                                                                        background: el.fill ?? 'transparent',
+                                                                                        borderRadius: `${el.borderRadius ?? 0}px`,
+                                                                                    }} />
+                                                                                );
+                                                                            }
+                                                                            if (el.type === 'image') {
+                                                                                return (
+                                                                                    <img key={i} src={getImgSrc(el.src)} alt="" style={{
+                                                                                        position: 'absolute',
+                                                                                        left: `${el.x ?? 0}px`,
+                                                                                        top: `${el.y ?? 0}px`,
+                                                                                        width: `${el.width ?? 100}px`,
+                                                                                        height: `${el.height ?? 100}px`,
+                                                                                        objectFit: 'cover',
+                                                                                        borderRadius: `${el.borderRadius ?? 0}px`,
+                                                                                    }} />
+                                                                                );
+                                                                            }
+                                                                            return null;
+                                                                        })}
+                                                                    </div>
+                                                                </PageShell>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    if (page.type === 'customerInfo') {
+                                                        const metadata = reportData.metadata || page.content;
+                                                        const customerInitials = metadata.customerName?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'N/A';
+                                                        
+                                                        return (
+                                                            <div key={`info-${idx}`} style={{ marginBottom: '30px' }}>
+                                                                <PageShell>
+                                                                    <div style={{ height: '170px', background: 'linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%)', position: 'relative', overflow: 'hidden' }}>
+                                                                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                                                            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 700, color: '#0284C7', margin: '0 auto 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+                                                                                {customerInitials}
+                                                                            </div>
+                                                                            <div style={{ fontSize: '20px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>Booking Information</div>
+                                                                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>Complete travel itinerary details</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div style={{ padding: '32px 36px', fontSize: '12px' }}>
+                                                                        <div style={{ marginBottom: '20px' }}>
+                                                                            <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: '#0284C7' }}>Customer Details</div>
+                                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                                                                                <div>Name: {metadata.customerName}</div>
+                                                                                <div>Email: {metadata.customerEmail}</div>
+                                                                                <div>Country: {metadata.country}</div>
+                                                                                <div>Mobile: {metadata.mobileNo}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </PageShell>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return null;
+                                                }).filter(Boolean)}
+                                            </div>
+                                        );
+                                    })()}
                                     </div>
                                 </div>
                             </section>
