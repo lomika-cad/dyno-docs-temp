@@ -447,11 +447,33 @@ export default function ReportsHistory() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+        img { 
+            max-width: 100%; 
+            height: auto; 
+            image-rendering: auto; 
+            -webkit-filter: blur(0px);
+            filter: blur(0px);
+        }
         .page { width: 595px; min-height: 842px; background: white; margin: 20px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1); page-break-after: always; overflow: hidden; }
         .page:last-child { page-break-after: auto; }
         @media print {
             body { background: white; }
             .page { margin: 0; box-shadow: none; page-break-after: always; }
+            img { 
+                display: block !important; 
+                visibility: visible !important; 
+                opacity: 1 !important;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            * {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            div {
+                background-attachment: local !important;
+            }
         }
         .section-title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
         .section-title-bar { width: 3px; height: 16px; border-radius: 2px; }
@@ -481,7 +503,7 @@ export default function ReportsHistory() {
                         }
                     } else if (el.type === 'image') {
                         const imgSrc = getImgSrc(el.src);
-                        html += `<img src="${imgSrc}" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px;" />`;
+                        html += `<img src="${imgSrc}" alt="" crossorigin="anonymous" style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; width: ${el.width || 100}px; height: ${el.height || 100}px; object-fit: cover; border-radius: ${el.borderRadius || 0}px; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" />`;
                     } else if (el.type === 'pill') {
                         html += `<div style="position: absolute; left: ${el.x || 0}px; top: ${el.y || 0}px; padding: 14px 18px; border-radius: 18px; background: ${el.colors?.bg || '#ffffff'}; color: ${el.colors?.text || '#111827'}; border: 1px solid ${(el.colors?.text || '#111827')}30; display: flex; flex-direction: column; gap: 4px; min-width: 130px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);"><span style="font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;">${el.label || ''}</span><span style="font-size: 16px; font-weight: 600;">${el.value || ''}</span></div>`;
                     }
@@ -528,7 +550,7 @@ export default function ReportsHistory() {
     <div style="height: 130px; background: linear-gradient(135deg, #1E293B 0%, #334155 100%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden;">
         ${heroImgs.length > 0 ? `
         <div style="position: absolute; inset: 0; display: flex;">
-            ${heroImgs.slice(0, 4).map((img: string) => `<div style="flex: 1; position: relative; overflow: hidden;"><img src="${img}" style="width: 100%; height: 100%; object-fit: cover;" /><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.3);"></div></div>`).join('')}
+            ${heroImgs.slice(0, 4).map((img: string) => `<div style="flex: 1; position: relative; overflow: hidden;"><img src="${img}" alt="" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" /><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.3);"></div></div>`).join('')}
         </div>
         ` : ''}
         <div style="text-align: center; position: relative; z-index: 10;">
@@ -559,7 +581,7 @@ export default function ReportsHistory() {
                 const imgs = placeImgs(sp.place);
                 return `
                 <div style="background: white; border-radius: 10px; border: 1px solid #E5E7EB; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                    ${imgs[0] ? `<div style="height: 60px; overflow: hidden;"><img src="${imgs[0]}" style="width: 100%; height: 100%; object-fit: cover;" /></div>` : ''}
+                    ${imgs[0] ? `<div style="height: 60px; overflow: hidden;"><img src="${imgs[0]}" alt="" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" /></div>` : ''}
                     <div style="padding: 10px;">
                         <div style="font-size: 12px; font-weight: 700; color: #111827;">${sp.place?.name || sp.place?.placeName || 'Unknown'}</div>
                         <div style="font-size: 10px; color: #6B7280;">📍 ${sp.district}</div>
@@ -576,7 +598,7 @@ export default function ReportsHistory() {
                 const theme = svcColors[sh.type] || svcColors.hotel;
                 return `
                 <div style="display: flex; gap: 10px; background: ${theme.bg}; padding: 10px; border-radius: 8px; border: 1px solid ${theme.border};">
-                    ${imgs[0] ? `<img src="${imgs[0]}" style="width: 60px; height: 50px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" />` : ''}
+                    ${imgs[0] ? `<img src="${imgs[0]}" alt="" crossorigin="anonymous" style="width: 60px; height: 50px; border-radius: 6px; object-fit: cover; flex-shrink: 0; display: block !important; visibility: visible !important; opacity: 1 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;" />` : ''}
                     <div style="flex: 1; min-width: 0;">
                         <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                             <div style="padding: 2px 8px; border-radius: 4px; background: ${theme.badge}; color: white; font-size: 8px; font-weight: 700; text-transform: uppercase;">
@@ -697,11 +719,53 @@ export default function ReportsHistory() {
         if (printWindow) {
             printWindow.document.write(html);
             printWindow.document.close();
-            setTimeout(() => {
-                printWindow.print();
-            }, 500);
+            
+            // Wait for images to load before printing
+            printWindow.onload = () => {
+                const images = printWindow.document.images;
+                let loadedImages = 0;
+                const totalImages = images.length;
+                
+                if (totalImages === 0) {
+                    // No images to load, print immediately
+                    setTimeout(() => {
+                        printWindow.print();
+                    }, 500);
+                    return;
+                }
+                
+                const checkAllImagesLoaded = () => {
+                    loadedImages++;
+                    if (loadedImages === totalImages) {
+                        setTimeout(() => {
+                            printWindow.print();
+                        }, 1000); // Extra delay to ensure rendering
+                    }
+                };
+                
+                // Add load event listeners to all images
+                Array.from(images).forEach((img) => {
+                    if (img.complete) {
+                        checkAllImagesLoaded();
+                    } else {
+                        img.onload = checkAllImagesLoaded;
+                        img.onerror = () => {
+                            console.warn('Image failed to load:', img.src);
+                            checkAllImagesLoaded();
+                        };
+                    }
+                });
+                
+                // Fallback timeout in case images take too long
+                setTimeout(() => {
+                    if (loadedImages < totalImages) {
+                        console.warn('Some images may not have loaded completely');
+                        printWindow.print();
+                    }
+                }, 5000);
+            };
         }
-        showSuccess("Print dialog opened. Save as PDF.");
+        showSuccess("Print dialog will open once images are loaded.");
         setExportDropdownOpen(null);
     };
 
