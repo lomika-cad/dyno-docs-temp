@@ -4,10 +4,14 @@ import "../styles/agencyData.css";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
+import PaletteRoundedIcon from "@mui/icons-material/PaletteRounded";
 
 import CircularProgress from '@mui/material/CircularProgress';
 import { getReports } from "../services/reports-api";
 import { showError } from "../components/Toast";
+import "../styles/templateCustomize.css";
 
 interface Report {
     id: string;
@@ -25,6 +29,7 @@ export default function ReportsHistory() {
     const [isLoading, setIsLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [customizeModalOpen, setCustomizeModalOpen] = useState(false);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
     const itemsPerPage = 10;
 
@@ -110,10 +115,20 @@ export default function ReportsHistory() {
     };
 
     const handleCustomizeTemplate = (report: Report) => {
-        // TODO: Implement template customization logic
-        console.log('Customizing template for report:', report.id);
-        // You can add navigation to a template customization page or open a modal
-        // Example: navigate(`/template/customize/${report.id}`);
+        setSelectedReport(report);
+        setCustomizeModalOpen(true);
+    };
+
+    const handleCloseCustomizeModal = () => {
+        setCustomizeModalOpen(false);
+        setSelectedReport(null);
+    };
+
+    const handleSaveTemplate = () => {
+        // TODO: Implement template save logic
+        console.log('Saving template for report:', selectedReport?.id);
+        // Add your save logic here
+        setCustomizeModalOpen(false);
     };
 
     return (
@@ -1001,6 +1016,322 @@ export default function ReportsHistory() {
                     </div>
                 );
             })()}
+
+            {/* Template Customize Modal */}
+            {customizeModalOpen && selectedReport && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: 9999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <div className="template-customize" style={{
+                        width: '100vw',
+                        height: '100vh',
+                        backgroundColor: 'white',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        <header className="template-customize-header">
+                            <div className="template-customize-title">
+                                <button 
+                                    type="button" 
+                                    className="template-customize-back" 
+                                    onClick={handleCloseCustomizeModal}
+                                >
+                                    <CloseRoundedIcon fontSize="small" />
+                                </button>
+                                <div>
+                                    <p>Template customization</p>
+                                    <h1>Report: {selectedReport.customerName}</h1>
+                                </div>
+                            </div>
+                            <div className="template-customize-actions">
+                                <div className="template-customize-badge">
+                                    <PaletteRoundedIcon fontSize="small" />
+                                    Customize Template
+                                </div>
+                                <button
+                                    type="button"
+                                    className="btn btn--orange"
+                                    onClick={handleSaveTemplate}
+                                >
+                                    <SaveRoundedIcon fontSize="small" />
+                                    Save changes
+                                </button>
+                            </div>
+                        </header>
+
+                        <main className="template-customize-content">
+                            <aside className="template-customize-panel template-customize-panel--left">
+                                <div className="template-customize-panel-card">
+                                    <h3>Report Information</h3>
+                                    <div style={{ padding: '16px' }}>
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <label style={{ 
+                                                display: 'block', 
+                                                fontSize: '12px', 
+                                                fontWeight: '600', 
+                                                color: '#6b7280',
+                                                marginBottom: '4px'
+                                            }}>
+                                                Customer Name
+                                            </label>
+                                            <div style={{ 
+                                                fontSize: '14px', 
+                                                fontWeight: '500', 
+                                                color: '#111827' 
+                                            }}>
+                                                {selectedReport.customerName}
+                                            </div>
+                                        </div>
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <label style={{ 
+                                                display: 'block', 
+                                                fontSize: '12px', 
+                                                fontWeight: '600', 
+                                                color: '#6b7280',
+                                                marginBottom: '4px'
+                                            }}>
+                                                Email
+                                            </label>
+                                            <div style={{ 
+                                                fontSize: '14px', 
+                                                fontWeight: '500', 
+                                                color: '#111827' 
+                                            }}>
+                                                {selectedReport.customerEmail}
+                                            </div>
+                                        </div>
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <label style={{ 
+                                                display: 'block', 
+                                                fontSize: '12px', 
+                                                fontWeight: '600', 
+                                                color: '#6b7280',
+                                                marginBottom: '4px'
+                                            }}>
+                                                Created
+                                            </label>
+                                            <div style={{ 
+                                                fontSize: '14px', 
+                                                fontWeight: '500', 
+                                                color: '#111827' 
+                                            }}>
+                                                {formatDate(selectedReport.createdAt)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </aside>
+
+                            <section className="template-customize-canvas">
+                                <div className="template-customize-canvas-scroll">
+                                    <div className="template-customize-canvas-wrapper">
+                                        <div
+                                            className="template-customize-canvas-stage"
+                                            style={{ 
+                                                width: '595px', 
+                                                height: '842px', 
+                                                background: '#fff',
+                                                margin: '20px auto',
+                                                border: '1px solid #e5e7eb',
+                                                borderRadius: '8px',
+                                                padding: '20px',
+                                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                            }}
+                                        >
+                                            <div style={{ 
+                                                fontSize: '24px', 
+                                                fontWeight: '700', 
+                                                marginBottom: '20px',
+                                                color: '#111827',
+                                                textAlign: 'center'
+                                            }}>
+                                                Template Preview
+                                            </div>
+                                            <div style={{ 
+                                                fontSize: '16px', 
+                                                color: '#6b7280',
+                                                textAlign: 'center',
+                                                marginBottom: '40px'
+                                            }}>
+                                                Report for {selectedReport.customerName}
+                                            </div>
+                                            
+                                            {/* Sample template elements */}
+                                            <div style={{
+                                                background: '#f8fafc',
+                                                padding: '20px',
+                                                borderRadius: '8px',
+                                                marginBottom: '20px'
+                                            }}>
+                                                <h3 style={{ 
+                                                    fontSize: '18px', 
+                                                    fontWeight: '600', 
+                                                    marginBottom: '12px',
+                                                    color: '#1e293b' 
+                                                }}>
+                                                    Report Content
+                                                </h3>
+                                                <div style={{ 
+                                                    fontSize: '14px', 
+                                                    lineHeight: '1.6', 
+                                                    color: '#475569',
+                                                    whiteSpace: 'pre-wrap'
+                                                }}>
+                                                    {selectedReport.generatedReport.substring(0, 500)}...
+                                                </div>
+                                            </div>
+
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                height: '200px',
+                                                border: '2px dashed #e5e7eb',
+                                                borderRadius: '8px',
+                                                color: '#9ca3af',
+                                                fontSize: '14px'
+                                            }}>
+                                                Template customization tools will be added here
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <aside className="template-customize-panel template-customize-panel--right">
+                                <div className="template-customize-panel-card">
+                                    <h3>Customization Options</h3>
+                                    <div style={{ padding: '16px' }}>
+                                        <div className="template-customize-control" style={{ marginBottom: '20px' }}>
+                                            <label style={{ 
+                                                display: 'block', 
+                                                fontSize: '12px', 
+                                                fontWeight: '600', 
+                                                color: '#6b7280',
+                                                marginBottom: '8px'
+                                            }}>
+                                                Template Colors
+                                            </label>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input
+                                                    type="color"
+                                                    defaultValue="#3b82f6"
+                                                    style={{ 
+                                                        width: '40px', 
+                                                        height: '40px', 
+                                                        border: 'none', 
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                />
+                                                <input
+                                                    type="color"
+                                                    defaultValue="#10b981"
+                                                    style={{ 
+                                                        width: '40px', 
+                                                        height: '40px', 
+                                                        border: 'none', 
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                />
+                                                <input
+                                                    type="color"
+                                                    defaultValue="#f59e0b"
+                                                    style={{ 
+                                                        width: '40px', 
+                                                        height: '40px', 
+                                                        border: 'none', 
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="template-customize-control" style={{ marginBottom: '20px' }}>
+                                            <label style={{ 
+                                                display: 'block', 
+                                                fontSize: '12px', 
+                                                fontWeight: '600', 
+                                                color: '#6b7280',
+                                                marginBottom: '8px'
+                                            }}>
+                                                Font Family
+                                            </label>
+                                            <select style={{
+                                                width: '100%',
+                                                padding: '8px 12px',
+                                                border: '1px solid #e5e7eb',
+                                                borderRadius: '8px',
+                                                fontSize: '14px',
+                                                background: 'white'
+                                            }}>
+                                                <option>Poppins</option>
+                                                <option>Inter</option>
+                                                <option>Roboto</option>
+                                                <option>Open Sans</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="template-customize-control">
+                                            <label style={{ 
+                                                display: 'block', 
+                                                fontSize: '12px', 
+                                                fontWeight: '600', 
+                                                color: '#6b7280',
+                                                marginBottom: '8px'
+                                            }}>
+                                                Logo Upload
+                                            </label>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '8px 12px',
+                                                    border: '1px solid #e5e7eb',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px',
+                                                    background: 'white'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="template-customize-panel-card template-customize-panel-footer">
+                                    <button 
+                                        type="button" 
+                                        className="template-customize-close" 
+                                        onClick={handleCloseCustomizeModal}
+                                    >
+                                        <CloseRoundedIcon fontSize="small" />
+                                        Exit customization
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn--orange"
+                                        onClick={handleSaveTemplate}
+                                    >
+                                        <SaveRoundedIcon fontSize="small" />
+                                        Save changes
+                                    </button>
+                                </div>
+                            </aside>
+                        </main>
+                    </div>
+                </div>
+            )}
         </Navbar>
     );
 }
