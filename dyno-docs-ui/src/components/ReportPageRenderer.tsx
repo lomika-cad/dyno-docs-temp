@@ -35,6 +35,15 @@ export interface ReportData {
         selectedRoutes?: string[];
         createdAt?: string;
         bookingGradientColor?: string;
+        dayHeaderColor?: string;
+        dayItineraryColor?: string;
+        dayPlacesColor?: string;
+        dayServicesColor?: string;
+        dayNotesColor?: string;
+        costHeaderColor?: string;
+        costTotalColor?: string;
+        policiesHeaderColor?: string;
+        textColor?: string;
     };
     cost?: {
         totalAmount?: number;
@@ -424,12 +433,20 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
 
     // Check if this is a continuation page
     const isContinuationPage = page.type === 'dayDetailContinued' || page.isOverflow;
+    
+    // Get colors from page content metadata or use defaults
+    const dayHeaderColor = page.content?.dayHeaderColor || '#1E293B';
+    const dayItineraryColor = page.content?.dayItineraryColor || '#8B5CF6';
+    const dayPlacesColor = page.content?.dayPlacesColor || '#10B981';
+    const dayServicesColor = page.content?.dayServicesColor || '#F59E0B';
+    const dayNotesColor = page.content?.dayNotesColor || '#EC4899';
+    const textColor = page.content?.textColor || '#374151';
 
     return (
         <PageShell scale={scale}>
             {/* Only show header on main day page, not continuation */}
             {!isContinuationPage && (
-                <div style={{ height: `${130 * scale}px`, background: '#1E293B', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ height: `${130 * scale}px`, background: heroImgs.length > 0 ? 'transparent' : `linear-gradient(135deg, ${dayHeaderColor} 0%, ${dayHeaderColor}dd 100%)`, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                     {heroImgs.length > 0 ? (
                         <div style={{ display: 'flex', height: '100%' }}>
                             {heroImgs.slice(0, 4).map((src, i) => (
@@ -443,7 +460,7 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
                         <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)' }} />
                     )}
                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', zIndex: 10 }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: `${56 * scale}px`, height: `${56 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', fontSize: `${20 * scale}px`, fontWeight: 700, color: '#1E293B', marginBottom: `${8 * scale}px`, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: `${56 * scale}px`, height: `${56 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', fontSize: `${20 * scale}px`, fontWeight: 700, color: dayHeaderColor, marginBottom: `${8 * scale}px`, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
                             {page.dayNumber}
                         </div>
                         <div style={{ fontSize: `${15 * scale}px`, fontWeight: 700, color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>{page.content?.selectedDay || 'Date TBD'}</div>
@@ -455,7 +472,7 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
             {isContinuationPage && (
                 <div style={{ 
                     height: `${60 * scale}px`, 
-                    background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)', 
+                    background: `linear-gradient(135deg, ${dayHeaderColor} 0%, ${dayHeaderColor}dd 100%)`, 
                     display: 'flex', 
                     alignItems: 'center', 
                     padding: `0 ${32 * scale}px`,
@@ -497,15 +514,15 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
             }}>
                 {page.content?.description && !isContinuationPage && (
                     <div style={{ marginBottom: `${20 * scale}px`, flexShrink: 0 }}>
-                        <SectionTitle color="#8B5CF6" scale={scale}>Daily Itinerary</SectionTitle>
-                        <div style={{ fontSize: `${12 * scale}px`, lineHeight: 1.6, color: '#374151', background: '#F9FAFB', padding: `${14 * scale}px`, borderRadius: `${8 * scale}px`, border: '1px solid #E5E7EB' }}>
+                        <SectionTitle color={dayItineraryColor} scale={scale}>Daily Itinerary</SectionTitle>
+                        <div style={{ fontSize: `${12 * scale}px`, lineHeight: 1.6, color: textColor, background: '#F9FAFB', padding: `${14 * scale}px`, borderRadius: `${8 * scale}px`, border: '1px solid #E5E7EB' }}>
                             {page.content.description}
                         </div>
                     </div>
                 )}
                 {(page.content?.selectedPlaces || []).length > 0 && (
                     <div style={{ marginBottom: `${20 * scale}px`, flexShrink: 0 }}>
-                        <SectionTitle color="#10B981" scale={scale}>
+                        <SectionTitle color={dayPlacesColor} scale={scale}>
                             {isContinuationPage ? 'More Visiting Places' : 'Visiting Places'}
                         </SectionTitle>
                         <div style={{ display: 'grid', gridTemplateColumns: `repeat(2, 1fr)`, gap: `${12 * scale}px` }}>
@@ -535,7 +552,7 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
                 )}
                 {(page.content?.selectedHotels || []).length > 0 && (
                     <div style={{ marginBottom: `${20 * scale}px`, flexShrink: 0 }}>
-                        <SectionTitle color="#F59E0B" scale={scale}>
+                        <SectionTitle color={dayServicesColor} scale={scale}>
                             {isContinuationPage ? 'More Services' : 'Services & Accommodations'}
                         </SectionTitle>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: `${8 * scale}px` }}>
@@ -566,7 +583,7 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
                 )}
                 {page.content?.remarks && (
                     <div style={{ flexShrink: 0 }}>
-                        <SectionTitle color="#EC4899" scale={scale}>Additional Notes</SectionTitle>
+                        <SectionTitle color={dayNotesColor} scale={scale}>Additional Notes</SectionTitle>
                         <div style={{ fontSize: `${10 * scale}px`, lineHeight: 1.5, color: '#6B7280', background: '#FDF2F8', padding: `${12 * scale}px`, borderRadius: `${8 * scale}px`, border: '1px solid #FBCFE8', fontStyle: 'italic' }}>
                             {page.content.remarks}
                         </div>
@@ -591,12 +608,16 @@ export const CostPageRenderer: React.FC<CostPageProps> = ({ page, reportData, sc
     const promoCode = costData.promoCode || reportCostData.promoCode || '';
     const promoCodeDiscount = costData.promoCodeDiscount || reportCostData.promoCodeDiscount || 0;
     const finalAmount = costData.finalAmount || reportCostData.finalAmount || totalAmount;
+    
+    const costHeaderColor = reportData.metadata?.costHeaderColor || page.content?.costHeaderColor || '#0f766e';
+    const costTotalColor = reportData.metadata?.costTotalColor || page.content?.costTotalColor || '#15803d';
+    const textColor = reportData.metadata?.textColor || page.content?.textColor || '#1e293b';
 
     return (
         <PageShell scale={scale}>
             <div style={{
                 height: `${120 * scale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden',
-                background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 25%, #14b8a6 75%, #5eead4 100%)',
+                background: `linear-gradient(135deg, ${costHeaderColor} 0%, ${costHeaderColor}dd 100%)`,
             }}>
                 <div style={{ position: 'absolute', top: `${-30 * scale}px`, right: `${-30 * scale}px`, width: `${120 * scale}px`, height: `${120 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
                 <div style={{ position: 'absolute', bottom: `${-20 * scale}px`, left: `${-20 * scale}px`, width: `${80 * scale}px`, height: `${80 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
@@ -624,12 +645,12 @@ export const CostPageRenderer: React.FC<CostPageProps> = ({ page, reportData, sc
                     marginBottom: `${24 * scale}px`
                 }}>
                     <div style={{ marginBottom: `${20 * scale}px` }}>
-                        <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: '#1e293b', marginBottom: `${16 * scale}px` }}>Package Details</div>
+                        <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: textColor, marginBottom: `${16 * scale}px` }}>Package Details</div>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: `${12 * scale}px 0`, borderBottom: '1px solid #f1f5f9' }}>
                         <span style={{ fontSize: `${13 * scale}px`, color: '#64748b' }}>Tour Package Amount</span>
-                        <span style={{ fontSize: `${14 * scale}px`, fontWeight: 600, color: '#1e293b' }}>LKR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span style={{ fontSize: `${14 * scale}px`, fontWeight: 600, color: textColor }}>LKR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
 
                     {promoCodeDiscount > 0 && (
@@ -652,13 +673,13 @@ export const CostPageRenderer: React.FC<CostPageProps> = ({ page, reportData, sc
                     <div style={{
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         marginTop: `${12 * scale}px`,
-                        background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                        background: `linear-gradient(135deg, ${costTotalColor}15 0%, ${costTotalColor}20 100%)`,
                         margin: `${16 * scale}px ${-28 * scale}px ${-28 * scale}px`,
                         padding: `${20 * scale}px ${28 * scale}px`,
                         borderBottomLeftRadius: `${16 * scale}px`, borderBottomRightRadius: `${16 * scale}px`
                     }}>
-                        <span style={{ fontSize: `${16 * scale}px`, fontWeight: 700, color: '#15803d' }}>Total Amount</span>
-                        <span style={{ fontSize: `${20 * scale}px`, fontWeight: 700, color: '#15803d' }}>
+                        <span style={{ fontSize: `${16 * scale}px`, fontWeight: 700, color: costTotalColor }}>Total Amount</span>
+                        <span style={{ fontSize: `${20 * scale}px`, fontWeight: 700, color: costTotalColor }}>
                             LKR {finalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                     </div>
@@ -693,12 +714,15 @@ export const PoliciesPageRenderer: React.FC<PoliciesPageProps> = ({ page, report
     const specialRemark = policiesData.specialRemark || reportPoliciesData.specialRemark || '';
     const bookingPolicy = policiesData.bookingPolicy || reportPoliciesData.bookingPolicy || '';
     const cancellationPolicy = policiesData.cancellationPolicy || reportPoliciesData.cancellationPolicy || '';
+    
+    const policiesHeaderColor = reportData.metadata?.policiesHeaderColor || page.content?.policiesHeaderColor || '#dc2626';
+    const textColor = reportData.metadata?.textColor || page.content?.textColor || '#1e293b';
 
     return (
         <PageShell scale={scale}>
             <div style={{
                 height: `${120 * scale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden',
-                background: 'linear-gradient(135deg, #7c2d12 0%, #dc2626 25%, #ef4444 75%, #fca5a5 100%)',
+                background: `linear-gradient(135deg, ${policiesHeaderColor} 0%, ${policiesHeaderColor}dd 100%)`,
             }}>
                 <div style={{ position: 'absolute', top: `${-30 * scale}px`, right: `${-30 * scale}px`, width: `${120 * scale}px`, height: `${120 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
                 <div style={{ position: 'absolute', bottom: `${-20 * scale}px`, left: `${-20 * scale}px`, width: `${80 * scale}px`, height: `${80 * scale}px`, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
@@ -728,7 +752,7 @@ export const PoliciesPageRenderer: React.FC<PoliciesPageProps> = ({ page, report
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: `${8 * scale}px`, marginBottom: `${12 * scale}px` }}>
                             <div style={{ fontSize: `${16 * scale}px` }}>⚡</div>
-                            <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: '#1e293b' }}>Important Notice</div>
+                            <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: textColor }}>Important Notice</div>
                         </div>
                         <div style={{ fontSize: `${12 * scale}px`, color: '#4b5563', lineHeight: 1.6, padding: `${12 * scale}px`, background: '#fef3c7', borderRadius: `${8 * scale}px`, border: '1px solid #fbbf24' }}>
                             {specialRemark}
@@ -744,7 +768,7 @@ export const PoliciesPageRenderer: React.FC<PoliciesPageProps> = ({ page, report
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: `${8 * scale}px`, marginBottom: `${12 * scale}px` }}>
                             <div style={{ fontSize: `${16 * scale}px` }}>📅</div>
-                            <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: '#1e293b' }}>Booking Policy</div>
+                            <div style={{ fontSize: `${14 * scale}px`, fontWeight: 700, color: textColor }}>Booking Policy</div>
                         </div>
                         <div style={{ fontSize: `${12 * scale}px`, color: '#4b5563', lineHeight: 1.7 }}>
                             {bookingPolicy}

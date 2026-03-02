@@ -90,7 +90,6 @@ export default function ReportsHistory() {
     const [selectedElementIndex, setSelectedElementIndex] = useState<number | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [canvasScale, setCanvasScale] = useState(1);
-    const [bookingGradientColor, setBookingGradientColor] = useState('#0284C7');
 
     // Drag state
     const dragRef = useRef<{
@@ -1441,6 +1440,66 @@ export default function ReportsHistory() {
                                                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', resize: 'vertical' }}
                                             />
                                         </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Header Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.dayHeaderColor || '#1E293B'} 
+                                                onChange={(e) => updatePageContent(selectedPageIndex, 'dayHeaderColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Itinerary Section Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.dayItineraryColor || '#8B5CF6'} 
+                                                onChange={(e) => updatePageContent(selectedPageIndex, 'dayItineraryColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Places Section Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.dayPlacesColor || '#10B981'} 
+                                                onChange={(e) => updatePageContent(selectedPageIndex, 'dayPlacesColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Services Section Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.dayServicesColor || '#F59E0B'} 
+                                                onChange={(e) => updatePageContent(selectedPageIndex, 'dayServicesColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Notes Section Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.dayNotesColor || '#EC4899'} 
+                                                onChange={(e) => updatePageContent(selectedPageIndex, 'dayNotesColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Text Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.pages?.[selectedPageIndex]?.content?.textColor || '#374151'} 
+                                                onChange={(e) => updatePageContent(selectedPageIndex, 'textColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
                                         <p className="template-customize-hint" style={{ marginTop: '8px', fontSize: '11px', color: '#6b7280' }}>
                                             💡 Places and services are displayed from the original report data.
                                         </p>
@@ -1480,6 +1539,36 @@ export default function ReportsHistory() {
                                                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
                                             />
                                         </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Header Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.costHeaderColor || '#0f766e'} 
+                                                onChange={(e) => updateMetadata('costHeaderColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Total Amount Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.costTotalColor || '#15803d'} 
+                                                onChange={(e) => updateMetadata('costTotalColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Text Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.textColor || '#1e293b'} 
+                                                onChange={(e) => updateMetadata('textColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
@@ -1514,6 +1603,26 @@ export default function ReportsHistory() {
                                                 value={editableReportData.policies?.cancellationPolicy || ''} 
                                                 onChange={(e) => updatePolicies('cancellationPolicy', e.target.value)}
                                                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', resize: 'vertical' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Header Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.policiesHeaderColor || '#dc2626'} 
+                                                onChange={(e) => updateMetadata('policiesHeaderColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
+                                            />
+                                        </div>
+                                        <div className="template-customize-control">
+                                            <label className="template-customize-color-label"><PaletteRoundedIcon fontSize="small" />Text Color</label>
+                                            <input 
+                                                type="color" 
+                                                className="template-customize-input" 
+                                                value={editableReportData.metadata?.textColor || '#1e293b'} 
+                                                onChange={(e) => updateMetadata('textColor', e.target.value)}
+                                                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px', height: '40px' }}
                                             />
                                         </div>
                                     </div>
