@@ -61,6 +61,7 @@ export default function ReportGeneration() {
         customerName: "",
         country: "",
         mobileNo: "",
+        email: "",
         transportationMode: "",
         numberOfPassengers: "",
         daysAndNights: "",
@@ -346,6 +347,7 @@ export default function ReportGeneration() {
                     formData.customerName.trim() !== "" &&
                     formData.country.trim() !== "" &&
                     formData.mobileNo.trim() !== "" &&
+                    formData.email.trim() !== "" &&
                     formData.numberOfPassengers.trim() !== "" &&
                     formData.daysAndNights.trim() !== ""
                 );
@@ -445,6 +447,7 @@ export default function ReportGeneration() {
                 customerName: "",
                 country: "",
                 mobileNo: "",
+                email: "",
                 transportationMode: "",
                 numberOfPassengers: "",
                 daysAndNights: "",
@@ -603,6 +606,19 @@ export default function ReportGeneration() {
                                             className="formField-input"
                                             placeholder="Enter customer mobile no"
                                             value={formData.mobileNo}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div className="formField">
+                                        <label className="formField-label">
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            className="formField-input"
+                                            placeholder="Enter customer email"
+                                            value={formData.email}
                                             onChange={handleInputChange}
                                         />
                                     </div>
@@ -2638,7 +2654,8 @@ ${bodyExtra}
                                         { icon: '👤', label: 'Full Name', value: formData.customerName },
                                         { icon: '🌍', label: 'Country', value: formData.country },
                                         { icon: '📱', label: 'Mobile', value: formData.mobileNo },
-                                        { icon: '🗓️', label: 'Duration', value: formData.daysAndNights },
+                                        { icon: '�', label: 'Email', value: formData.email },
+                                        { icon: '�🗓️', label: 'Duration', value: formData.daysAndNights },
                                         { icon: '👥', label: 'Passengers', value: formData.numberOfPassengers },
                                         ...(formData.transportationMode ? [{ icon: '🚌', label: 'Transport', value: formData.transportationMode }] : []),
                                     ];
