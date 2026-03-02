@@ -457,19 +457,47 @@ export default function ReportsHistory() {
         .page { width: 595px; min-height: 842px; background: white; margin: 20px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1); page-break-after: always; overflow: hidden; }
         .page:last-child { page-break-after: auto; }
         @media print {
-            body { background: white; }
-            .page { margin: 0; box-shadow: none; page-break-after: always; }
+            @page {
+                size: A4;
+                margin: 0;
+                padding: 0;
+            }
+            * {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                box-sizing: border-box;
+            }
+            html, body {
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                font-size: 12px !important;
+            }
+            .page { 
+                width: 210mm !important; 
+                height: 297mm !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+                box-shadow: none !important; 
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                overflow: hidden !important;
+                position: relative !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
             img { 
                 display: block !important; 
                 visibility: visible !important; 
                 opacity: 1 !important;
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
-            }
-            * {
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-                color-adjust: exact;
+                max-width: 100% !important;
+                height: auto !important;
             }
             div {
                 background-attachment: local !important;
