@@ -1257,11 +1257,22 @@ export default function ReportsHistory() {
                                                     if (page.type === 'customerInfo') {
                                                         const metadata = reportData.metadata || page.content;
                                                         const customerInitials = metadata.customerName?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'N/A';
+                                                        const infoFields = [
+                                                            { icon: '👤', label: 'Full Name', value: metadata.customerName },
+                                                            { icon: '🌍', label: 'Country', value: metadata.country },
+                                                            { icon: '📱', label: 'Mobile', value: metadata.mobileNo },
+                                                            { icon: '📧', label: 'Email', value: metadata.customerEmail },
+                                                            { icon: '🗓️', label: 'Duration', value: metadata.daysAndNights },
+                                                            { icon: '👥', label: 'Passengers', value: metadata.numberOfPassengers },
+                                                            ...(metadata.transportationMode ? [{ icon: '🚌', label: 'Transport', value: metadata.transportationMode }] : []),
+                                                        ];
                                                         
                                                         return (
                                                             <div key={`info-${idx}`} style={{ marginBottom: '30px' }}>
                                                                 <PageShell>
                                                                     <div style={{ height: '170px', background: 'linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%)', position: 'relative', overflow: 'hidden' }}>
+                                                                        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                                                                        <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(0,0,0,0.08)' }} />
                                                                         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
                                                                             <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 700, color: '#0284C7', margin: '0 auto 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
                                                                                 {customerInitials}
@@ -1270,14 +1281,48 @@ export default function ReportsHistory() {
                                                                             <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>Complete travel itinerary details</div>
                                                                         </div>
                                                                     </div>
-                                                                    <div style={{ padding: '32px 36px', fontSize: '12px' }}>
-                                                                        <div style={{ marginBottom: '20px' }}>
-                                                                            <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: '#0284C7' }}>Customer Details</div>
-                                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                                                                                <div>Name: {metadata.customerName}</div>
-                                                                                <div>Email: {metadata.customerEmail}</div>
-                                                                                <div>Country: {metadata.country}</div>
-                                                                                <div>Mobile: {metadata.mobileNo}</div>
+                                                                    <div style={{ padding: '32px 36px' }}>
+                                                                        <SectionTitle color="#0284C7">Customer Details</SectionTitle>
+                                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '28px' }}>
+                                                                            {infoFields.map((field, i) => (
+                                                                                <div key={i} style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                                                                        <span style={{ fontSize: '16px' }}>{field.icon}</span>
+                                                                                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{field.label}</span>
+                                                                                    </div>
+                                                                                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', paddingLeft: '24px' }}>{field.value || 'N/A'}</div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                        <SectionTitle color="#10B981">Selected Route</SectionTitle>
+                                                                        <div style={{ background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)', padding: '16px', borderRadius: '10px', border: '1px solid #A7F3D0', marginBottom: '28px' }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                                                                {(metadata.selectedRoutes || []).map((route: string, i: number) => (
+                                                                                    <div key={i}>
+                                                                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'white', borderRadius: '6px', fontSize: '12px', fontWeight: 600, color: '#047857', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+                                                                                            <span>📍</span>
+                                                                                            <span>{route}</span>
+                                                                                        </div>
+                                                                                        {i < (metadata.selectedRoutes || []).length - 1 && (
+                                                                                            <span style={{ margin: '0 4px', color: '#10B981', fontSize: '12px' }}>→</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                        <SectionTitle color="#F59E0B">Trip Summary</SectionTitle>
+                                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                                                                            <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)', borderRadius: '10px', border: '1px solid #FCD34D' }}>
+                                                                                <div style={{ fontSize: '22px', fontWeight: 700, color: '#B45309', marginBottom: '4px' }}>{reportData.pages?.filter((p: any) => p.type === 'dayDetail').length || 0}</div>
+                                                                                <div style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Days</div>
+                                                                            </div>
+                                                                            <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)', borderRadius: '10px', border: '1px solid #93C5FD' }}>
+                                                                                <div style={{ fontSize: '22px', fontWeight: 700, color: '#1E40AF', marginBottom: '4px' }}>{(metadata.selectedRoutes || []).length}</div>
+                                                                                <div style={{ fontSize: '10px', fontWeight: 700, color: '#1E3A8A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Locations</div>
+                                                                            </div>
+                                                                            <div style={{ textAlign: 'center', padding: '14px', background: 'linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%)', borderRadius: '10px', border: '1px solid #F87171' }}>
+                                                                                <div style={{ fontSize: '22px', fontWeight: 700, color: '#991B1B', marginBottom: '4px' }}>{metadata.numberOfPassengers || 0}</div>
+                                                                                <div style={{ fontSize: '10px', fontWeight: 700, color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Guests</div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
