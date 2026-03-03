@@ -10,6 +10,7 @@ namespace UI.Controllers.Operations;
 
 [ApiController]
 [Route("api/operations/promo-codes")]
+[Authorize]
 public class PromoCodeController(IMediator mediator) : ControllerBase
 {
     /// <summary>

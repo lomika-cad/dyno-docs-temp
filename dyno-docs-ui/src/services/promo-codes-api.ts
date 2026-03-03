@@ -65,9 +65,11 @@ export const getPromoCodes = async (token?: string): Promise<{ data: PromoCode[]
     }
 };
 
-export const getActivePromoCodes = async (): Promise<{ data: PromoCode[] }> => {
+export const getActivePromoCodes = async (token?: string): Promise<{ data: PromoCode[] }> => {
     try {
-        const response = await axios.get(`${API_URL}/active`);
+        const response = await axios.get(`${API_URL}/active`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         return response;
     } catch (error) {
         throw error;

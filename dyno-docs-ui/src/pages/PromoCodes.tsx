@@ -15,9 +15,6 @@ import {
     type CreatePromoCodePayload,
 } from "../services/promo-codes-api";
 
-// Mock token - replace with actual auth token from your auth system
-const DD_TOKEN = "mock-token";
-
 const ITEMS_PER_PAGE = 5;
 
 // Helper to format date for input
@@ -70,7 +67,7 @@ export default function PromoCodes() {
     const fetchPromoCodes = async () => {
         try {
             setIsLoading(true);
-            const response = await getPromoCodes(DD_TOKEN);
+            const response = await getPromoCodes(sessionStorage.getItem("dd_token") || "");
             setPromoCodes(response.data);
         } catch (error) {
             showError("Failed to fetch promo codes");
@@ -173,7 +170,7 @@ export default function PromoCodes() {
 
         try {
             setIsSubmitting(true);
-            await createPromoCode(formData);
+            await createPromoCode(formData, sessionStorage.getItem("dd_token") || "");
             showSuccess("Promo code created successfully!");
             handleClear();
             fetchPromoCodes();
@@ -195,7 +192,7 @@ export default function PromoCodes() {
 
         try {
             setIsDeleting(true);
-            await deletePromoCode(promoToDelete.id);
+            await deletePromoCode(promoToDelete.id, sessionStorage.getItem("dd_token") || "");
             showSuccess("Promo code deleted successfully");
             setDeleteModalOpen(false);
             setPromoToDelete(null);
