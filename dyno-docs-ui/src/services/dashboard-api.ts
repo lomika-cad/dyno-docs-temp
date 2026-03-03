@@ -28,3 +28,16 @@ export const getLastTwoWeeksReportStats = async (token: string, tenantId: string
         throw error;
     }
 };
+
+export const getBirthdayReminders = async (token: string, tenantId: string) => {
+  try {
+    const response = await axios.get(`${API_URL}/birthday-reminders/${tenantId}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

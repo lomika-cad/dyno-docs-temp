@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Grid } from "@mui/material";
 import { Users, NotepadText } from "lucide-react";
 import Navbar from "../layouts/Navbar";
-import { getLastTwoWeeksReportStats, getStats } from "../services/dashboard-api";
+import { getBirthdayReminders, getLastTwoWeeksReportStats, getStats } from "../services/dashboard-api";
 import { StatCard } from "../components/StatCard";
 import { BarChart } from "../components/BarChart";
 
@@ -19,41 +19,48 @@ export default function Dashboard() {
 
   const handleGetStats = async () => {
     if (!token || !tenantId) {
-      console.error("Token or Tenant ID not found in session storage.");
       return;
     }
     try {
       const stats = await getStats(token, tenantId);
       setStats(stats);
     } catch (error) {
-      console.error("Error fetching dashboard stats:", error);
+      setStats({});
     }
   }
 
   const handleGetLastTwoWeeksReportStats = async () => {
+    if (!token || !tenantId) {
+      return;
+    }
+
+    try {
+      const reportStats = await getLastTwoWeeksReportStats(token, tenantId);
+      if (Array.isArray(reportStats)) {
+        setChartData(reportStats);
+      }
+    } catch (error) {
+      setChartData([]);
+    }
+  }
+
+  const handleGetBirthdayReminders = async () => {
     if (!token || !tenantId) {
       console.error("Token or Tenant ID not found in session storage.");
       return;
     }
 
     try {
-      const reportStats = await getLastTwoWeeksReportStats(token, tenantId);
-      console.log("Last two weeks report stats:", reportStats);
-      
-      // Set the chart data
-      if (Array.isArray(reportStats)) {
-        setChartData(reportStats);
-      }
+      const reminders = await getBirthdayReminders(token, tenantId);
     } catch (error) {
-      console.error("Error fetching last two weeks report stats:", error);
-      // Set sample data if API fails for demonstration
-      setChartData([]);
+      console.error("Error fetching birthday reminders:", error);
     }
   }
 
   useEffect(() => {
     handleGetStats();
     handleGetLastTwoWeeksReportStats();
+    handleGetBirthdayReminders();
   }, []);
 
   return (

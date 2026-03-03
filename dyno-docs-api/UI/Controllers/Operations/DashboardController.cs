@@ -25,4 +25,12 @@ public class DashboardController (IMediator mediator) : ControllerBase
         var result = await mediator.Send(query, cancellationToken);
         return Ok(result);
     }
+    
+    [HttpGet("birthday-reminders/{tenantId}")]
+    public async Task<IActionResult> GetBirthdayReminders(Guid tenantId, CancellationToken cancellationToken)
+    {
+        var query = new GetBirthdayReminders() { TenantId = tenantId };
+        var result = await mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
 }
