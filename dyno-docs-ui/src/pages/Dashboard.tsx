@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Container, Grid } from "@mui/material";
 import { Users, NotepadText } from "lucide-react";
 import Navbar from "../layouts/Navbar";
-import { getStats } from "../services/dashboard-api";
+import { getLastTwoWeeksReportStats, getStats } from "../services/dashboard-api";
 import { StatCard } from "../components/StatCard";
 
 export default function Dashboard() {
@@ -23,8 +23,23 @@ export default function Dashboard() {
     }
   }
 
+  const handleGetLastTwoWeeksReportStats = async () => {
+    if (!token || !tenantId) {
+      console.error("Token or Tenant ID not found in session storage.");
+      return;
+    }
+
+    try {
+      const reportStats = await getLastTwoWeeksReportStats(token, tenantId);
+      console.log("Last two weeks report stats:", reportStats);
+    } catch (error) {
+      console.error("Error fetching last two weeks report stats:", error);
+    }
+  }
+
   useEffect(() => {
     handleGetStats();
+    handleGetLastTwoWeeksReportStats();
   }, []);
 
   return (

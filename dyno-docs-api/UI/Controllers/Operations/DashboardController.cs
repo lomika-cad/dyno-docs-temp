@@ -17,4 +17,12 @@ public class DashboardController (IMediator mediator) : ControllerBase
         var result = await mediator.Send(query, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("last-reports/{tenantId}")]
+    public async Task<IActionResult> GetLastReports(Guid tenantId, CancellationToken cancellationToken)
+    {
+        var query = new GetLastTwoWeeksReportCounts() { TenantId = tenantId };
+        var result = await mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
 }
