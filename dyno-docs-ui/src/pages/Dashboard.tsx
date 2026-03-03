@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Container, Grid } from "@mui/material";
+import { Box, Grid } from "@mui/material";
 import { Users, NotepadText } from "lucide-react";
 import Navbar from "../layouts/Navbar";
 import { getLastTwoWeeksReportStats, getStats } from "../services/dashboard-api";
@@ -45,6 +45,8 @@ export default function Dashboard() {
         setChartData(reportStats);
       }
     } catch (error) {
+      console.error("Error fetching last two weeks report stats:", error);
+      // Set sample data if API fails for demonstration
       setChartData([]);
     }
   }
@@ -61,10 +63,9 @@ export default function Dashboard() {
           <h2 className="agency-title">Dashboard</h2>
         </div>
       </div>
-      <Container sx={{ py: 2 }}>
         <Box className="agency">
           {/* Stats Cards Row */}
-          <Grid container spacing={{ xs: 2, md: 2 }} sx={{ mb: 4 }}>
+          <Grid container spacing={{ xs: 2, md: 2 }} sx={{ mt: 2 }}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Generated Reports"
@@ -128,7 +129,6 @@ export default function Dashboard() {
             </Grid>
           </Grid>
         </Box>
-      </Container>
     </Navbar>
   );
 }
