@@ -106,7 +106,7 @@ export default function Dashboard() {
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Generated Reports"
-                value={stats.generatedReports || 0}
+                value={stats.totalReports || 0}
                 icon={<NotepadText size={20} />}
               />
             </Grid>
@@ -114,7 +114,7 @@ export default function Dashboard() {
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Customers"
-                value={stats.customers || 0}
+                value={stats.totalCustomers || 0}
                 icon={<Users size={20} />}
               />
             </Grid>
