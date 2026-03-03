@@ -4,9 +4,16 @@ import { Users, NotepadText } from "lucide-react";
 import Navbar from "../layouts/Navbar";
 import { getLastTwoWeeksReportStats, getStats } from "../services/dashboard-api";
 import { StatCard } from "../components/StatCard";
+import { BarChart } from "../components/BarChart";
+
+interface ChartDataPoint {
+  date: string;
+  count: number;
+}
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>({});
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const token = sessionStorage.getItem("dd_token");
   const tenantId = sessionStorage.getItem("dd_tenant_id");
 
@@ -32,8 +39,13 @@ export default function Dashboard() {
     try {
       const reportStats = await getLastTwoWeeksReportStats(token, tenantId);
       console.log("Last two weeks report stats:", reportStats);
+      
+      // Set the chart data
+      if (Array.isArray(reportStats)) {
+        setChartData(reportStats);
+      }
     } catch (error) {
-      console.error("Error fetching last two weeks report stats:", error);
+      setChartData([]);
     }
   }
 
@@ -51,9 +63,9 @@ export default function Dashboard() {
       </div>
       <Container sx={{ py: 2 }}>
         <Box className="agency">
-
-          <Grid container spacing={{ md: 2 }}>
-            <Grid size={3}>
+          {/* Stats Cards Row */}
+          <Grid container spacing={{ xs: 2, md: 2 }} sx={{ mb: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Generated Reports"
                 value={stats.generatedReports || 0}
@@ -61,7 +73,7 @@ export default function Dashboard() {
               />
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Customers"
                 value={stats.customers || 0}
@@ -69,7 +81,7 @@ export default function Dashboard() {
               />
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Available Templates"
                 value={stats.availableTemplates === -1 ? "Unlimited" : stats.availableTemplates || 0}
@@ -77,12 +89,42 @@ export default function Dashboard() {
               />
             </Grid>
 
-            <Grid size={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
                 title="Available Reports"
                 value={stats.availableReports === -1 ? "Unlimited" : stats.availableReports || 0}
                 icon={<NotepadText size={20} />}
               />
+            </Grid>
+          </Grid>
+
+          {/* Chart Row */}
+          <Grid container spacing={{ xs: 2, md: 4 }}>
+            <Grid size={{ xs: 12, lg: 8 }}>
+              <BarChart 
+                data={chartData} 
+                title="Report Generation - Last 2 Weeks" 
+              />
+            </Grid>
+            
+            {/* Additional chart or content can go here */}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <Box 
+                sx={{ 
+                  height: { xs: "200px", md: "300px" },
+                  bgcolor: "#f8f9fa",
+                  borderRadius: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "2px dashed #e0e0e0"
+                }}
+              >
+                <Box sx={{ textAlign: "center", color: "#999" }}>
+                  <NotepadText size={40} />
+                  <Box sx={{ mt: 2, fontSize: "0.9rem" }}>Additional Chart Area</Box>
+                </Box>
+              </Box>
             </Grid>
           </Grid>
         </Box>
