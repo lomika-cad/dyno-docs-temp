@@ -376,7 +376,7 @@ export default function ReportGeneration() {
             const response = await validatePromoCode({
                 code: formData.promoCode,
                 purchaseAmount: parseFloat(formData.totalAmount)
-            });
+            }, sessionStorage.getItem("dd_token") || "");
 
             if (response.data.isValid) {
                 const discount = response.data.calculatedDiscount || 0;
