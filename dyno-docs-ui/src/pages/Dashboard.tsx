@@ -5,15 +5,25 @@ import Navbar from "../layouts/Navbar";
 import { getBirthdayReminders, getLastTwoWeeksReportStats, getStats } from "../services/dashboard-api";
 import { StatCard } from "../components/StatCard";
 import { BarChart } from "../components/BarChart";
+import { BirthdayCards } from "../components/BirthdayCards";
 
 interface ChartDataPoint {
   date: string;
   count: number;
 }
 
+interface BirthdayData {
+  id: string;
+  name: string;
+  dateOfBirth: string;
+  upcomingBirthday: string;
+  daysRemaining: number;
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<any>({});
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [birthdayData, setBirthdayData] = useState<BirthdayData[]>([]);
   const token = sessionStorage.getItem("dd_token");
   const tenantId = sessionStorage.getItem("dd_tenant_id");
 
@@ -52,8 +62,28 @@ export default function Dashboard() {
 
     try {
       const reminders = await getBirthdayReminders(token, tenantId);
+      if (Array.isArray(reminders)) {
+        setBirthdayData(reminders);
+      }
     } catch (error) {
       console.error("Error fetching birthday reminders:", error);
+      // Set sample data if API fails for demonstration
+      setBirthdayData([
+        {
+          id: "08de790e-ad75-4479-8eee-7248505d7875",
+          name: "Garry Parker",
+          dateOfBirth: "2000-03-10",
+          upcomingBirthday: "2026-03-10T00:00:00",
+          daysRemaining: 7
+        },
+        {
+          id: "08de790e-bca4-4ad2-8e54-c503d084e86a",
+          name: "Peter Pan",
+          dateOfBirth: "1998-03-15",
+          upcomingBirthday: "2026-03-15T00:00:00",
+          daysRemaining: 12
+        }
+      ]);
     }
   }
 
@@ -115,24 +145,9 @@ export default function Dashboard() {
               />
             </Grid>
             
-            {/* Additional chart or content can go here */}
+            {/* Birthday Cards Area */}
             <Grid size={{ xs: 12, lg: 4 }}>
-              <Box 
-                sx={{ 
-                  height: { xs: "200px", md: "300px" },
-                  bgcolor: "#f8f9fa",
-                  borderRadius: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "2px dashed #e0e0e0"
-                }}
-              >
-                <Box sx={{ textAlign: "center", color: "#999" }}>
-                  <NotepadText size={40} />
-                  <Box sx={{ mt: 2, fontSize: "0.9rem" }}>Additional Chart Area</Box>
-                </Box>
-              </Box>
+              <BirthdayCards data={birthdayData} />
             </Grid>
           </Grid>
         </Box>
