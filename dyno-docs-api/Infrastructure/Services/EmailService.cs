@@ -21,15 +21,22 @@ public class EmailService(IApplicationDbContext context, IConfiguration configur
 
         if (string.IsNullOrWhiteSpace(customer.Email))
             throw new InvalidOperationException($"Customer '{customer.Name}' does not have an email address.");
+      
+        
+        
+        var agencyName = await context.Tenants.Where(c => c.Id == customer.TenantId)
+            .Select(c => c.AgencyName)
+            .FirstOrDefaultAsync() ?? "DynoDocs";
+        
 
         var smtp = GetSmtpSettings();
-        var html = BuildBirthdayHtml(customer.Name ?? "Valued Customer", customer.DateOfBirth);
+        var html = BuildBirthdayHtml(customer.Name ?? "Valued Customer", customer.DateOfBirth,agencyName);
 
         using var message = new MailMessage(smtp.SenderEmail, customer.Email,
             $"🎂 Happy Birthday, {customer.Name ?? "Friend"}! 🎉", html)
         {
             IsBodyHtml = true,
-            From = new MailAddress(smtp.SenderEmail, "DynoDocs 🎉")
+            From = new MailAddress(smtp.SenderEmail, $"{agencyName} 🎉")
         };
 
         using var client = new SmtpClient(smtp.Host, smtp.Port)
@@ -41,7 +48,7 @@ public class EmailService(IApplicationDbContext context, IConfiguration configur
         await client.SendMailAsync(message);
     }
 
-    private static string BuildBirthdayHtml(string name, DateOnly? dob)
+    private static string BuildBirthdayHtml(string name, DateOnly? dob,string agencyName)
     {
         var age = dob.HasValue
             ? (int)((DateTime.Today - dob.Value.ToDateTime(TimeOnly.MinValue)).TotalDays / 365.25)
@@ -77,7 +84,7 @@ public class EmailService(IApplicationDbContext context, IConfiguration configur
                 Happy Birthday!
               </h1>
               <p style="margin:6px 0 0 0;font-size:15px;color:#ffe5d0;font-weight:500;">
-                From all of us at DynoDocs ❤️
+                From all of us at {agencyName} ❤️
               </p>
             </td>
           </tr>
@@ -137,6 +144,7 @@ public class EmailService(IApplicationDbContext context, IConfiguration configur
               </p>
 
               <!-- CTA Button -->
+              <!-- 
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:32px;">
                 <tr>
                   <td align="center">
@@ -145,11 +153,12 @@ public class EmailService(IApplicationDbContext context, IConfiguration configur
                               text-decoration:none;padding:14px 40px;border-radius:50px;
                               font-size:16px;font-weight:700;letter-spacing:0.5px;
                               box-shadow:0 4px 14px rgba(255,123,46,0.4);">
-                      Celebrate with DynoDocs 🎉
+                      Celebrate with {agencyName} 🎉
                     </a>
                   </td>
                 </tr>
               </table>
+              -->
 
             </td>
           </tr>
