@@ -16,6 +16,19 @@ export const createCustomer = async (customerData: any, token: string) => {
     }
 }
 
+export const sendCustomerEmail = async (customerId: string, token: string) => {
+    try {
+        const response = await axios.post(`${API_URL}/${customerId}/send-birthday-email`, {}, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}
+
 export const getCustomers = async (token: string) => {
     try {
         const response = await axios.get(`${API_URL}`, {
