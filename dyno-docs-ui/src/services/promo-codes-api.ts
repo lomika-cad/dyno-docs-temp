@@ -65,9 +65,11 @@ export const getPromoCodes = async (token?: string): Promise<{ data: PromoCode[]
     }
 };
 
-export const getActivePromoCodes = async (): Promise<{ data: PromoCode[] }> => {
+export const getActivePromoCodes = async (token?: string): Promise<{ data: PromoCode[] }> => {
     try {
-        const response = await axios.get(`${API_URL}/active`);
+        const response = await axios.get(`${API_URL}/active`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         return response;
     } catch (error) {
         throw error;
@@ -118,9 +120,11 @@ export const deletePromoCode = async (promoCodeId: string, token?: string): Prom
     }
 };
 
-export const validatePromoCode = async (data: ValidatePromoCodePayload): Promise<{ data: ValidatePromoCodeResult }> => {
+export const validatePromoCode = async (data: ValidatePromoCodePayload, token?: string): Promise<{ data: ValidatePromoCodeResult }> => {
     try {
-        const response = await axios.post(`${API_URL}/validate`, data);
+        const response = await axios.post(`${API_URL}/validate`, data, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         return response;
     } catch (error) {
         throw error;

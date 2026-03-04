@@ -38,12 +38,15 @@ public class CreateReportCommandHandler(IApplicationDbContext context, ITenantSe
             return Result.Failure("No user subscriptions found for the tenant.");
         }
         
-        if (existingUserSubscriptions.ReportsLimit <= 0)
+        if (existingUserSubscriptions.ReportsLimit == 0)
         {
             return Result.Failure("Report limit reached for the tenant.");
         }
-        
-        existingUserSubscriptions.ReportsLimit -= 1;
+
+        if (existingUserSubscriptions.ReportsLimit != -1)
+        {
+            existingUserSubscriptions.ReportsLimit -= 1;
+        }
         
         context.UserSubscription.Update(existingUserSubscriptions);
         
