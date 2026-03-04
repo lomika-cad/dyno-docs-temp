@@ -33,6 +33,7 @@ public static class InfrastructureDependencyInjection
         // Application Services
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IDropBoxService, DropBoxService>();
+        services.AddScoped<IEmailService, EmailService>();
 
         // Excel Services
         services.AddScoped<IPlaceExcelService,PlaceExcelService>();

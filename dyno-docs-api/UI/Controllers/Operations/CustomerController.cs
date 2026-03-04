@@ -1,4 +1,5 @@
 ﻿using Application.Common;
+using Application.Common.Interfaces;
 using Application.UserStories.Operations.Customers.Commands;
 using Application.UserStories.Operations.Customers.Queries;
 using Domain.Entities.Operations;
@@ -9,7 +10,7 @@ namespace UI.Controllers.Operations;
 
 [ApiController]
 [Route("api/operations/customers")]
-public class CustomerController (IMediator mediator) : ControllerBase
+public class CustomerController(IMediator mediator, IEmailService emailService) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -20,6 +21,7 @@ public class CustomerController (IMediator mediator) : ControllerBase
         {
             return Ok(res);
         }
+
         return BadRequest(res);
     }
 
@@ -42,6 +44,7 @@ public class CustomerController (IMediator mediator) : ControllerBase
         {
             return Ok(res);
         }
+
         return BadRequest(res);
     }
 
@@ -55,6 +58,29 @@ public class CustomerController (IMediator mediator) : ControllerBase
         {
             return Ok(res);
         }
+
         return BadRequest(res);
+    }
+
+    [HttpPost("{id}/send-birthday-email")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> SendBirthdayEmail(Guid id)
+    {
+        try
+        {
+            await emailService.SendBirthdayEmailAsync(id);
+            return Ok(new { message = " Birthday email sent successfully!" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Failed to send birthday email.", detail = ex.Message });
+        }
     }
 }
