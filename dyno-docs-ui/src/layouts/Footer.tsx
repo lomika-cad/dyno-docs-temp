@@ -66,8 +66,8 @@ export default function Footer() {
           <ul>
             <li onClick={() => window.open("https://www.tiktok.com/@dyno5878?_r=1&_t=ZS-93pvFnfpf1M", "_blank")}><TikTokOutlined size={18} className="icon" /> TikTok</li>
             <li onClick={() => window.open("https://wa.me/+94775353762?text=Hello%20DynoDocs", "_blank")}><WhatsAppOutlined size={18} className="icon" /> WhatsApp</li>
-            <li onClick={() => window.open("https://www.instagram.com/dynodocs06?igsh=eWplcDV0Y2JtcjAz", "_blank")}><InstagramOutlined size={18} className="icon" /> Instagram</li>
-            <li onClick={() => window.open("https://www.linkedin.com/in/dyno-docs-1064653b0", "_blank")}><LinkedinOutlined size={18} className="icon" /> LinkedIn</li>
+            <li onClick={() => window.open("https://www.instagram.com/dynodocs", "_blank")}><InstagramOutlined size={18} className="icon" /> Instagram</li>
+            <li onClick={() => window.open("https://www.linkedin.com/company/dynodocs", "_blank")}><LinkedinOutlined size={18} className="icon" /> LinkedIn</li>
           </ul>
         </div>
 
