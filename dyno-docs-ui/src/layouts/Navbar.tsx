@@ -880,11 +880,11 @@ export default function Navbar({ children, items }: NavbarProps) {
             const res = await getUnreadChatCount(token);
             setUnreadCount(res.unreadChatCount || 0);
         } catch (error) {
-            console.error("Failed to fetch unread chat count:", error);
         }
     }, [token]);
 
     useEffect(() => {
+        // Fetch unread count on component mount
         handleGetUnreadChatCount();
     }, [handleGetUnreadChatCount]);
 

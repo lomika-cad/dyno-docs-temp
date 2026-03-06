@@ -814,7 +814,7 @@ export default function ReportsHistory() {
                         img.onload = () => {
                             checkAllImagesLoaded();
                         };
-                        img.onerror = (e) => {
+                        img.onerror = () => {
                             checkAllImagesLoaded();
                         };
                         
