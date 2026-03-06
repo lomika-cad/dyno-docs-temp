@@ -104,11 +104,8 @@ export default function ChatBot() {
                 setExistingCommands(res); // Store existing commands with their IDs
                 const convertedFlows = convertCommandsToDialogFlows(res);
                 setDialogFlows(convertedFlows);
-                console.log("Loaded chatbot commands:", res);
-                console.log("Converted to dialog flows:", convertedFlows);
             }
         } catch (error) {
-            console.error("Error fetching chatbot commands:", error);
             showError("Failed to load existing chatbot commands.");
         } finally {
             setIsLoading(false);

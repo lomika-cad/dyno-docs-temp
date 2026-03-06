@@ -525,7 +525,6 @@ function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
     const handleGetUnreadChatCount = async () => {
         try {
             const res = await getUnreadChatCount(token);
-            console.log("Unread chat count:", res.count);
         } catch (error) {
 
         }
@@ -833,7 +832,6 @@ export default function Navbar({ children, items }: NavbarProps) {
     const handleMe = async () => {
         try {
             const res = await getMe(token, sessionStorage.getItem("dd_tenant_id") || "");
-            console.log(res);
 
             const nextInfo: SubscriptionInfo = {
                 plan: res.planName ?? "Free",
@@ -880,16 +878,13 @@ export default function Navbar({ children, items }: NavbarProps) {
     const handleGetUnreadChatCount = useCallback(async () => {
         try {
             const res = await getUnreadChatCount(token);
-            console.log("Unread chat count:", res.count);
             setUnreadCount(res.unreadChatCount || 0);
         } catch (error) {
-            // Silently handle errors to avoid disrupting user experience
             console.error("Failed to fetch unread chat count:", error);
         }
     }, [token]);
 
     useEffect(() => {
-        // Fetch unread count on component mount
         handleGetUnreadChatCount();
     }, [handleGetUnreadChatCount]);
 

@@ -72,20 +72,13 @@ export default function Chats() {
             setIsLoadingChats(true);
             const response = await getAvailableChats(DD_TOKEN);
 
-            console.log("API Response:", response);
-
-            // Transform the response to flatten clientUsers into individual chat items
             const transformedChats: ChatItem[] = [];
 
             if (Array.isArray(response)) {
-                // Flatten all client users from all chats
                 for (const chat of response) {
-                    // Check if chat has clientUsers array
                     if (chat.clientUsers && Array.isArray(chat.clientUsers)) {
-                        // Create a chat item for each client user
                         for (const clientUser of chat.clientUsers) {
                             try {
-                                // Fetch messages for this client to get the last message
                                 const messagesResponse = await getMessages(clientUser.id);
                                 const messagesList = messagesResponse.messages || messagesResponse || [];
 
@@ -95,7 +88,7 @@ export default function Chats() {
 
                                 transformedChats.push({
                                     id: clientUser.id,
-                                    chatId: chat.id, // Store the parent chat ID
+                                    chatId: chat.id,
                                     name: clientUser.name || "Anonymous User",
                                     email: clientUser.email || "",
                                     lastMessage: lastMessage
@@ -108,10 +101,9 @@ export default function Chats() {
                                 });
                             } catch (msgError) {
                                 console.warn(`Failed to fetch messages for client ${clientUser.id}:`, msgError);
-                                // Add chat item without last message info
                                 transformedChats.push({
                                     id: clientUser.id,
-                                    chatId: chat.id, // Store the parent chat ID
+                                    chatId: chat.id,
                                     name: clientUser.name || "Anonymous User",
                                     email: clientUser.email || "",
                                     lastMessage: "No messages yet",
@@ -123,13 +115,8 @@ export default function Chats() {
                     }
                 }
             }
-
-            console.log("Transformed Chats:", transformedChats);
             setChats(transformedChats);
-
-            // Don't auto-select any chat - let user choose
         } catch (error: any) {
-            console.error("Failed to load chats:", error);
             showError("Failed to load chats. Please try again.");
         } finally {
             setIsLoadingChats(false);
@@ -187,12 +174,8 @@ export default function Chats() {
     const checkAndSetBotStatus = async (chatUserId: string) => {
         try {
             const response = await checkBotStatus(chatUserId, DD_TOKEN);
-            console.log("Bot Status Response:", response);
-            // Response is expected to be { isBotOn: true/false }
             setBotStatus(response.isBotOn || false);
         } catch (error: any) {
-            console.error("Failed to check bot status:", error);
-            // Default to false (allow messaging) if check fails
             setBotStatus(false);
         }
     };
@@ -263,7 +246,7 @@ export default function Chats() {
             setIsSendingMessage(true);
 
             // Send message using the correct request body structure
-            const response = await sendMessage({
+            await sendMessage({
                 chatId: selectedChat.chatId, // Actual chat ID (like dd_public_chat_id in Chat.tsx)
                 tenantId: DD_TENANT_ID,
                 chatUserId: selectedChat.id, // Client user ID we're messaging
@@ -272,16 +255,11 @@ export default function Chats() {
                 conversationIndex: null
             });
 
-            console.log("Send message response:", response);
-
-            // Silently reload messages to get the latest including bot response
             setTimeout(() => {
                 silentLoadMessages(selectedChat.id);
-                // Check bot status after message is sent and response is received
                 checkAndSetBotStatus(selectedChat.id);
             }, 300);
         } catch (error: any) {
-            console.error("Failed to send message:", error);
             showError("Failed to send message. Please try again.");
             // Remove the optimistically added message on error
             setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
@@ -532,7 +510,6 @@ export default function Chats() {
     const handleCheckBotStatus = async () => {
         try {
             const res = await checkBotStatus(selectedChat?.id || "", DD_TOKEN);
-            console.log("Bot status response:", res.message);
             if (res.message === "Bot is Off") {
                 setBotStatus(false);
             } else {

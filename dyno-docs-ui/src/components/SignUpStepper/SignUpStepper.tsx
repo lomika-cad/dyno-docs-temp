@@ -81,20 +81,12 @@ export default function SignUpStepper() {
 
       if (payload.planId) formdata.append("PlanId", payload.planId);
       formdata.append("PlanName", payload.planId === "1" ? "Free" : payload.planId === "2" ? "Professional" : "Enterprise");
-      formdata.append("PlanType", payload.planType ?? "");
-
-      console.log(payload);
-      console.log(payload.planId === "1" ? "Free" : payload.planId === "2" ? "Professional" : "Enterprise");
-      
-
+      formdata.append("PlanType", payload.planType ?? "");    
 
       await registerAgency(formdata);
-
-      // // API returns a Guid on success; show message and redirect to sign in
       showSuccess("Registration successful. Please sign in.");
       window.location.href = "/";
     } catch (error: any) {
-      console.error(error);
       showError(error?.response?.data?.message ?? "Registration failed. Please try again.");
     } finally {
       setLoading(false);

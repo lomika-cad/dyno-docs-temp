@@ -32,7 +32,6 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
 
     try {
       const res = await login(email, password);
-      console.log(res);
       sessionStorage.setItem("dd_token", res.token);
       sessionStorage.setItem("dd_agency_name", res.agencyName);
       sessionStorage.setItem("dd_email", res.email);
@@ -53,7 +52,6 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
   const handleMe = async (token: string, tenantId: string) => {
     try {
       const res = await getMe(token, tenantId);
-      console.log(res);
       sessionStorage.setItem("dd_subscription_plan", res.planName);
       sessionStorage.setItem("dd_subscription_expiry", res.endDate);
       sessionStorage.setItem("dd_report_limit", res.reportsLimit);
@@ -61,7 +59,7 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
       sessionStorage.setItem("dd_discount_percentage", res.discountPercentage);
       sessionStorage.setItem("dd_subscription_isActive", res.isActive);
     } catch (error) {
-      console.error(error);      
+           
     }
   }
 
