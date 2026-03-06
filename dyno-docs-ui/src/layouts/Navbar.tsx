@@ -14,7 +14,6 @@ import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
@@ -164,7 +163,7 @@ type ProfileModalProps = {
 type AgencyData = {
     name: string;
     contactNo: string;
-    address: string;
+    agencyAddress: string;
     agencyLogo: string;
 };
 
@@ -187,7 +186,7 @@ function ProfileModal({ open, onClose }: ProfileModalProps) {
     const [agencyData, setAgencyData] = useState<AgencyData>({
         name: "",
         contactNo: "",
-        address: "",
+        agencyAddress: "",
         agencyLogo: "",
     });
 
@@ -200,31 +199,41 @@ function ProfileModal({ open, onClose }: ProfileModalProps) {
 
     const [editedAgencyData, setEditedAgencyData] = useState<AgencyData>(agencyData);
 
+    const formatLogoSrc = (logo: string) => {
+        if (!logo) return "";
+        if (logo.startsWith("data:") || logo.startsWith("http")) {
+            return logo;
+        }
+        return `data:image/png;base64,${logo}`;
+    };
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const response = await getTenantInfo(tenantId);
+            const data = response.data || response;
+
+            const agency: AgencyData = {
+                name: data.agencyName || "",
+                contactNo: data.contactNo || "",
+                agencyAddress: data.agencyAddress || "",
+                agencyLogo: data.agencyLogo || "",
+            };
+
+            setAgencyData(agency);
+            setEditedAgencyData(agency);
+        } catch (error) {
+            console.error("Failed to load profile data:", error);
+            showError("Failed to load profile data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (!open) return;
 
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const response = await getTenantInfo(tenantId);
-                const data = response.data || response;
 
-                const agency: AgencyData = {
-                    name: data.agencyName || "",
-                    contactNo: data.contactNo || "",
-                    address: data.address || "",
-                    agencyLogo: data.logoUrl || "",
-                };
-
-                setAgencyData(agency);
-                setEditedAgencyData(agency);
-            } catch (error) {
-                console.error("Failed to load profile data:", error);
-                showError("Failed to load profile data");
-            } finally {
-                setLoading(false);
-            }
-        };
 
         loadData();
     }, [open, tenantId]);
@@ -250,10 +259,10 @@ function ProfileModal({ open, onClose }: ProfileModalProps) {
         setSaving(true);
         try {
             const response = await updateLogo(tenantId, file, token);
-            const newLogoUrl = response.data?.logoUrl || response.logoUrl || "";
-
-            setAgencyData((prev) => ({ ...prev, logo: newLogoUrl }));
-            setEditedAgencyData((prev) => ({ ...prev, logo: newLogoUrl }));
+            const newLogoUrl = response.data?.agencyLogo || response.agencyLogo || response.data?.logoUrl || response.logoUrl || "";
+            loadData();
+            setAgencyData((prev) => ({ ...prev, agencyLogo: newLogoUrl }));
+            setEditedAgencyData((prev) => ({ ...prev, agencyLogo: newLogoUrl }));
 
             showSuccess("Logo updated successfully");
         } catch (error: any) {
@@ -271,11 +280,12 @@ function ProfileModal({ open, onClose }: ProfileModalProps) {
                 tenantId,
                 agencyName: editedAgencyData.name,
                 contactNo: editedAgencyData.contactNo,
-                address: editedAgencyData.address,
+                address: editedAgencyData.agencyAddress,
             };
 
             await updateAgencyData(payload, token);
             setAgencyData(editedAgencyData);
+            sessionStorage.setItem("dd_agency_name", editedAgencyData.name);
             showSuccess("Agency data updated successfully");
         } catch (error: any) {
             console.error("Failed to update agency data:", error);
@@ -288,7 +298,7 @@ function ProfileModal({ open, onClose }: ProfileModalProps) {
     const hasChanges =
         editedAgencyData.name !== agencyData.name ||
         editedAgencyData.contactNo !== agencyData.contactNo ||
-        editedAgencyData.address !== agencyData.address;
+        editedAgencyData.agencyAddress !== agencyData.agencyAddress;
 
     if (!open) return null;
 
@@ -346,7 +356,7 @@ function ProfileModal({ open, onClose }: ProfileModalProps) {
                                     >
                                         {editedAgencyData.agencyLogo ? (
                                             <img
-                                                src={editedAgencyData.agencyLogo}
+                                                src={formatLogoSrc(editedAgencyData.agencyLogo)}
                                                 alt={editedAgencyData.name || "Agency logo"}
                                                 className="pfm-logoImg"
                                             />
@@ -413,11 +423,11 @@ function ProfileModal({ open, onClose }: ProfileModalProps) {
                                         <label className="pfm-label">Address</label>
                                         <textarea
                                             className="pfm-input pfm-textarea"
-                                            value={editedAgencyData.address}
+                                            value={editedAgencyData.agencyAddress}
                                             onChange={(e) =>
                                                 setEditedAgencyData((prev) => ({
                                                     ...prev,
-                                                    address: e.target.value,
+                                                    agencyAddress: e.target.value,
                                                 }))
                                             }
                                             rows={4}
@@ -468,16 +478,6 @@ function ProfileModal({ open, onClose }: ProfileModalProps) {
                                             <span className="pfm-infoLabel">Email</span>
                                             <span className="pfm-infoValue">{userData.email || "-"}</span>
                                         </div>
-
-                                        <div className="pfm-infoItem">
-                                            <span className="pfm-infoLabel">Mobile</span>
-                                            <span className="pfm-infoValue">{userData.mobile || "-"}</span>
-                                        </div>
-
-                                        <div className="pfm-infoItem">
-                                            <span className="pfm-infoLabel">Role</span>
-                                            <span className="pfm-infoValue">{userData.role || "-"}</span>
-                                        </div>
                                     </div>
                                 </div>
 
@@ -509,7 +509,7 @@ function ProfileModal({ open, onClose }: ProfileModalProps) {
             </div>
         </div>
     );
-}   
+}
 
 function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
     const [yearly, setYearly] = useState(false);
@@ -527,7 +527,7 @@ function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
             const res = await getUnreadChatCount(token);
             console.log("Unread chat count:", res.count);
         } catch (error) {
-            
+
         }
     }
 
@@ -548,7 +548,7 @@ function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
             showSuccess("Subscription updated successfully.");
             onUpdated?.();
             onClose();
-        } catch (error:any) {
+        } catch (error: any) {
             showError(error.response?.data?.message || "Failed to update subscription. Please try again.");
         }
     }
@@ -994,7 +994,7 @@ export default function Navbar({ children, items }: NavbarProps) {
                     <div className="ddModal-card">
                         <div className="ddModal-title">Session timed out</div>
                         <br />
-                        <img style={{width: "80px", height: "80px"}} src={TimeoutImg} alt="" />
+                        <img style={{ width: "80px", height: "80px" }} src={TimeoutImg} alt="" />
                         <br />
                         <div className="ddModal-subtitle">
                             You were inactive for too long. Click anywhere to continue.
