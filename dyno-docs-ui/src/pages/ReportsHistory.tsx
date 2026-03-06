@@ -237,18 +237,7 @@ export default function ReportsHistory() {
         }
         return pages;
     };
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
+    
     const parseReportData = (report: Report): ReportData | null => {
         try {
             return JSON.parse(report.generatedReport);
