@@ -6,15 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.UserStories.Operations.UserTemplates.Queries;
 
-public class GetUserTemplates : IRequest<List<UserTemplateDto>>
+public class GetUserTemplateList : IRequest<List<UserTemplateDtos>>
 {
     public Guid UserId { get; set; }
 }
 
-public class GetUserTemplatesHandler(IApplicationDbContext dbContext)
-    : IRequestHandler<GetUserTemplates, List<UserTemplateDto>>
+public class GetUserTemplateListHandler(IApplicationDbContext dbContext)
+    : IRequestHandler<GetUserTemplateList, List<UserTemplateDtos>>
 {
-    public async Task<List<UserTemplateDto>> Handle(GetUserTemplates request, CancellationToken cancellationToken)
+    public async Task<List<UserTemplateDtos>> Handle(GetUserTemplateList request, CancellationToken cancellationToken)
     {
         // First materialize the raw data (including the byte[] thumbnail) into memory
         var raw = await (from ut in dbContext.UserTemplate
@@ -29,7 +29,7 @@ public class GetUserTemplatesHandler(IApplicationDbContext dbContext)
             }).ToListAsync(cancellationToken);
 
         // Convert the thumbnail bytes to base64 data URLs in-memory
-        var userTemplates = raw.Select(x => new UserTemplateDto
+        var userTemplates = raw.Select(x => new UserTemplateDtos
         {
             TemplateId = x.Id,
             TemplateName = x.TemplateName,
@@ -43,7 +43,7 @@ public class GetUserTemplatesHandler(IApplicationDbContext dbContext)
     }
 }
 
-public class UserTemplateDto
+public class UserTemplateDtos
 {
     public Guid TemplateId { get; set; }
     public string TemplateName { get; set; } = string.Empty;
