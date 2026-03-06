@@ -24,7 +24,6 @@ export const getTenantInfo = async (tenantId: string) => {
     }
 }
 
-// Register agency (single endpoint expects multipart/form-data)
 export const registerAgency = async (formData: FormData) => {
     try {
         const response = await axios.post(`${API_URL}/register-agency`, formData, {
@@ -33,6 +32,38 @@ export const registerAgency = async (formData: FormData) => {
             },
         });
         return response.data ?? response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const updateLogo = async (tenantId: string, logoFile: File, token: string) => {
+    try {
+        const formData = new FormData();
+        formData.append("tenantId", tenantId);
+        formData.append("logo", logoFile);
+
+        const response = await axios.put(`${API_URL}/agency-logo`, formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const updateAgencyData = async (data: any, token: string) => {
+    try {
+        const response = await axios.put(`${API_URL}/agency-data`, data, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.data;
     } catch (error) {
         throw error;
     }

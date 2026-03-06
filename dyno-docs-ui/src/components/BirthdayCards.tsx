@@ -291,19 +291,21 @@ export function BirthdayCards({ data }: BirthdayCardsProps) {
                     {person.name}
                   </Typography>
                   
-                  <IconButton
-                    size="small"
-                    onClick={() => handleSendEmail(person)}
-                    sx={{
-                      color: "#1976D2",
-                      "&:hover": {
-                        bgcolor: "#E3F2FD",
-                      },
-                    }}
-                    title="Send birthday email"
-                  >
-                    <Mail size={16} />
-                  </IconButton>
+                  {person.daysRemaining === 0 && (
+                    <IconButton
+                      size="small"
+                      onClick={() => handleSendEmail(person)}
+                      sx={{
+                        color: "#1976D2",
+                        "&:hover": {
+                          bgcolor: "#E3F2FD",
+                        },
+                      }}
+                      title="Send birthday email"
+                    >
+                      <Mail size={16} />
+                    </IconButton>
+                  )}
                 </Box>
 
                 <Box

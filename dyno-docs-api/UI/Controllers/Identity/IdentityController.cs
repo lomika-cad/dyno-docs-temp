@@ -1,3 +1,4 @@
+using Application.Common;
 using Application.UserStories.Identity.Commands;
 using Application.UserStories.Identity.Queries;
 using MediatR;
@@ -85,6 +86,56 @@ public class IdentityController(IMediator mediator) : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(ex.Message);
+        }
+    }
+    
+    [HttpPut("agency-logo")]
+    [Authorize]
+    [ProducesResponseType(typeof(Result), 200)]
+    [ProducesResponseType(typeof(string), 400)]
+    public async Task<IActionResult> UpdateAgencyLogo([FromForm] UpdateAgencyLogo request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new UpdateAgencyLogo()
+            {
+                TenantId = request.TenantId,
+                Logo = request.Logo
+            };
+
+            var result = await mediator.Send(command, cancellationToken);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+    
+    [HttpPut("agency-data")]
+    [Authorize]
+    [ProducesResponseType(typeof(Result), 200)]
+    [ProducesResponseType(typeof(string), 400)]
+    public async Task<IActionResult> UpdateAgencyData([FromBody] UpdateAgencyData request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new UpdateAgencyData()
+            {
+                TenantId = request.TenantId,
+                AgencyName = request.AgencyName,
+                ContactNo = request.ContactNo,
+                Address = request.Address,
+            };
+
+            var result = await mediator.Send(command, cancellationToken);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
         }
     }
 }
