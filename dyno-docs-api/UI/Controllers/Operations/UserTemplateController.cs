@@ -11,31 +11,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace UI.Controllers.Operations;
 
 [ApiController]
-[Route("api/operations/templates")]
-public class TemplateController (IMediator mediator) : ControllerBase
+[Route("api/operations/user-templates")]
+public class UserTemplateController (IMediator mediator) : ControllerBase
 {
-    [HttpPost]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
-    public async Task<ActionResult<Result>> CreateTemplate([FromForm] CreateTemplateCommand command)
-    {
-        var res = await mediator.Send(command);
-        if (res.Succeeded)
-        {
-            return StatusCode(StatusCodes.Status200OK, res);
-        }
-        return BadRequest(res);
-    }
-    
-    [HttpGet]
-    [ProducesResponseType(typeof(List<Template>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<Template>>> GetTemplates()
-    {
-        var query = new GetTemplatesQuery();
-        var templates = await mediator.Send(query);
-        return Ok(templates);
-    }
-    
-    [HttpPost("assign-to-user")]
+    [HttpPost("assign")]
     [Authorize]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     public async Task<ActionResult<Result>> AssignTemplateToUser([FromBody] AssignTemplate command)

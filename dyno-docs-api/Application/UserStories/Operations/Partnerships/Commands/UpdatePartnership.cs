@@ -7,7 +7,7 @@ using OneOf.Types;
 
 namespace Application.UserStories.Operations.Partnerships.Commands;
 
-public class UpdatePartnershipCommand : IRequest<Result>
+public class UpdatePartnership : IRequest<Result>
 {
     public Guid Id { get; set; }
     public string? Name { get; set; }
@@ -16,9 +16,9 @@ public class UpdatePartnershipCommand : IRequest<Result>
     public PartnershipTypes PartnershipType { get; set; }
 }
 
-public class UpdatePartnershipCommandHandler(IApplicationDbContext dbContext) : IRequestHandler<UpdatePartnershipCommand, Result>
+public class UpdatePartnershipHandler(IApplicationDbContext dbContext) : IRequestHandler<UpdatePartnership, Result>
 {
-    public async Task<Result> Handle(UpdatePartnershipCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(UpdatePartnership request, CancellationToken cancellationToken)
     {
         var entity = await dbContext.Partnership.FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
         if (entity == null)

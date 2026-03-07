@@ -522,18 +522,6 @@ function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
 
     const token = sessionStorage.getItem("dd_token") || "";
 
-    const handleGetUnreadChatCount = async () => {
-        try {
-            const res = await getUnreadChatCount(token);
-        } catch (error) {
-
-        }
-    }
-
-    useEffect(() => {
-        handleGetUnreadChatCount();
-    }, []);
-
     const handleUpdatePlan = async (planId: string) => {
         const body = {
             tenantId: sessionStorage.getItem("dd_tenant_id") || "",
@@ -880,11 +868,11 @@ export default function Navbar({ children, items }: NavbarProps) {
             const res = await getUnreadChatCount(token);
             setUnreadCount(res.unreadChatCount || 0);
         } catch (error) {
-            console.error("Failed to fetch unread chat count:", error);
         }
     }, [token]);
 
     useEffect(() => {
+        // Fetch unread count on component mount
         handleGetUnreadChatCount();
     }, [handleGetUnreadChatCount]);
 

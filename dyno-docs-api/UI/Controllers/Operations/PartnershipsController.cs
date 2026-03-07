@@ -11,13 +11,13 @@ namespace UI.Controllers.Operations;
 [Authorize]
 [ApiController]
 [Route("api/operations/partnerships")]
-public class PartnershipController(IMediator mediator) : ControllerBase
+public class PartnershipsController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreatePartnership([FromForm] CreatePartnershipCommand command)
+    public async Task<IActionResult> CreatePartnership([FromForm] CreatePartnership command)
     {
         var res = await mediator.Send(command);
         return Ok(res);
@@ -27,7 +27,7 @@ public class PartnershipController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(List<Partnership>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPartnerships()
     {
-        var res = await mediator.Send(new GetPartnerships());
+        var res = await mediator.Send(new GetPartnershipList());
         return Ok(res);
     }
     
@@ -47,7 +47,7 @@ public class PartnershipController(IMediator mediator) : ControllerBase
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdatePartnership(Guid id, [FromBody] UpdatePartnershipCommand command)
+    public async Task<IActionResult> UpdatePartnership(Guid id, [FromBody] UpdatePartnership command)
     {
         if (id != command.Id)
         {
@@ -63,7 +63,7 @@ public class PartnershipController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeletePartnership(Guid id)
     {
-        var command = new DeletePartnershipCommand { Id = id };
+        var command = new DeletePartnership { Id = id };
         var res = await mediator.Send(command);
         return Ok(res);
     }

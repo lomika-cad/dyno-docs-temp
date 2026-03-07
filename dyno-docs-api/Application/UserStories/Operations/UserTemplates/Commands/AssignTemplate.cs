@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.UserStories.Operations.UserTemplates.Commands;
 
-public class AssignTemplateCommand : IRequest<Result>
+public class AssignTemplate : IRequest<Result>
 {
     public Guid UserId { get; set; }
     public Guid TemplateId { get; set; }
@@ -16,20 +16,12 @@ public class AssignTemplateCommand : IRequest<Result>
     public Guid TenantId { get; set; }
 }
 
-public class AssignTemplateCommandHandler : IRequestHandler<AssignTemplateCommand, Result>
+public class AssignTemplateHandler(IApplicationDbContext context, IMediator mediator)
+    : IRequestHandler<AssignTemplate, Result>
 {
-    private readonly IApplicationDbContext _context;
-    private readonly IMediator _mediator;
-
-    public AssignTemplateCommandHandler(IApplicationDbContext context, IMediator mediator)
+    public async Task<Result> Handle(AssignTemplate request, CancellationToken cancellationToken)
     {
-        _context = context;
-        _mediator = mediator;
-    }
-
-    public async Task<Result> Handle(AssignTemplateCommand request, CancellationToken cancellationToken)
-    {
-        var templateLimit = await _context.UserSubscription
+        var templateLimit = await context.UserSubscription
             .Where(us => us.TenantId == request.TenantId)
             .Select(us => us.TemplatesLimit)
             .FirstOrDefaultAsync(cancellationToken);
@@ -39,7 +31,7 @@ public class AssignTemplateCommandHandler : IRequestHandler<AssignTemplateComman
             return Result.Failure("User has reached the maximum number of assigned templates.");
         }
         
-        var existingAssignment = await _context.UserTemplate.Where(u => u.UserId == request.UserId && u.TemplateId == request.TemplateId)
+        var existingAssignment = await context.UserTemplate.Where(u => u.UserId == request.UserId && u.TemplateId == request.TemplateId)
             .FirstOrDefaultAsync(cancellationToken);
         
         if (existingAssignment != null)
@@ -54,7 +46,7 @@ public class AssignTemplateCommandHandler : IRequestHandler<AssignTemplateComman
             TemplateDesign = request.TemplateDesign
         };
 
-        _context.UserTemplate.Add(userTemplate);
+        context.UserTemplate.Add(userTemplate);
 
         var query = new UpdateTemplateLimitCommand()
         {
@@ -62,9 +54,9 @@ public class AssignTemplateCommandHandler : IRequestHandler<AssignTemplateComman
             ActionType = "Assign",
         };
         
-        await _mediator.Send(query, cancellationToken);
+        await mediator.Send(query, cancellationToken);
         
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success("Template assigned to user successfully.");
     }

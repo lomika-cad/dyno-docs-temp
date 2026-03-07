@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.UserStories.Operations.Partnerships.Queries;
 
-public class GetPartnerships : IRequest<List<Partnership>> {}
+public class GetPartnershipList : IRequest<List<Partnership>> {}
 
-public class GetPartnershipsHandler(IApplicationDbContext dbContext) : IRequestHandler<GetPartnerships, List<Partnership>>
+public class GetPartnershipListHandler(IApplicationDbContext dbContext) : IRequestHandler<GetPartnershipList, List<Partnership>>
 {
-    public async Task<List<Partnership>> Handle(GetPartnerships request, CancellationToken cancellationToken)
+    public async Task<List<Partnership>> Handle(GetPartnershipList request, CancellationToken cancellationToken)
     {
         var partnerships = await dbContext.Partnership.ToListAsync(cancellationToken);
         return partnerships;

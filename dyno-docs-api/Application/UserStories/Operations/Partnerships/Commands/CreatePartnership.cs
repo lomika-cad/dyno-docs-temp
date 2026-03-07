@@ -8,7 +8,7 @@ using OneOf.Types;
 
 namespace Application.UserStories.Operations.Partnerships.Commands;
 
-public class CreatePartnershipCommand : IRequest<Result>
+public class CreatePartnership : IRequest<Result>
 {
     public string? Name { get; set; }
     public string? Description { get; set; }
@@ -17,9 +17,9 @@ public class CreatePartnershipCommand : IRequest<Result>
     public IFormFile[]? Images { get; set; }
 }
 
-public class CreatePartnershipCommandHandler (IApplicationDbContext dbContext) : IRequestHandler<CreatePartnershipCommand, Result>
+public class CreatePartnershipHandler (IApplicationDbContext dbContext) : IRequestHandler<CreatePartnership, Result>
 {
-    public async Task<Result> Handle(CreatePartnershipCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(CreatePartnership request, CancellationToken cancellationToken)
     {
         byte[][] imageBytes = null;
         if (request.Images != null)
