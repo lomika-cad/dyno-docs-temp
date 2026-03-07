@@ -35,6 +35,31 @@ public class TemplateController (IMediator mediator) : ControllerBase
         return Ok(templates);
     }
     
+    [HttpPut]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Result>> UpdateTemplate([FromForm] UpdateTemplateCommand command)
+    {
+        var res = await mediator.Send(command);
+        if (res.Succeeded)
+        {
+            return Ok(res);
+        }
+        return BadRequest(res);
+    }
+    
+    [HttpDelete("{id}")]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Result>> DeleteTemplate([FromRoute] Guid id)
+    {
+        var command = new DeleteTemplateCommand() { TemplateId = id };
+        var res = await mediator.Send(command);
+        if (res.Succeeded)
+        {
+            return Ok(res);
+        }
+        return BadRequest(res);
+    }
+    
     [HttpPost("assign-to-user")]
     [Authorize]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
