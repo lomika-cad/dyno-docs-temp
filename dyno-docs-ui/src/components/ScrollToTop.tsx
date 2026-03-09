@@ -8,12 +8,8 @@ interface ScrollToTopProps {
   children?: ReactNode;
 }
 
-export default function ScrollToTop({
-  smooth = true,
-  offset = 320,
-  label = "Back to top",
-  children,
-}: ScrollToTopProps) {
+export default function ScrollToTop({ smooth = true, offset = 320, label = "Back to top", children}: ScrollToTopProps) {
+  
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
