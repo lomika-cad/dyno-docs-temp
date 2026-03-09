@@ -21,6 +21,7 @@ export function BirthdayCards({ data }: BirthdayCardsProps) {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<BirthdayData | null>(null);
   const [sending, setSending] = useState(false);
+
   const token = sessionStorage.getItem("dd_token");
 
   const handleSendEmail = (person: BirthdayData) => {
@@ -41,7 +42,6 @@ export function BirthdayCards({ data }: BirthdayCardsProps) {
       setConfirmModalOpen(false);
       setSelectedPerson(null);
     } catch (error) {
-      console.error("Error sending birthday email:", error);
       showError("Failed to send birthday email. Please try again.");
     } finally {
       setSending(false);
@@ -123,7 +123,6 @@ export function BirthdayCards({ data }: BirthdayCardsProps) {
           </CardContent>
         </Card>
 
-        {/* Confirmation Modal */}
         {confirmModalOpen && selectedPerson && (
           <div 
             className="ddModal" 
@@ -210,7 +209,6 @@ export function BirthdayCards({ data }: BirthdayCardsProps) {
         }}
       >
         <CardContent sx={{ p: 3 }}>
-          {/* Header */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
             <Box
               sx={{
@@ -236,7 +234,6 @@ export function BirthdayCards({ data }: BirthdayCardsProps) {
             </Typography>
           </Box>
 
-          {/* Birthday List */}
           <Box
             sx={{
               maxHeight: { xs: "200px", md: "240px" },
@@ -371,7 +368,6 @@ export function BirthdayCards({ data }: BirthdayCardsProps) {
             ))}
           </Box>
 
-          {/* Footer with count */}
           <Box
             sx={{
               mt: 2,
@@ -393,7 +389,6 @@ export function BirthdayCards({ data }: BirthdayCardsProps) {
         </CardContent>
       </Card>
 
-      {/* Confirmation Modal */}
       {confirmModalOpen && selectedPerson && (
         <div 
           className="ddModal" 
