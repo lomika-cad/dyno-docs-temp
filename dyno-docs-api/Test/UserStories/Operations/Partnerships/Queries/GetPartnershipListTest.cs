@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Test.UserStories.Operations.Partnerships.Queries;
 
-public class GetPartnershipsTest
+public class GetPartnershipListTest
 {
     [Fact]
     public async Task Handle_ShouldReturnAllPartnerships()
@@ -38,8 +38,8 @@ public class GetPartnershipsTest
         }
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new GetPartnershipsHandler(context);
-        var query = new GetPartnerships();
+        var handler = new GetPartnershipListHandler(context);
+        var query = new GetPartnershipList();
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -56,8 +56,8 @@ public class GetPartnershipsTest
     {
         // Arrange
         var context = TestDbContextFactory.Create();
-        var handler = new GetPartnershipsHandler(context);
-        var query = new GetPartnerships();
+        var handler = new GetPartnershipListHandler(context);
+        var query = new GetPartnershipList();
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);

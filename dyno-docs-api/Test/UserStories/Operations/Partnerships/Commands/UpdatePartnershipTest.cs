@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Test.UserStories.Operations.Partnerships.Commands;
 
-public class UpdatePartnershipCommandTest
+public class UpdatePartnershipTest
 {
     [Fact]
     public async Task Handle_ShouldUpdatePartnership_WhenExists()
@@ -24,8 +24,8 @@ public class UpdatePartnershipCommandTest
         context.Partnership.Add(existingPartnership);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdatePartnershipCommandHandler(context);
-        var command = new UpdatePartnershipCommand
+        var handler = new UpdatePartnershipHandler(context);
+        var command = new UpdatePartnership
         {
             Id = existingPartnership.Id,
             Name = "Updated Partnership",
@@ -54,8 +54,8 @@ public class UpdatePartnershipCommandTest
     {
         // Arrange
         var context = TestDbContextFactory.Create();
-        var handler = new UpdatePartnershipCommandHandler(context);
-        var command = new UpdatePartnershipCommand
+        var handler = new UpdatePartnershipHandler(context);
+        var command = new UpdatePartnership
         {
             Id = Guid.NewGuid(), // Non-existent ID
             Name = "Updated Partnership",

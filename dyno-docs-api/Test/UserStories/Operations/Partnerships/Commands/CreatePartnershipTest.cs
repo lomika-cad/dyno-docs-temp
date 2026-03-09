@@ -8,15 +8,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Test.UserStories.Operations.Partnerships.Commands;
 
-public class CreatePartnershipCommandTest
+public class CreatePartnershipTest
 {
     [Fact]
     public async Task Handle_ShouldCreatePartnership_WhenValidRequest()
     {
         // Arrange
         var context = TestDbContextFactory.Create();
-        var handler = new CreatePartnershipCommandHandler(context);
-        var command = new CreatePartnershipCommand
+        var handler = new CreatePartnershipHandler(context);
+        var command = new CreatePartnership
         {
             Name = "Test Partnership",
             Description = "A test partnership",
@@ -46,7 +46,7 @@ public class CreatePartnershipCommandTest
     {
         // Arrange
         var context = TestDbContextFactory.Create();
-        var handler = new CreatePartnershipCommandHandler(context);
+        var handler = new CreatePartnershipHandler(context);
 
         // Mock IFormFile
         var mockImage1 = new Mock<IFormFile>();
@@ -66,7 +66,7 @@ public class CreatePartnershipCommandTest
                 stream.Write(imageData2, 0, imageData2.Length);
             });
 
-        var command = new CreatePartnershipCommand
+        var command = new CreatePartnership
         {
             Name = "Partnership with Images",
             Description = "A partnership with images",

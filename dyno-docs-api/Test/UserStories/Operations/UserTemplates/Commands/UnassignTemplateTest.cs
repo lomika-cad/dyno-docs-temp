@@ -7,7 +7,7 @@ using MediatR;
 
 namespace Test.UserStories.Operations.UserTemplates.Commands;
 
-public class UnassignTemplateCommandTest
+public class UnassignTemplateTest
 {
     [Fact]
     public async Task Handle_ShouldUnassignTemplate_WhenExists()
@@ -29,8 +29,8 @@ public class UnassignTemplateCommandTest
         context.UserTemplate.Add(userTemplate);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UnassignTemplateCommandHandler(context, mockMediator.Object);
-        var command = new UnassignTemplateCommand
+        var handler = new UnassignTemplateHandler(context, mockMediator.Object);
+        var command = new UnassignTemplate
         {
             TemplateId = templateId,
             UserId = userId,
@@ -63,8 +63,8 @@ public class UnassignTemplateCommandTest
 
         // No user template assignment exists
 
-        var handler = new UnassignTemplateCommandHandler(context, mockMediator.Object);
-        var command = new UnassignTemplateCommand
+        var handler = new UnassignTemplateHandler(context, mockMediator.Object);
+        var command = new UnassignTemplate
         {
             TemplateId = templateId,
             UserId = userId,

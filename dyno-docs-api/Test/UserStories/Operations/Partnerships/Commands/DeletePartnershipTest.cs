@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Test.UserStories.Operations.Partnerships.Commands;
 
-public class DeletePartnershipCommandTest
+public class DeletePartnershipTest
 {
     [Fact]
     public async Task Handle_ShouldDeletePartnership_WhenExists()
@@ -24,8 +24,8 @@ public class DeletePartnershipCommandTest
         context.Partnership.Add(existingPartnership);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new DeletePartnershipCommandHandler(context);
-        var command = new DeletePartnershipCommand
+        var handler = new DeletePartnershipHandler(context);
+        var command = new DeletePartnership
         {
             Id = existingPartnership.Id
         };
@@ -46,8 +46,8 @@ public class DeletePartnershipCommandTest
     {
         // Arrange
         var context = TestDbContextFactory.Create();
-        var handler = new DeletePartnershipCommandHandler(context);
-        var command = new DeletePartnershipCommand
+        var handler = new DeletePartnershipHandler(context);
+        var command = new DeletePartnership
         {
             Id = Guid.NewGuid() // Non-existent ID
         };

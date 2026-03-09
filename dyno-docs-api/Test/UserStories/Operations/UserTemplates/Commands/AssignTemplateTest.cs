@@ -7,7 +7,7 @@ using MediatR;
 
 namespace Test.UserStories.Operations.UserTemplates.Commands;
 
-public class AssignTemplateCommandTest
+public class AssignTemplateTest
 {
     [Fact]
     public async Task Handle_ShouldAssignTemplate_WhenValid()
@@ -32,8 +32,8 @@ public class AssignTemplateCommandTest
         context.UserSubscription.Add(userSubscription);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new AssignTemplateCommandHandler(context, mockMediator.Object);
-        var command = new AssignTemplateCommand
+        var handler = new AssignTemplateHandler(context, mockMediator.Object);
+        var command = new AssignTemplate
         {
             UserId = userId,
             TemplateId = templateId,
@@ -79,8 +79,8 @@ public class AssignTemplateCommandTest
         context.UserSubscription.Add(userSubscription);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new AssignTemplateCommandHandler(context, mockMediator.Object);
-        var command = new AssignTemplateCommand
+        var handler = new AssignTemplateHandler(context, mockMediator.Object);
+        var command = new AssignTemplate
         {
             UserId = userId,
             TemplateId = templateId,
@@ -135,8 +135,8 @@ public class AssignTemplateCommandTest
         context.UserSubscription.Add(userSubscription);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new AssignTemplateCommandHandler(context, mockMediator.Object);
-        var command = new AssignTemplateCommand
+        var handler = new AssignTemplateHandler(context, mockMediator.Object);
+        var command = new AssignTemplate
         {
             UserId = userId,
             TemplateId = templateId, // Same template already assigned

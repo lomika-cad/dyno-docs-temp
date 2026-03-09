@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Test.UserStories.Operations.UserTemplates.Queries;
 
-public class GetUserTemplatesTest
+public class GetUserTemplateListTest
 {
     [Fact]
     public async Task Handle_ShouldReturnUserTemplates_WithBase64Thumbnails()
@@ -51,8 +51,8 @@ public class GetUserTemplatesTest
 
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new GetUserTemplatesHandler(context);
-        var query = new GetUserTemplates
+        var handler = new GetUserTemplateListHandler(context);
+        var query = new GetUserTemplateList
         {
             UserId = userId
         };
@@ -84,8 +84,8 @@ public class GetUserTemplatesTest
         var context = TestDbContextFactory.Create();
         var userId = Guid.NewGuid(); // User with no template assignments
 
-        var handler = new GetUserTemplatesHandler(context);
-        var query = new GetUserTemplates
+        var handler = new GetUserTemplateListHandler(context);
+        var query = new GetUserTemplateList
         {
             UserId = userId
         };

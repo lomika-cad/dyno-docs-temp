@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Test.UserStories.Operations.UserTemplates.Commands;
 
-public class UpdateDesignCommandTest
+public class UpdateDesignTest
 {
     [Fact]
     public async Task Handle_ShouldUpdateDesign_WhenExists()
@@ -25,8 +25,8 @@ public class UpdateDesignCommandTest
         context.UserTemplate.Add(userTemplate);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var handler = new UpdateDesignCommandHandler(context);
-        var command = new UpdateDesignCommand
+        var handler = new UpdateDesignHandler(context);
+        var command = new UpdateDesign
         {
             UserId = userId,
             TemplateId = templateId,
@@ -55,8 +55,8 @@ public class UpdateDesignCommandTest
 
         // No user template assignment exists
 
-        var handler = new UpdateDesignCommandHandler(context);
-        var command = new UpdateDesignCommand
+        var handler = new UpdateDesignHandler(context);
+        var command = new UpdateDesign
         {
             UserId = userId,
             TemplateId = templateId,
