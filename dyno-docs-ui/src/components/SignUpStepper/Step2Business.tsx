@@ -18,6 +18,7 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
   const [agencyAddress, setAgencyAddress] = useState(initial?.agencyAddress ?? "");
   const [logoFile, setLogoFile] = useState<File | null>(initial?.agencyLogoFile ?? null);
   const [logoPreview, setLogoPreview] = useState<string | null>(initial?.agencyLogoUrl ?? null);
+  const [isLogoDragActive, setIsLogoDragActive] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -43,8 +44,6 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
     setLogoPreview(null);
     if (fileRef.current) fileRef.current.value = "";
   };
-
-  const [isLogoDragActive, setIsLogoDragActive] = useState(false);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -124,7 +123,7 @@ export default function Step2Business({ initial, onNext, onBack }: Props) {
         </label>
 
         <label className="field">
-          <div className="field-label">State</div>
+          <div className="field-label">Province</div>
           <input id="state" className="field-input" value={state} onChange={(e) => setState(e.target.value)} placeholder="Enter your state" />
           {errors.state && <div className="field-error">{errors.state}</div>}
         </label>
