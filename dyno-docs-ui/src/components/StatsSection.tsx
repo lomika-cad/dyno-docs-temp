@@ -3,6 +3,7 @@ import { Container, Grid, Box, Typography } from "@mui/material";
 import { Hourglass, Zap, Bookmark, Shield } from "lucide-react";
 
 const StatsSection = () => {
+
   const stats = useMemo(
     () => [
       {
@@ -43,7 +44,7 @@ const StatsSection = () => {
 
       const step = (timestamp: number) => {
         const progress = Math.min((timestamp - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic for a smooth finish
+        const eased = 1 - Math.pow(1 - progress, 3);
         const current = target * eased;
 
         setCounts((prev) => {
@@ -93,7 +94,6 @@ const StatsSection = () => {
           spacing={{ xs: 4, md: 6 }}
           alignItems="stretch"
         >
-          {/* Left Content */}
           <Grid size={{ xs: 12, md: 5 }}>
             <Box data-aos="fade-right">
               <Typography
@@ -133,7 +133,6 @@ const StatsSection = () => {
             </Box>
           </Grid>
 
-          {/* Right Stats Grid */}
           <Grid size={{ xs: 12, md: 7 }}>
             <Grid container spacing={{ xs: 3.5, md: 4.5 }}>
               {stats.map((stat, index) => {
@@ -160,7 +159,6 @@ const StatsSection = () => {
                         gap: 3.5,
                       }}
                     >
-                      {/* Icon Container */}
                       <Box
                         sx={{
                           flexShrink: 0,
@@ -181,7 +179,6 @@ const StatsSection = () => {
                         />
                       </Box>
 
-                      {/* Stat Content */}
                       <Box>
                         <Typography
                           variant="h6"
