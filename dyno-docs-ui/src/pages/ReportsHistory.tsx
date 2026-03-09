@@ -238,17 +238,6 @@ export default function ReportsHistory() {
         return pages;
     };
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
     const parseReportData = (report: Report): ReportData | null => {
         try {
             return JSON.parse(report.generatedReport);
@@ -572,7 +561,6 @@ export default function ReportsHistory() {
                         const topPercent = ((el.y || 0) / 842) * 100;
                         const widthPercent = ((el.width || 100) / 595) * 100;
                         const heightPercent = ((el.height || 100) / 842) * 100;
-                        console.log('Template image src:', el.src, '->', imgSrc);
                         if (!imgSrc || imgSrc.trim() === '') {
                             console.warn('Empty image src for template element:', el);
                         }
@@ -801,8 +789,6 @@ export default function ReportsHistory() {
                 let loadedImages = 0;
                 const totalImages = images.length;
                 
-                console.log(`Found ${totalImages} images in PDF`);
-                
                 if (totalImages === 0) {
                     // No images to load, print immediately
                     setTimeout(() => {
@@ -813,9 +799,7 @@ export default function ReportsHistory() {
                 
                 const checkAllImagesLoaded = () => {
                     loadedImages++;
-                    console.log(`Loaded ${loadedImages}/${totalImages} images`);
                     if (loadedImages === totalImages) {
-                        console.log('All images loaded, printing...');
                         setTimeout(() => {
                             printWindow.print();
                         }, 1000); // Extra delay to ensure rendering
@@ -824,21 +808,16 @@ export default function ReportsHistory() {
                 
                 // Add load event listeners to all images
                 Array.from(images).forEach((img, index) => {
-                    console.log(`Image ${index}: ${img.src.substring(0, 100)}...`);
                     if (img.complete && img.naturalWidth > 0) {
-                        console.log(`Image ${index} already loaded`);
                         checkAllImagesLoaded();
                     } else {
                         img.onload = () => {
-                            console.log(`Image ${index} loaded successfully`);
                             checkAllImagesLoaded();
                         };
-                        img.onerror = (e) => {
-                            console.warn(`Image ${index} failed to load:`, img.src, e);
+                        img.onerror = () => {
                             checkAllImagesLoaded();
                         };
                         
-                        // Force reload if image has not started loading
                         if (!img.src || img.src === 'about:blank') {
                             console.warn(`Image ${index} has invalid src, skipping`);
                             checkAllImagesLoaded();

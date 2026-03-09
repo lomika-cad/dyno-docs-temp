@@ -11,7 +11,8 @@ import { getPartnershipByDistrict } from "../services/partnership-api";
 import { generateDayDescription } from "../services/ai-api";
 import { getUserTemplates } from "../services/template-api";
 import { generateReport } from "../services/reports-api";
-import { validatePromoCode } from "../services/promo-codes-api";
+import { validatePromoCode, getActivePromoCodes } from "../services/promo-codes-api";
+import type { PromoCode } from "../services/promo-codes-api";
 
 export default function ReportGeneration() {
     const navigate = useNavigate();
@@ -32,6 +33,8 @@ export default function ReportGeneration() {
     const [generatedReport] = useState<any>(null);
     const [validatingPromoCode, setValidatingPromoCode] = useState(false);
     const [promoCodeMessage, setPromoCodeMessage] = useState<string>("");
+    const [activePromoCodes, setActivePromoCodes] = useState<PromoCode[]>([]);
+    const [loadingPromoCodes, setLoadingPromoCodes] = useState(false);
     const dayCardRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +63,22 @@ export default function ReportGeneration() {
             .then((data) => setTemplates(Array.isArray(data) ? data : data?.templates ?? data?.data ?? []))
             .catch(() => showError("Failed to load templates."))
             .finally(() => setLoadingTemplates(false));
+    }, [currentStep]);
+
+    // Fetch active promo codes when reaching step 3 (for dropdown)
+    useEffect(() => {
+        if (currentStep !== 3) return;
+        setLoadingPromoCodes(true);
+        getActivePromoCodes(sessionStorage.getItem("dd_token") || undefined)
+            .then((res) => {
+                const data = res?.data ?? [];
+                setActivePromoCodes(Array.isArray(data) ? data : []);
+            })
+            .catch(() => {
+                showError("Failed to load promo codes.");
+                setActivePromoCodes([]);
+            })
+            .finally(() => setLoadingPromoCodes(false));
     }, [currentStep]);
 
     // Form state
@@ -137,6 +156,18 @@ export default function ReportGeneration() {
             ...prev,
             [name]: value,
         }));
+    };
+
+    const handlePromoCodeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        const numericTotal = parseFloat(formData.totalAmount) || 0;
+        setFormData((prev) => ({
+            ...prev,
+            promoCode: value,
+            promoCodeDiscount: 0,
+            finalAmount: numericTotal,
+        }));
+        setPromoCodeMessage("");
     };
 
     const handleRouteToggle = (route: string) => {
@@ -2288,12 +2319,11 @@ export default function ReportGeneration() {
                                         Promo Code (Optional)
                                     </label>
                                     <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                                        <input
-                                            type="text"
+                                        <select
                                             name="promoCode"
                                             value={formData.promoCode}
-                                            onChange={handleInputChange}
-                                            placeholder="Enter promo code..."
+                                            onChange={handlePromoCodeSelect}
+                                            disabled={loadingPromoCodes}
                                             style={{
                                                 flex: 1,
                                                 padding: "12px",
@@ -2301,8 +2331,22 @@ export default function ReportGeneration() {
                                                 borderRadius: "8px",
                                                 fontSize: "13px",
                                                 fontFamily: "inherit",
+                                                backgroundColor: "white",
+                                                cursor: loadingPromoCodes ? "not-allowed" : "pointer",
+                                                minHeight: "44px",
                                             }}
-                                        />
+                                            aria-label="Select promo code"
+                                        >
+                                            <option value="">
+                                                {loadingPromoCodes ? "Loading promo codes..." : activePromoCodes.length === 0 ? "No promo codes available" : "Select a promo code..."}
+                                            </option>
+                                            {activePromoCodes.map((promo) => (
+                                                <option key={promo.id} value={promo.code}>
+                                                    {promo.code}
+                                                    {promo.description ? ` — ${promo.description}` : ""}
+                                                </option>
+                                            ))}
+                                        </select>
                                         <button
                                             type="button"
                                             onClick={handlePromoCodeValidation}

@@ -642,7 +642,6 @@ export default function Templates() {
   const handleMe = async () => {
     try {
       const res = await getMe(sessionStorage.getItem("dd_token") ?? "", sessionStorage.getItem("dd_tenant_id") ?? "");
-      console.log(res);
       sessionStorage.setItem("dd_template_limit", res.templatesLimit);
     } catch (error) {
       console.error(error);
@@ -704,8 +703,6 @@ export default function Templates() {
   };
 
   const handleUnassignTemplateRequest = (template: any) => {
-    console.log(template);
-
     setTemplateToUnassign(template);
   };
 

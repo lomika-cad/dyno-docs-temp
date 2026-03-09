@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
@@ -14,6 +14,10 @@ import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
+import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
+import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import "../styles/navbar.css";
 import "../styles/agencyData.css";
 import "../styles/home.css";
@@ -27,6 +31,7 @@ import CardPayment from "../components/CardPayment";
 import useIdleTimer from "../hooks/IdleTimer";
 import TimeoutImg from "../assets/waste.png";
 import { getUnreadChatCount } from "../services/agent-api";
+import { updateLogo, updateAgencyData, getTenantInfo } from "../services/auth-api";
 
 export type NavbarItem = {
     label: string;
@@ -150,6 +155,362 @@ type PricingModalProps = {
     onUpdated?: () => void;
 };
 
+type ProfileModalProps = {
+    open: boolean;
+    onClose: () => void;
+};
+
+type AgencyData = {
+    name: string;
+    contactNo: string;
+    agencyAddress: string;
+    agencyLogo: string;
+};
+
+type UserData = {
+    fullName: string;
+    email: string;
+    mobile: string;
+    role: string;
+};
+
+function ProfileModal({ open, onClose }: ProfileModalProps) {
+    const token = sessionStorage.getItem("dd_token") || "";
+    const tenantId = sessionStorage.getItem("dd_tenant_id") || "";
+
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [logoHover, setLogoHover] = useState(false);
+    const logoInputRef = useRef<HTMLInputElement>(null);
+
+    const [agencyData, setAgencyData] = useState<AgencyData>({
+        name: "",
+        contactNo: "",
+        agencyAddress: "",
+        agencyLogo: "",
+    });
+
+    const [userData] = useState<UserData>({
+        fullName: sessionStorage.getItem("dd_full_name") || "",
+        email: sessionStorage.getItem("dd_email") || "",
+        mobile: sessionStorage.getItem("dd_mobile") || "",
+        role: sessionStorage.getItem("dd_role") || "",
+    });
+
+    const [editedAgencyData, setEditedAgencyData] = useState<AgencyData>(agencyData);
+
+    const formatLogoSrc = (logo: string) => {
+        if (!logo) return "";
+        if (logo.startsWith("data:") || logo.startsWith("http")) {
+            return logo;
+        }
+        return `data:image/png;base64,${logo}`;
+    };
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const response = await getTenantInfo(tenantId);
+            const data = response.data || response;
+
+            const agency: AgencyData = {
+                name: data.agencyName || "",
+                contactNo: data.contactNo || "",
+                agencyAddress: data.agencyAddress || "",
+                agencyLogo: data.agencyLogo || "",
+            };
+
+            setAgencyData(agency);
+            setEditedAgencyData(agency);
+        } catch (error) {
+            console.error("Failed to load profile data:", error);
+            showError("Failed to load profile data");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!open) return;
+
+
+
+        loadData();
+    }, [open, tenantId]);
+
+    const handleLogoClick = () => {
+        logoInputRef.current?.click();
+    };
+
+    const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            showError("Please select an image file");
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            showError("Image size should be less than 5MB");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const response = await updateLogo(tenantId, file, token);
+            const newLogoUrl = response.data?.agencyLogo || response.agencyLogo || response.data?.logoUrl || response.logoUrl || "";
+            loadData();
+            setAgencyData((prev) => ({ ...prev, agencyLogo: newLogoUrl }));
+            setEditedAgencyData((prev) => ({ ...prev, agencyLogo: newLogoUrl }));
+
+            showSuccess("Logo updated successfully");
+        } catch (error: any) {
+            console.error("Failed to update logo:", error);
+            showError(error.response?.data?.message || "Failed to update logo");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSaveAgencyData = async () => {
+        setSaving(true);
+        try {
+            const payload = {
+                tenantId,
+                agencyName: editedAgencyData.name,
+                contactNo: editedAgencyData.contactNo,
+                address: editedAgencyData.agencyAddress,
+            };
+
+            await updateAgencyData(payload, token);
+            setAgencyData(editedAgencyData);
+            sessionStorage.setItem("dd_agency_name", editedAgencyData.name);
+            showSuccess("Agency data updated successfully");
+        } catch (error: any) {
+            console.error("Failed to update agency data:", error);
+            showError(error.response?.data?.message || "Failed to update agency data");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const hasChanges =
+        editedAgencyData.name !== agencyData.name ||
+        editedAgencyData.contactNo !== agencyData.contactNo ||
+        editedAgencyData.agencyAddress !== agencyData.agencyAddress;
+
+    if (!open) return null;
+
+    return (
+        <div className="profileFullscreen" role="dialog" aria-modal="true" aria-label="Profile modal">
+            <div className="profileFullscreen__backdrop" onClick={onClose} />
+
+            <div className="pfm-shell">
+                <header className="pfm-topbar">
+                    <div className="pfm-topbar__left">
+                        <div className="pfm-topbar__badge">Account Center</div>
+                        <h2 className="pfm-topbar__title">Profile & Agency Settings</h2>
+                        <p className="pfm-topbar__subtitle">
+                            Manage your agency information, logo, and personal account details.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        className="pfm-closeBtn"
+                        aria-label="Close profile"
+                        onClick={onClose}
+                    >
+                        ×
+                    </button>
+                </header>
+
+                <div className="pfm-body">
+                    {loading ? (
+                        <div className="pfm-loaderWrap" role="status" aria-live="polite">
+                            <CircularProgress size={54} sx={{ color: "var(--color-primary)" }} />
+                        </div>
+                    ) : (
+                        <div className="pfm-grid">
+                            {/* Left column */}
+                            <section className="pfm-card pfm-card--hero">
+                                <div className="pfm-sectionHead">
+                                    <div className="pfm-sectionIcon">
+                                        <BusinessRoundedIcon />
+                                    </div>
+                                    <div>
+                                        <h3 className="pfm-sectionTitle">Agency Profile</h3>
+                                        <p className="pfm-sectionText">
+                                            Update your organization branding and contact details.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="pfm-brandPanel">
+                                    <div
+                                        className="pfm-logoBox"
+                                        onMouseEnter={() => setLogoHover(true)}
+                                        onMouseLeave={() => setLogoHover(false)}
+                                        onClick={handleLogoClick}
+                                    >
+                                        {editedAgencyData.agencyLogo ? (
+                                            <img
+                                                src={formatLogoSrc(editedAgencyData.agencyLogo)}
+                                                alt={editedAgencyData.name || "Agency logo"}
+                                                className="pfm-logoImg"
+                                            />
+                                        ) : (
+                                            <div className="pfm-logoFallback">
+                                                <BusinessRoundedIcon sx={{ fontSize: 48 }} />
+                                            </div>
+                                        )}
+
+                                        <div className={`pfm-logoOverlay ${logoHover ? "pfm-logoOverlay--show" : ""}`}>
+                                            <CloudUploadRoundedIcon />
+                                            <span>Upload Logo</span>
+                                        </div>
+                                    </div>
+
+                                    <input
+                                        ref={logoInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        style={{ display: "none" }}
+                                        onChange={handleLogoChange}
+                                    />
+
+                                    <div className="pfm-brandInfo">
+                                        <h4>{editedAgencyData.name || "Your Agency"}</h4>
+                                        <p>Upload a clean company logo for a more professional appearance.</p>
+                                    </div>
+                                </div>
+
+                                <div className="pfm-formGrid">
+                                    <div className="pfm-field">
+                                        <label className="pfm-label">Agency Name</label>
+                                        <input
+                                            type="text"
+                                            className="pfm-input"
+                                            value={editedAgencyData.name}
+                                            onChange={(e) =>
+                                                setEditedAgencyData((prev) => ({
+                                                    ...prev,
+                                                    name: e.target.value,
+                                                }))
+                                            }
+                                            placeholder="Enter agency name"
+                                        />
+                                    </div>
+
+                                    <div className="pfm-field">
+                                        <label className="pfm-label">Contact Number</label>
+                                        <input
+                                            type="text"
+                                            className="pfm-input"
+                                            value={editedAgencyData.contactNo}
+                                            onChange={(e) =>
+                                                setEditedAgencyData((prev) => ({
+                                                    ...prev,
+                                                    contactNo: e.target.value,
+                                                }))
+                                            }
+                                            placeholder="Enter contact number"
+                                        />
+                                    </div>
+
+                                    <div className="pfm-field pfm-field--full">
+                                        <label className="pfm-label">Address</label>
+                                        <textarea
+                                            className="pfm-input pfm-textarea"
+                                            value={editedAgencyData.agencyAddress}
+                                            onChange={(e) =>
+                                                setEditedAgencyData((prev) => ({
+                                                    ...prev,
+                                                    agencyAddress: e.target.value,
+                                                }))
+                                            }
+                                            rows={4}
+                                            placeholder="Enter agency address"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pfm-actions">
+                                    <button type="button" className="pfm-btn pfm-btn--ghost" onClick={onClose}>
+                                        Cancel
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="pfm-btn pfm-btn--primary"
+                                        onClick={handleSaveAgencyData}
+                                        disabled={!hasChanges || saving}
+                                    >
+                                        <SaveRoundedIcon fontSize="small" />
+                                        {saving ? "Saving..." : "Save Changes"}
+                                    </button>
+                                </div>
+                            </section>
+
+                            {/* Right column */}
+                            <section className="pfm-sideCol">
+                                <div className="pfm-card">
+                                    <div className="pfm-sectionHead">
+                                        <div className="pfm-sectionIcon">
+                                            <PersonRoundedIcon />
+                                        </div>
+                                        <div>
+                                            <h3 className="pfm-sectionTitle">Personal Information</h3>
+                                            <p className="pfm-sectionText">
+                                                Your account details currently available in the system.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="pfm-infoList">
+                                        <div className="pfm-infoItem">
+                                            <span className="pfm-infoLabel">Full Name</span>
+                                            <span className="pfm-infoValue">{userData.fullName || "-"}</span>
+                                        </div>
+
+                                        <div className="pfm-infoItem">
+                                            <span className="pfm-infoLabel">Email</span>
+                                            <span className="pfm-infoValue">{userData.email || "-"}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pfm-card pfm-card--summary">
+                                    <div className="pfm-summaryHeader">
+                                        <h3>Profile Summary</h3>
+                                        <span className="pfm-summaryDot" />
+                                    </div>
+
+                                    <div className="pfm-summaryRows">
+                                        <div className="pfm-summaryRow">
+                                            <span>Agency</span>
+                                            <strong>{editedAgencyData.name || "Not set"}</strong>
+                                        </div>
+                                        <div className="pfm-summaryRow">
+                                            <span>Contact</span>
+                                            <strong>{editedAgencyData.contactNo || "Not set"}</strong>
+                                        </div>
+                                        <div className="pfm-summaryRow">
+                                            <span>Status</span>
+                                            <strong>Active Account</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
     const [yearly, setYearly] = useState(false);
     const [plans, setPlans] = useState<any[]>([]);
@@ -160,19 +521,6 @@ function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
     );
 
     const token = sessionStorage.getItem("dd_token") || "";
-
-    const handleGetUnreadChatCount = async () => {
-        try {
-            const res = await getUnreadChatCount(token);
-            console.log("Unread chat count:", res.count);
-        } catch (error) {
-            
-        }
-    }
-
-    useEffect(() => {
-        handleGetUnreadChatCount();
-    }, []);
 
     const handleUpdatePlan = async (planId: string) => {
         const body = {
@@ -187,7 +535,7 @@ function PricingModal({ open, onClose, onUpdated }: PricingModalProps) {
             showSuccess("Subscription updated successfully.");
             onUpdated?.();
             onClose();
-        } catch (error:any) {
+        } catch (error: any) {
             showError(error.response?.data?.message || "Failed to update subscription. Please try again.");
         }
     }
@@ -400,6 +748,7 @@ export default function Navbar({ children, items }: NavbarProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
     const [pricingOpen, setPricingOpen] = useState(false);
+    const [profileOpen, setProfileOpen] = useState(false);
     const [idleModalOpen, setIdleModalOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo>(() => ({
@@ -471,7 +820,6 @@ export default function Navbar({ children, items }: NavbarProps) {
     const handleMe = async () => {
         try {
             const res = await getMe(token, sessionStorage.getItem("dd_tenant_id") || "");
-            console.log(res);
 
             const nextInfo: SubscriptionInfo = {
                 plan: res.planName ?? "Free",
@@ -518,11 +866,8 @@ export default function Navbar({ children, items }: NavbarProps) {
     const handleGetUnreadChatCount = useCallback(async () => {
         try {
             const res = await getUnreadChatCount(token);
-            console.log("Unread chat count:", res.count);
             setUnreadCount(res.unreadChatCount || 0);
         } catch (error) {
-            // Silently handle errors to avoid disrupting user experience
-            console.error("Failed to fetch unread chat count:", error);
         }
     }, [token]);
 
@@ -563,6 +908,10 @@ export default function Navbar({ children, items }: NavbarProps) {
 
     return (
         <div className="app-shell">
+            <ProfileModal
+                open={profileOpen}
+                onClose={() => setProfileOpen(false)}
+            />
             <PricingModal
                 open={pricingOpen}
                 onClose={() => setPricingOpen(false)}
@@ -628,7 +977,7 @@ export default function Navbar({ children, items }: NavbarProps) {
                     <div className="ddModal-card">
                         <div className="ddModal-title">Session timed out</div>
                         <br />
-                        <img style={{width: "80px", height: "80px"}} src={TimeoutImg} alt="" />
+                        <img style={{ width: "80px", height: "80px" }} src={TimeoutImg} alt="" />
                         <br />
                         <div className="ddModal-subtitle">
                             You were inactive for too long. Click anywhere to continue.
@@ -768,9 +1117,14 @@ export default function Navbar({ children, items }: NavbarProps) {
                     </div>
 
                     <div className="topbar-user" aria-label="User">
-                        <span className="topbar-avatar" aria-hidden="true">
+                        <button
+                            type="button"
+                            className="topbar-avatar"
+                            aria-label="Open profile"
+                            onClick={() => setProfileOpen(true)}
+                        >
                             {userName.charAt(0).toUpperCase()}
-                        </span>
+                        </button>
                     </div>
                 </header>
 
