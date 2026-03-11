@@ -22,12 +22,8 @@ const getYears = (count = 12) => {
 	return Array.from({ length: count }, (_, index) => String(start + index));
 };
 
-export default function CardPayment({
-	totalAmount,
-	currency = "LKR",
-	locale = "en-LK",
-	onPaid,
-}: CardPaymentProps) {
+export default function CardPayment({totalAmount, currency = "LKR",	locale = "en-LK", onPaid}: CardPaymentProps) {
+
 	const [cardNumberSegments, setCardNumberSegments] = useState<string[]>(["", "", "", ""]);
 	const [cardHolder, setCardHolder] = useState("");
 	const [expiryMonth, setExpiryMonth] = useState("07");
@@ -35,8 +31,6 @@ export default function CardPayment({
 	const [cvv, setCvv] = useState("");
 
 	const amountLabel = useMemo(() => {
-		// If amount is in LKR but we want to *display* as USD
-		// without conversion, just change the currency code.
 		const displayCurrency = currency === "LKR" ? "USD" : currency;
 		try {
 			return new Intl.NumberFormat(locale, {

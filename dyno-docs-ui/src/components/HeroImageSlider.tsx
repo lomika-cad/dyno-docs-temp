@@ -6,6 +6,7 @@ import image4 from "../assets/imageSlider4.jpg";
 import image5 from "../assets/imageSlider5.jpg";
 
 export default function HeroImageSlider() {
+  
   const images = [
     image1,
     image2,

@@ -2,6 +2,7 @@ import { Container, Grid, Box, Typography, Card, CardContent } from "@mui/materi
 import { Lightbulb, CheckCircle, Grid3x3 } from "lucide-react";
 
 const FeaturesSection = () => {
+
   const features = [
     {
       icon: Lightbulb,
@@ -26,7 +27,6 @@ const FeaturesSection = () => {
   return (
     <Box sx={{ py: 8, bgcolor: "#f9f9f9" }}>
       <Container maxWidth="lg">
-        {/* Header */}
         <Box sx={{ textAlign: "center", mb: 6 }}>
           <Typography
             variant="h3"
@@ -56,7 +56,6 @@ const FeaturesSection = () => {
           </Typography>
         </Box>
 
-        {/* Features Grid */}
         <Grid container spacing={4}>
           {features.map((feature, index) => {
             const IconComponent = feature.icon;
@@ -88,7 +87,6 @@ const FeaturesSection = () => {
                       p: 3,
                     }}
                   >
-                    {/* Icon */}
                     <Box
                       sx={{
                         mt: 2,
@@ -108,7 +106,6 @@ const FeaturesSection = () => {
                       />
                     </Box>
 
-                    {/* Title */}
                     <Typography
                       variant="h6"
                       sx={{
@@ -121,7 +118,6 @@ const FeaturesSection = () => {
                       {feature.title}
                     </Typography>
 
-                    {/* Description */}
                     <Typography
                       variant="body2"
                       sx={{

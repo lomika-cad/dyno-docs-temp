@@ -6,11 +6,8 @@ type StatCardProps = {
   icon: React.ReactNode;
 };
 
-export function StatCard({
-  title,
-  value,
-  icon,
-}: StatCardProps) {
+export function StatCard({ title, value, icon }: StatCardProps) {
+
   return (
     <Card
       sx={{

@@ -1,16 +1,13 @@
 import React from 'react';
 
-// A4 dimensions at 96 DPI
 export const A4_WIDTH = 595;
 export const A4_HEIGHT = 842;
 
-// Content area height (excluding header)
 const HEADER_HEIGHT = 130;
 const PADDING_TOP = 20;
 const PADDING_BOTTOM = 32;
 const CONTENT_HEIGHT = A4_HEIGHT - HEADER_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
 
-// Type definitions
 export type ReportPageType = 'template' | 'customerInfo' | 'dayDetail' | 'dayDetailContinued' | 'cost' | 'policies';
 
 export interface ReportPage {
@@ -66,9 +63,9 @@ export interface ReportData {
     totalPages?: number;
 }
 
-// Utility functions for images
 export const getImgSrc = (raw: any): string => {
-    const s = typeof raw === 'string' ? raw : raw?.url ?? raw?.src ?? raw?.path ?? '';
+    console.log(raw);    
+    const s = typeof raw === 'string' ? raw : '';
     if (!s) return '';
     if (s.startsWith('data:')) return s;
     if (s.length > 200 && /^[A-Za-z0-9+/]+=*$/.test(s)) return `data:image/jpeg;base64,${s}`;
@@ -91,14 +88,12 @@ export const svcImgs = (hotel: any): string[] => {
     return (Array.isArray(raw) ? raw : [raw]).map(getImgSrc).filter(Boolean);
 };
 
-// Service color themes
 export const svcColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
     hotel: { bg: '#f5f0ff', border: '#ddd6fe', text: '#5b21b6', badge: '#7c3aed' },
     transport: { bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8', badge: '#2563eb' },
     activity: { bg: '#fff1f0', border: '#fecaca', text: '#b91c1c', badge: '#dc2626' },
 };
 
-// Page Shell component - A4 sized container
 interface PageShellProps {
     children: React.ReactNode;
     scale?: number;
@@ -123,7 +118,6 @@ export const PageShell: React.FC<PageShellProps> = ({ children, scale = 1, showS
     </div>
 );
 
-// Section Title component
 interface SectionTitleProps {
     color: string;
     children: React.ReactNode;
@@ -142,7 +136,6 @@ export const SectionTitle: React.FC<SectionTitleProps> = ({ color, children, sca
     </div>
 );
 
-// Template Page Renderer
 interface TemplatePageProps {
     page: ReportPage;
     scale?: number;
@@ -234,7 +227,6 @@ export const TemplatePageRenderer: React.FC<TemplatePageProps> = ({ page, scale 
                                 }} />
                             );
                         }
-                        // Default rectangle
                         return (
                             <div key={i} style={{
                                 ...baseStyle,
@@ -283,7 +275,6 @@ export const TemplatePageRenderer: React.FC<TemplatePageProps> = ({ page, scale 
     );
 };
 
-// Customer Info Page Renderer
 interface CustomerInfoPageProps {
     page: ReportPage;
     reportData: ReportData;
@@ -350,36 +341,30 @@ export const CustomerInfoPageRenderer: React.FC<CustomerInfoPageProps> = ({ page
     );
 };
 
-// Day Detail Page Renderer
 interface DayDetailPageProps {
     page: ReportPage;
     scale?: number;
 }
 
-// Helper to split day content across pages if needed
 export const splitDayContentForPages = (dayPage: ReportPage): ReportPage[] => {
     const content = dayPage.content;
     const places = content?.selectedPlaces || [];
     const hotels = content?.selectedHotels || [];
     
-    // Estimate content height (rough calculation)
     const descriptionHeight = content?.description ? 100 : 0;
-    const placesHeight = Math.ceil(places.length / 2) * 100; // 2 columns, ~100px per row
-    const hotelsHeight = hotels.length * 80; // ~80px per hotel
+    const placesHeight = Math.ceil(places.length / 2) * 100;
+    const hotelsHeight = hotels.length * 80;
     const remarksHeight = content?.remarks ? 60 : 0;
     const totalContentHeight = descriptionHeight + placesHeight + hotelsHeight + remarksHeight;
     
-    // If content fits in one page, return as is
     if (totalContentHeight <= CONTENT_HEIGHT) {
         return [dayPage];
     }
     
-    // Split content across pages
     const pages: ReportPage[] = [];
     const maxPlacesPerPage = 4;
     const maxHotelsPerPage = 3;
     
-    // First page with description and some places/hotels
     const firstPagePlaces = places.slice(0, maxPlacesPerPage);
     const firstPageHotels = hotels.slice(0, maxHotelsPerPage);
     const remainingPlaces = places.slice(maxPlacesPerPage);
@@ -395,13 +380,12 @@ export const splitDayContentForPages = (dayPage: ReportPage): ReportPage[] => {
         }
     });
     
-    // Additional pages for overflow content
     let currentPlaces = remainingPlaces;
     let currentHotels = remainingHotels;
     let pageCount = 1;
     
     while (currentPlaces.length > 0 || currentHotels.length > 0) {
-        const pagePlaces = currentPlaces.slice(0, maxPlacesPerPage + 2); // More space without header
+        const pagePlaces = currentPlaces.slice(0, maxPlacesPerPage + 2);
         const pageHotels = currentHotels.slice(0, maxHotelsPerPage + 2);
         
         currentPlaces = currentPlaces.slice(maxPlacesPerPage + 2);
@@ -431,10 +415,8 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
     const heroImgs: string[] = [];
     (page.content?.selectedPlaces || []).forEach((sp: any) => placeImgs(sp.place).slice(0, 2).forEach((u: string) => heroImgs.push(u)));
 
-    // Check if this is a continuation page
     const isContinuationPage = page.type === 'dayDetailContinued' || page.isOverflow;
     
-    // Get colors from page content metadata or use defaults
     const dayHeaderColor = page.content?.dayHeaderColor || '#1E293B';
     const dayItineraryColor = page.content?.dayItineraryColor || '#8B5CF6';
     const dayPlacesColor = page.content?.dayPlacesColor || '#10B981';
@@ -444,7 +426,6 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
 
     return (
         <PageShell scale={scale}>
-            {/* Only show header on main day page, not continuation */}
             {!isContinuationPage && (
                 <div style={{ height: `${130 * scale}px`, background: heroImgs.length > 0 ? 'transparent' : `linear-gradient(135deg, ${dayHeaderColor} 0%, ${dayHeaderColor}dd 100%)`, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                     {heroImgs.length > 0 ? (
@@ -468,7 +449,6 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
                 </div>
             )}
             
-            {/* Continuation header - smaller */}
             {isContinuationPage && (
                 <div style={{ 
                     height: `${60 * scale}px`, 
@@ -594,7 +574,6 @@ export const DayDetailPageRenderer: React.FC<DayDetailPageProps> = ({ page, scal
     );
 };
 
-// Cost Page Renderer
 interface CostPageProps {
     page: ReportPage;
     reportData: ReportData;
@@ -701,7 +680,6 @@ export const CostPageRenderer: React.FC<CostPageProps> = ({ page, reportData, sc
     );
 };
 
-// Policies Page Renderer
 interface PoliciesPageProps {
     page: ReportPage;
     reportData: ReportData;
@@ -795,7 +773,6 @@ export const PoliciesPageRenderer: React.FC<PoliciesPageProps> = ({ page, report
     );
 };
 
-// Main Report Page Renderer
 interface ReportPageRendererProps {
     page: ReportPage;
     reportData: ReportData;
@@ -820,7 +797,6 @@ export const ReportPageRenderer: React.FC<ReportPageRendererProps> = ({ page, re
     }
 };
 
-// Helper function to process report data and split pages with overflow content
 export const processReportPagesForOverflow = (reportData: ReportData): ReportPage[] => {
     const pages = reportData.pages || [];
     const processedPages: ReportPage[] = [];
@@ -834,7 +810,6 @@ export const processReportPagesForOverflow = (reportData: ReportData): ReportPag
         }
     });
     
-    // Renumber pages
     return processedPages.map((page, idx) => ({
         ...page,
         pageNumber: idx + 1

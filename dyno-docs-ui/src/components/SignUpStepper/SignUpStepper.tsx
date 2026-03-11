@@ -81,7 +81,7 @@ export default function SignUpStepper() {
 
       if (payload.planId) formdata.append("PlanId", payload.planId);
       formdata.append("PlanName", payload.planId === "1" ? "Free" : payload.planId === "2" ? "Professional" : "Enterprise");
-      formdata.append("PlanType", payload.planType ?? "");    
+      formdata.append("PlanType", payload.planType ?? "");
 
       await registerAgency(formdata);
       showSuccess("Registration successful. Please sign in.");
@@ -115,9 +115,7 @@ export default function SignUpStepper() {
       <div className="stepper-card">
         {step === 1 && <Step1Personal initial={form} onNext={onNext} />}
         {step === 2 && <Step2Business initial={form} onNext={onNext} onBack={onBack} />}
-        {step === 3 && (
-          <Step3Plan initial={form} onBack={onBack} onSubmit={onSubmit} loading={loading} />
-        )}
+        {step === 3 && <Step3Plan initial={form} onBack={onBack} onSubmit={onSubmit} loading={loading} />}
       </div>
     </div>
   );

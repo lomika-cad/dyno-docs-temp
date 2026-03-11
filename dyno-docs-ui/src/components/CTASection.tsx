@@ -75,7 +75,6 @@ const CTASection = () => {
             </Box>
           </Grid>
 
-          {/* Right Image */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Box
               sx={{
@@ -87,7 +86,6 @@ const CTASection = () => {
               }}
               data-aos="fade-left"
             >
-              {/* Placeholder for dashboard image */}
               <Box
                 sx={{
                   width: "100%",
@@ -102,7 +100,6 @@ const CTASection = () => {
                   overflow: "hidden",
                 }}
               >
-                {/* Dashboard preview image - replace with actual image path */}
                 <img
                   src={previewSite}
                   alt="DynoDocs Dashboard Preview"
@@ -113,8 +110,6 @@ const CTASection = () => {
                   }}
                 />
               </Box>
-
-              {/* Decorative shadow effect */}
               <Box
                 sx={{
                   position: "absolute",

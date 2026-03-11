@@ -2,7 +2,7 @@ import { Box, Card, CardContent, Typography } from "@mui/material";
 import { BarChart as BarChartIcon } from "lucide-react";
 
 interface ChartDataPoint {
-  date: string; // ISO string: "2026-03-03"
+  date: string;
   count: number;
 }
 
@@ -11,17 +11,13 @@ interface BarChartProps {
   title?: string;
 }
 
-export function BarChart({
-  data,
-  title = "Last 2 Weeks Report Statistics",
-}: BarChartProps) {
+export function BarChart({ data, title = "Last 2 Weeks Report Statistics" }: BarChartProps) {
+
   const formatDate = (dateStr: string) => {
-    // if dateStr is "YYYY-MM-DD" this is safe
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  // Empty state
   if (!data || data.length === 0) {
     return (
       <Card
@@ -64,10 +60,9 @@ export function BarChart({
     );
   }
 
-  // --- Scaling ---
-  const chartHeight = 260; // px (fixed so bars scale correctly)
-  const topPadding = 24; // space reserved for value labels
-  const bottomPadding = 34; // space reserved for date labels
+  const chartHeight = 260;
+  const topPadding = 24;
+  const bottomPadding = 34;
   const drawableHeight = chartHeight - topPadding - bottomPadding;
 
   const maxValue = Math.max(...data.map((d) => d.count), 1);
@@ -90,7 +85,6 @@ export function BarChart({
       }}
     >
       <CardContent sx={{ p: 3 }}>
-        {/* Header */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
           <Box
             sx={{
@@ -113,7 +107,6 @@ export function BarChart({
           </Typography>
         </Box>
 
-        {/* Chart */}
         <Box
           sx={{
             height: chartHeight,
@@ -136,13 +129,8 @@ export function BarChart({
           }}
         >
           {data.map((item, index) => {
-            // ✅ sqrt scaling makes small values visible when max is large
             const scaled = Math.sqrt(item.count) / Math.sqrt(maxValue);
-            const barPx =
-              item.count === 0
-                ? minPx
-                : Math.max(minPx, Math.round(scaled * drawableHeight));
-
+            const barPx = item.count === 0 ? minPx : Math.max(minPx, Math.round(scaled * drawableHeight));
             return (
               <Box
                 key={`${item.date}-${index}`}
@@ -163,7 +151,6 @@ export function BarChart({
                   },
                 }}
               >
-                {/* Value */}
                 <Typography
                   className="value"
                   variant="caption"
@@ -183,7 +170,6 @@ export function BarChart({
                   {item.count}
                 </Typography>
 
-                {/* Bar */}
                 <Box
                   className="bar"
                   sx={{
@@ -200,7 +186,6 @@ export function BarChart({
                   }}
                 />
 
-                {/* Date */}
                 <Typography
                   variant="caption"
                   sx={{
@@ -224,7 +209,6 @@ export function BarChart({
           })}
         </Box>
 
-        {/* Summary */}
         <Box
           sx={{
             mt: 2,

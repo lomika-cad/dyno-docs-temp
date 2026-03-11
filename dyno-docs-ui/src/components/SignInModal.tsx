@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import "../styles/signInModal.css";
 import { login } from "../services/auth-api";
 import { useState } from "react";
-import { showError } from "./Toast";
+import { showError, showInfo } from "./Toast";
 import { CircularProgress } from "@mui/material";
 import { getMe } from "../services/me-api";
 
@@ -12,6 +12,7 @@ interface SignInModalProps {
 }
 
 const SignInModal = ({ open, onClose }: SignInModalProps) => {
+
   if (!open) return null;
 
   const [email, setEmail] = useState("");
@@ -59,17 +60,19 @@ const SignInModal = ({ open, onClose }: SignInModalProps) => {
       sessionStorage.setItem("dd_discount_percentage", res.discountPercentage);
       sessionStorage.setItem("dd_subscription_isActive", res.isActive);
     } catch (error) {
-           
+      showInfo("Failed to retrieve user information.");    
     }
   }
 
   return (
     <div className="authModal" role="dialog" aria-modal="true" aria-label="Sign in" onClick={handleBackdropClick}>
+
       {loading && (
         <div className="globalLoader" role="status" aria-live="polite">
           <CircularProgress size={56} sx={{ color: 'var(--accent-600, #ff6b00)' }} />
         </div>
       )}
+      
       <div className="authModal-card">
         <h2 className="authModal-title">Sign in</h2>
 
