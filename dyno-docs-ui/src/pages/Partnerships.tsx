@@ -222,6 +222,11 @@ export default function Partnerships() {
         setSelectedImages([]);
         setImagePreviews([]);
         setEditingId(null);
+        
+        // Reset the file input element to clear its value
+        if (imagesInputRef.current) {
+            imagesInputRef.current.value = "";
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
