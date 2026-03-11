@@ -56,6 +56,37 @@ public class TestApplicationDbContext : DbContext, IApplicationDbContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        var currentTime = DateTime.UtcNow;
+        const string testUser = "test-user";
+        var testTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            // Handle AuditableEntity (CreatedAt, CreatedBy, LastModifiedAt, LastModifiedBy)
+            if (entry.Entity is AuditableEntity auditableEntity)
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        auditableEntity.CreatedAt = currentTime;
+                        auditableEntity.CreatedBy = testUser;
+                        auditableEntity.LastModifiedAt = currentTime;
+                        auditableEntity.LastModifiedBy = testUser;
+                        break;
+                    case EntityState.Modified:
+                        auditableEntity.LastModifiedAt = currentTime;
+                        auditableEntity.LastModifiedBy = testUser;
+                        break;
+                }
+            }
+
+            // Handle BaseEntity (TenantId)
+            if (entry.Entity is BaseEntity baseEntity && entry.State == EntityState.Added && baseEntity.TenantId == Guid.Empty)
+            {
+                baseEntity.TenantId = testTenantId;
+            }
+        }
+
         return await base.SaveChangesAsync(cancellationToken);
     }
 }
